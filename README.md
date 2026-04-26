@@ -2,6 +2,8 @@
 
 AI Video Blocker là một Chrome Extension (Manifest V3) mã nguồn mở, giúp cha mẹ bảo vệ trẻ em khỏi các nội dung "AI slop" (video rác được tạo hàng loạt bằng AI) trên YouTube.
 
+[Tiếng Việt](./README.md) | [English](./README_EN.md)
+
 [![GitHub license](https://img.shields.io/github/license/PiPyL/AIVideoBlockerV2)](https://github.com/PiPyL/AIVideoBlockerV2/blob/main/LICENSE)
 [![GitHub release](https://img.shields.io/github/v/release/PiPyL/AIVideoBlockerV2)](https://github.com/PiPyL/AIVideoBlockerV2/releases)
 
