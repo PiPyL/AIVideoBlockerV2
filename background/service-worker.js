@@ -35,6 +35,10 @@ async function handleMessage(msg, sender) {
       await migrateLegacyGeminiSecret();
       return await StorageManager.getSettings();
 
+    case 'MIGRATE_GEMINI_SECRET':
+      await migrateLegacyGeminiSecret();
+      return { ok: true };
+
     case 'UPDATE_SETTINGS':
       return await updateSettingsSecure(msg.settings);
 
@@ -140,6 +144,187 @@ async function getFullStats() {
     detectionProfile: settings.detectionProfile || 'recall-first',
     detectorVersion: StorageManager.DEFAULT_SETTINGS.detectorVersion
   };
+}
+
+// ==================== SECURE SETTINGS / SECRETS ====================
+
+async function updateSettingsSecure(partial = {}) {
+  const sanitized = { ...(partial || {}) };
+  if (sanitized.gemini) {
+    const gemini = { ...sanitized.gemini };
+    if (Object.prototype.hasOwnProperty.call(gemini, 'apiKey')) {
+      const apiKey = String(gemini.apiKey || '').trim();
+      delete gemini.apiKey;
+      if (apiKey) {
+        await setGeminiApiKey(apiKey);
+        gemini.hasApiKey = true;
+      }
+    }
+    sanitized.gemini = gemini;
+  }
+
+  const updated = await StorageManager.updateSettings(sanitized);
+  const hasKey = await hasGeminiApiKey();
+  if (updated.gemini?.hasApiKey !== hasKey) {
+    return await StorageManager.updateSettings({
+      gemini: {
+        ...updated.gemini,
+        hasApiKey: hasKey,
+        enabled: hasKey ? updated.gemini.enabled : false
+      }
+    });
+  }
+  return updated;
+}
+
+async function saveGeminiKey(msg = {}) {
+  const apiKey = String(msg.apiKey || '').trim();
+  if (!apiKey) return { ok: false, reason: 'missing_api_key' };
+
+  const testResult = await testGeminiKey({
+    apiKey,
+    model: msg.model
+  });
+  if (!testResult.ok) return testResult;
+
+  await setGeminiApiKey(apiKey);
+  const settings = await StorageManager.getSettings();
+  await StorageManager.updateSettings({
+    gemini: {
+      ...settings.gemini,
+      hasApiKey: true,
+      enabled: msg.enabled !== false,
+      model: msg.model || settings.gemini?.model || GeminiClassifier.DEFAULT_MODEL,
+      includeThumbnail: Boolean(msg.includeThumbnail),
+      timeoutMs: msg.includeThumbnail ? 6000 : 3500
+    }
+  });
+
+  return { ok: true, model: testResult.model || msg.model || GeminiClassifier.DEFAULT_MODEL };
+}
+
+async function clearGeminiKey() {
+  await deleteGeminiApiKey();
+  const settings = await StorageManager.getSettings();
+  await StorageManager.updateSettings({
+    gemini: {
+      ...settings.gemini,
+      enabled: false,
+      hasApiKey: false
+    }
+  });
+  return { ok: true };
+}
+
+async function migrateLegacyGeminiSecret() {
+  const data = await chrome.storage.local.get(['settings', 'geminiSecrets']);
+  const storedSettings = data.settings || {};
+  const legacyGemini = storedSettings.gemini || {};
+  const legacyApiKey = String(legacyGemini.apiKey || data.geminiSecrets?.apiKey || '').trim();
+  const existingSecret = await readGeminiSecret();
+
+  if (legacyApiKey && !existingSecret?.apiKey) {
+    await writeGeminiSecret(legacyApiKey);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(legacyGemini, 'apiKey') || data.geminiSecrets?.apiKey) {
+    const cleanedGemini = { ...legacyGemini };
+    delete cleanedGemini.apiKey;
+    cleanedGemini.hasApiKey = Boolean(legacyApiKey || existingSecret?.apiKey);
+    await chrome.storage.local.set({
+      settings: {
+        ...storedSettings,
+        gemini: cleanedGemini
+      },
+      geminiSecrets: {}
+    });
+  }
+}
+
+async function hasGeminiApiKey() {
+  const secret = await readGeminiSecret();
+  if (secret?.apiKey) return true;
+
+  const data = await chrome.storage.local.get('settings');
+  return Boolean(data.settings?.gemini?.apiKey);
+}
+
+async function getGeminiApiKey() {
+  await migrateLegacyGeminiSecret();
+  const secret = await readGeminiSecret();
+  return String(secret?.apiKey || '').trim();
+}
+
+async function setGeminiApiKey(apiKey) {
+  await writeGeminiSecret(apiKey);
+}
+
+async function deleteGeminiApiKey() {
+  await deleteGeminiSecret();
+  await chrome.storage.local.set({ geminiSecrets: {} });
+}
+
+async function readGeminiSecret() {
+  if (typeof indexedDB === 'undefined') {
+    return getMemorySecretStore().geminiApiKey || null;
+  }
+
+  const db = await openSecretDb();
+  return await idbRequest(db.transaction('secrets', 'readonly').objectStore('secrets').get('geminiApiKey'));
+}
+
+async function writeGeminiSecret(apiKey) {
+  const record = {
+    id: 'geminiApiKey',
+    apiKey: String(apiKey || '').trim(),
+    updatedAt: Date.now()
+  };
+
+  if (!record.apiKey) return;
+
+  if (typeof indexedDB === 'undefined') {
+    getMemorySecretStore().geminiApiKey = record;
+    return;
+  }
+
+  const db = await openSecretDb();
+  await idbRequest(db.transaction('secrets', 'readwrite').objectStore('secrets').put(record));
+}
+
+async function deleteGeminiSecret() {
+  if (typeof indexedDB === 'undefined') {
+    delete getMemorySecretStore().geminiApiKey;
+    return;
+  }
+
+  const db = await openSecretDb();
+  await idbRequest(db.transaction('secrets', 'readwrite').objectStore('secrets').delete('geminiApiKey'));
+}
+
+function getMemorySecretStore() {
+  if (!globalThis.__aivbMemorySecrets) globalThis.__aivbMemorySecrets = {};
+  return globalThis.__aivbMemorySecrets;
+}
+
+function openSecretDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('aivb-secure-secrets', 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('secrets')) {
+        db.createObjectStore('secrets', { keyPath: 'id' });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function idbRequest(request) {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
 }
 
 // ==================== GEMINI API ====================
@@ -485,6 +670,7 @@ async function rescanAllTabs() {
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log(`${LOG_PREFIX} Installed:`, details.reason);
+  await migrateLegacyGeminiSecret();
 
   if (details.reason === 'install') {
     // Khởi tạo settings mặc định
@@ -501,6 +687,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 // Startup
 chrome.runtime.onStartup.addListener(async () => {
   console.log(`${LOG_PREFIX} Started`);
+  await migrateLegacyGeminiSecret();
   await updateBadge(0);
 });
 

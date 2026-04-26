@@ -8,6 +8,11 @@ const root = path.join(__dirname, '..');
 
 function createWorkerHarness({ fetchImpl, gemini = {} } = {}) {
   const storageData = {};
+  const configuredApiKey = Object.prototype.hasOwnProperty.call(gemini, 'apiKey')
+    ? gemini.apiKey
+    : 'test-key';
+  const publicGemini = { ...gemini };
+  delete publicGemini.apiKey;
   const context = vm.createContext({
     console,
     setTimeout,
@@ -19,6 +24,9 @@ function createWorkerHarness({ fetchImpl, gemini = {} } = {}) {
     btoa: (value) => Buffer.from(value, 'binary').toString('base64'),
     fetch: fetchImpl || (async () => jsonResponse(geminiAllowPayload()))
   });
+  context.__aivbMemorySecrets = configuredApiKey
+    ? { geminiApiKey: { id: 'geminiApiKey', apiKey: configuredApiKey, updatedAt: Date.now() } }
+    : {};
 
   context.chrome = {
     storage: {
@@ -69,9 +77,9 @@ function createWorkerHarness({ fetchImpl, gemini = {} } = {}) {
     ...context.StorageManager.DEFAULT_SETTINGS,
     gemini: {
       ...context.StorageManager.DEFAULT_SETTINGS.gemini,
-      enabled: true,
-      apiKey: 'test-key',
-      ...gemini
+      enabled: Boolean(configuredApiKey),
+      hasApiKey: Boolean(configuredApiKey),
+      ...publicGemini
     }
   };
   storageData.geminiCache = {};
@@ -164,7 +172,7 @@ test('Local block không gọi Gemini', async () => {
 test('Thiếu API key thì fallback local và không gọi API', async () => {
   let fetchCount = 0;
   const harness = createWorkerHarness({
-    gemini: { apiKey: '' },
+    gemini: { apiKey: '', enabled: true },
     fetchImpl: async () => {
       fetchCount++;
       return jsonResponse(geminiAllowPayload());
@@ -176,6 +184,72 @@ test('Thiếu API key thì fallback local và không gọi API', async () => {
   assert.equal(result.skipped, true);
   assert.equal(result.reason, 'missing_api_key');
   assert.equal(fetchCount, 0);
+});
+
+test('GET_SETTINGS không trả raw Gemini API key', async () => {
+  const harness = createWorkerHarness();
+
+  const settings = await harness.send({ type: 'GET_SETTINGS' });
+
+  assert.equal(settings.gemini.hasApiKey, true);
+  assert.equal(Object.prototype.hasOwnProperty.call(settings.gemini, 'apiKey'), false);
+});
+
+test('Legacy apiKey trong settings được migrate khỏi storage public', async () => {
+  let apiKeyHeader = '';
+  const harness = createWorkerHarness({
+    gemini: { apiKey: '', enabled: true },
+    fetchImpl: async (url, options) => {
+      apiKeyHeader = options.headers['x-goog-api-key'];
+      return jsonResponse(geminiAllowPayload());
+    }
+  });
+  harness.context.__aivbMemorySecrets = {};
+  harness.storageData.settings.gemini = {
+    ...harness.context.StorageManager.DEFAULT_SETTINGS.gemini,
+    enabled: true,
+    apiKey: 'legacy-key'
+  };
+
+  const settings = await harness.send({ type: 'GET_SETTINGS' });
+  const result = await harness.send(classifyPayload({ shouldBlock: false }));
+
+  assert.equal(settings.gemini.hasApiKey, true);
+  assert.equal(Object.prototype.hasOwnProperty.call(settings.gemini, 'apiKey'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(harness.storageData.settings.gemini, 'apiKey'), false);
+  assert.equal(apiKeyHeader, 'legacy-key');
+  assert.equal(result.ok, true);
+});
+
+test('SAVE_GEMINI_KEY lưu key vào secret store, không lưu vào settings', async () => {
+  const harness = createWorkerHarness({ gemini: { apiKey: '', enabled: false } });
+
+  const saved = await harness.send({
+    type: 'SAVE_GEMINI_KEY',
+    apiKey: 'new-key',
+    model: 'gemini-3.1-flash-lite-preview',
+    enabled: true
+  });
+  const settings = await harness.send({ type: 'GET_SETTINGS' });
+
+  assert.equal(saved.ok, true);
+  assert.equal(settings.gemini.hasApiKey, true);
+  assert.equal(settings.gemini.enabled, true);
+  assert.equal(Object.prototype.hasOwnProperty.call(settings.gemini, 'apiKey'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(harness.storageData.settings.gemini, 'apiKey'), false);
+  assert.equal(harness.context.__aivbMemorySecrets.geminiApiKey.apiKey, 'new-key');
+});
+
+test('CLEAR_GEMINI_KEY xóa secret và tắt Gemini', async () => {
+  const harness = createWorkerHarness();
+
+  const cleared = await harness.send({ type: 'CLEAR_GEMINI_KEY' });
+  const settings = await harness.send({ type: 'GET_SETTINGS' });
+
+  assert.equal(cleared.ok, true);
+  assert.equal(settings.gemini.hasApiKey, false);
+  assert.equal(settings.gemini.enabled, false);
+  assert.equal(harness.context.__aivbMemorySecrets.geminiApiKey, undefined);
 });
 
 test('Watch safe gửi request nền và cache allow', async () => {

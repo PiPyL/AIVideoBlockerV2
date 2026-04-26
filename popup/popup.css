@@ -409,6 +409,12 @@ body::-webkit-scrollbar-thumb {
   color: var(--text-secondary);
 }
 
+.gemini-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .checkbox-row {
   display: flex;
   align-items: flex-start;

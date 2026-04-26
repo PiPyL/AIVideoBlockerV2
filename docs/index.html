@@ -49,8 +49,8 @@
         <div class="container hero-container">
             <div class="hero-content">
                 <div class="badge">Dành cho phụ huynh thông thái 👶</div>
-                <h1>Bảo vệ trẻ em khỏi <span class="text-highlight">video AI độc hại</span> trên YouTube</h1>
-                <p>Bạn có biết 70% video đề xuất cho trẻ em hiện nay là do AI tạo ra với nội dung vô nghĩa? Tiện ích mở rộng của chúng tôi tự động phát hiện và chặn nội dung này, giúp môi trường mạng của con bạn an toàn hơn.</p>
+                <h1>Bảo vệ trẻ em khỏi <span class="text-highlight">"Rác AI" (AI Slop)</span> trên YouTube</h1>
+                <p>Khoảng 95% video cho trẻ nhỏ trên YouTube không đạt chất lượng. Tiện ích của chúng tôi chặn "Rác AI" tạo hàng loạt vô nghĩa, ngăn chặn việc làm mờ ranh giới thực-ảo và bóp méo nhận thức của trẻ.</p>
                 <div class="hero-cta">
                     <button onclick="openInstallModal()" class="btn btn-primary btn-large pulse-animation">
                         <i data-lucide="download"></i>
@@ -89,8 +89,8 @@
     <section id="features" class="features bg-light">
         <div class="container">
             <div class="section-title">
-                <h2>Tại sao chọn AI Video Blocker?</h2>
-                <p>Công nghệ hiện đại giúp cha mẹ an tâm tuyệt đối.</p>
+                <h2>Hành động ngay trước vấn nạn "Rác AI"</h2>
+                <p>Theo thư ngỏ từ hơn 200 chuyên gia, nội dung AI độc hại đang thu lợi nhuận khổng lồ trên sự an toàn của trẻ. AI Video Blocker là giải pháp tức thời cho cha mẹ.</p>
             </div>
             <div class="features-grid">
                 <div class="feature-card">
@@ -167,7 +167,7 @@
                 <i data-lucide="shield-check" class="text-green"></i>
                 <span>AI Video Blocker V2</span>
             </div>
-            <p class="copyright">&copy; 2026 AI Video Blocker Team. Đảm bảo quyền riêng tư và an toàn.</p>
+            <p class="copyright">&copy; 2026 AutoWork Team. Đảm bảo quyền riêng tư và an toàn.</p>
             <div class="footer-links">
                 <a href="#">Chính sách bảo mật</a>
                 <a href="#">Điều khoản</a>
@@ -220,6 +220,37 @@
                         <p>Nhấn vào nút <strong>Tải tiện ích đã giải nén</strong> (Load unpacked) ở góc trái và chọn thư mục bạn vừa giải nén ở Bước 1. Xong!</p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Warning Modal -->
+    <div id="videoModal" class="modal">
+        <div class="modal-overlay" onclick="closeVideoModal()"></div>
+        <div class="modal-content video-modal-content">
+            <button class="modal-close" onclick="closeVideoModal()">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="modal-header">
+                <h2>Cảnh báo "Rác AI" trên YouTube</h2>
+                <p>Sự bùng nổ của AI là không thể đảo ngược, nhưng an toàn của trẻ không thể bị đánh đổi.</p>
+            </div>
+            <div class="video-wrapper external-video">
+                <a href="https://www.youtube.com/watch?v=LOIRTF_prcY" target="_blank" rel="noopener noreferrer" class="video-thumbnail-link">
+                    <img src="https://img.youtube.com/vi/LOIRTF_prcY/hqdefault.jpg" alt="VTV Cảnh báo Rác AI" class="video-thumbnail">
+                    <div class="play-button-overlay">
+                        <i data-lucide="play-circle"></i>
+                        <span>Xem trên YouTube</span>
+                    </div>
+                </a>
+k            </div>
+            <div class="modal-footer video-modal-footer">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="hideVideoCheckbox">
+                    <span class="checkmark"></span>
+                    <span class="checkbox-text">Không hiển thị lại thông báo này</span>
+                </label>
+                <button class="btn btn-primary" onclick="closeVideoModal()">Tôi đã hiểu</button>
             </div>
         </div>
     </div>

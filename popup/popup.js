@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const checkboxGeminiThumbnail = $('#checkbox-gemini-thumbnail');
   const geminiCacheCount = $('#gemini-cache-count');
   const btnClearGeminiCache = $('#btn-clear-gemini-cache');
+  const btnClearGeminiKey = $('#btn-clear-gemini-key');
   const geminiStatus = $('#gemini-status');
 
   // ==================== INITIALIZATION ====================
@@ -100,9 +101,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Gemini API
     const gemini = s.gemini || {};
-    checkboxGeminiEnabled.checked = Boolean(gemini.enabled && gemini.apiKey);
+    checkboxGeminiEnabled.checked = Boolean(gemini.enabled && gemini.hasApiKey);
     geminiApiKey.value = '';
-    geminiApiKey.placeholder = gemini.apiKey ? 'API key đã lưu' : 'Nhập Gemini API key...';
+    geminiApiKey.placeholder = gemini.hasApiKey ? 'API key đã lưu an toàn' : 'Nhập Gemini API key...';
     geminiModel.value = gemini.model || 'gemini-3.1-flash-lite-preview';
     checkboxGeminiThumbnail.checked = Boolean(gemini.includeThumbnail);
 
@@ -165,7 +166,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     settings = await getSettings();
     const gemini = { ...(settings.gemini || {}) };
 
-    if (checkboxGeminiEnabled.checked && !gemini.apiKey && !geminiApiKey.value.trim()) {
+    if (checkboxGeminiEnabled.checked && !gemini.hasApiKey && !geminiApiKey.value.trim()) {
       checkboxGeminiEnabled.checked = false;
       setGeminiStatus('Nhập API key rồi bấm Kiểm tra trước khi bật.', 'error');
       return;
@@ -203,6 +204,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadStats();
     setGeminiStatus('Đã xóa cache Gemini.', 'success');
     btnClearGeminiCache.disabled = false;
+  });
+
+  btnClearGeminiKey.addEventListener('click', async () => {
+    btnClearGeminiKey.disabled = true;
+    await sendMessage({ type: 'CLEAR_GEMINI_KEY' });
+    geminiApiKey.value = '';
+    checkboxGeminiEnabled.checked = false;
+    settings = await getSettings();
+    await loadUI(settings);
+    setGeminiStatus('Đã xóa API key khỏi kho secret.', 'success');
+    btnClearGeminiKey.disabled = false;
   });
 
   // Set password
@@ -322,9 +334,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function testAndSaveGeminiKey(enableAfterSuccess = false) {
     const apiKey = geminiApiKey.value.trim();
     settings = await getSettings();
-    const currentKey = settings.gemini?.apiKey || '';
+    const hasSavedKey = Boolean(settings.gemini?.hasApiKey);
 
-    if (!apiKey && !currentKey) {
+    if (!apiKey && !hasSavedKey) {
       setGeminiStatus('Chưa có API key để kiểm tra.', 'error');
       checkboxGeminiEnabled.checked = false;
       return;
@@ -334,11 +346,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnTestGemini.textContent = 'Đang kiểm...';
     setGeminiStatus('Đang kiểm tra API key...', 'neutral');
 
-    const result = await sendMessage({
-      type: 'TEST_GEMINI_KEY',
-      apiKey: apiKey || currentKey,
-      model: geminiModel.value
-    });
+    const result = apiKey
+      ? await sendMessage({
+        type: 'SAVE_GEMINI_KEY',
+        apiKey,
+        model: geminiModel.value,
+        enabled: enableAfterSuccess || checkboxGeminiEnabled.checked,
+        includeThumbnail: checkboxGeminiThumbnail.checked
+      })
+      : await sendMessage({
+        type: 'TEST_GEMINI_KEY',
+        model: geminiModel.value
+      });
 
     btnTestGemini.disabled = false;
     btnTestGemini.textContent = 'Kiểm tra';
@@ -349,15 +368,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    await saveGeminiPartial({
-      enabled: enableAfterSuccess || checkboxGeminiEnabled.checked,
-      apiKey: apiKey || currentKey,
-      model: geminiModel.value,
-      includeThumbnail: checkboxGeminiThumbnail.checked,
-      timeoutMs: checkboxGeminiThumbnail.checked ? 6000 : 3500
-    });
+    if (!apiKey) {
+      await saveGeminiPartial({
+        enabled: enableAfterSuccess || checkboxGeminiEnabled.checked,
+        model: geminiModel.value,
+        includeThumbnail: checkboxGeminiThumbnail.checked,
+        timeoutMs: checkboxGeminiThumbnail.checked ? 6000 : 3500
+      });
+    } else {
+      settings = await getSettings();
+      await sendMessage({ type: 'RESCAN_ALL' });
+    }
     geminiApiKey.value = '';
-    geminiApiKey.placeholder = 'API key đã lưu';
+    geminiApiKey.placeholder = 'API key đã lưu an toàn';
     checkboxGeminiEnabled.checked = true;
     setGeminiStatus('API key hợp lệ. Gemini API đã bật.', 'success');
   }

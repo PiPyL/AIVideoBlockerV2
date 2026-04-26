@@ -21,7 +21,8 @@
 
   async function init() {
     console.log(`${LOG_PREFIX} Initializing on ${location.href}`);
-    
+
+    await requestGeminiSecretMigration();
     settings = await StorageManager.getSettings();
 
     // Lắng nghe thay đổi settings
@@ -477,7 +478,7 @@
   }
 
   async function getGeminiCachedDetections(videoElements) {
-    if (!settings?.gemini?.enabled || !settings?.gemini?.apiKey) return {};
+    if (!settings?.gemini?.enabled || !settings?.gemini?.hasApiKey) return {};
 
     const videoIds = [...new Set(Array.from(videoElements)
       .filter((el) => !isAggregateVideoContainer(el))
@@ -498,7 +499,7 @@
   }
 
   async function scanGeminiAndReapply(context, baseDetection, surface, captionText = '') {
-    if (!settings?.gemini?.enabled || !settings?.gemini?.apiKey) return;
+    if (!settings?.gemini?.enabled || !settings?.gemini?.hasApiKey) return;
     if (shouldBlockDetection(baseDetection)) return;
 
     const videoId = baseDetection?.videoId || extractVideoIdFromUrl(location.href);
@@ -808,6 +809,14 @@
     }, delay);
   }
 
+  async function requestGeminiSecretMigration() {
+    try {
+      await sendRuntimeMessage({ type: 'MIGRATE_GEMINI_SECRET' });
+    } catch (e) {
+      // Nếu service worker chưa sẵn sàng, getSettings vẫn trả settings đã sanitize.
+    }
+  }
+
   function sendRuntimeMessage(message) {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage(message, (response) => {
@@ -915,7 +924,7 @@
 
   function normalizeStoredSettings(value = {}) {
     const normalized = { ...StorageManager.DEFAULT_SETTINGS, ...(value || {}) };
-    normalized.gemini = { ...StorageManager.DEFAULT_SETTINGS.gemini, ...(value?.gemini || {}) };
+    normalized.gemini = StorageManager._sanitizeGeminiSettings(value?.gemini || {});
     normalized.captionScan = { ...StorageManager.DEFAULT_SETTINGS.captionScan, ...(value?.captionScan || {}) };
     return normalized;
   }

@@ -56,7 +56,34 @@ document.addEventListener('DOMContentLoaded', () => {
             observer.observe(el);
         }
     });
+
+    // Check localStorage for Video Modal
+    const hideVideoPopup = localStorage.getItem('hideVideoPopup');
+    if (!hideVideoPopup) {
+        setTimeout(openVideoModal, 500); // Small delay for better UX
+    }
 });
+
+function openVideoModal() {
+    const modal = document.getElementById('videoModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeVideoModal() {
+    const modal = document.getElementById('videoModal');
+    if (modal) {
+        const checkbox = document.getElementById('hideVideoCheckbox');
+        if (checkbox && checkbox.checked) {
+            localStorage.setItem('hideVideoPopup', 'true');
+        }
+        
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
 
 // Modal Logic
 function openInstallModal() {
