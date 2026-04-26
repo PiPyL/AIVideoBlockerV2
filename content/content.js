@@ -1,5 +1,5 @@
 /**
- * AI Video Blocker — Main Content Script
+ * SafeKid — Main Content Script
  * Điều phối detector + blocker, lắng nghe DOM changes
  */
 

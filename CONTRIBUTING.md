@@ -1,6 +1,6 @@
-# Hướng dẫn đóng góp cho AI Video Blocker
+# Hướng dẫn đóng góp cho SafeKid
 
-Chào mừng bạn đến với cộng đồng AI Video Blocker! Chúng tôi rất trân trọng mọi đóng góp của bạn để giúp môi trường YouTube an toàn hơn cho trẻ em.
+Chào mừng bạn đến với cộng đồng SafeKid! Chúng tôi rất trân trọng mọi đóng góp của bạn để giúp môi trường YouTube an toàn hơn cho trẻ em.
 
 ## Làm thế nào để đóng góp?
 

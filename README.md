@@ -1,6 +1,6 @@
-# AI Video Blocker V2 - Bảo vệ trẻ em khỏi video AI độc hại trên YouTube
+# SafeKid V2 - Bảo vệ trẻ em khỏi video AI độc hại trên YouTube
 
-AI Video Blocker là một Chrome Extension (Manifest V3) mã nguồn mở, giúp cha mẹ bảo vệ trẻ em khỏi các nội dung "AI slop" (video rác được tạo hàng loạt bằng AI) trên YouTube.
+SafeKid là một Chrome Extension (Manifest V3) mã nguồn mở, giúp cha mẹ bảo vệ trẻ em khỏi các nội dung "AI slop" (video rác được tạo hàng loạt bằng AI) trên YouTube.
 
 [Tiếng Việt](./README.md) | [English](./README_EN.md)
 

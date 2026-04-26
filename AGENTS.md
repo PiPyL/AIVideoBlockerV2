@@ -1,4 +1,4 @@
-# AI Video Blocker V2 - Agent Guidelines
+# SafeKid V2 - Agent Guidelines
 
 ## Project Overview
 Chrome Extension (Manifest V3) that detects and blocks AI-generated videos on YouTube to protect children.

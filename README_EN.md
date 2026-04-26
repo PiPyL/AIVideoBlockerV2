@@ -1,6 +1,6 @@
-# AI Video Blocker V2 - Protect Kids from AI-Generated Content on YouTube
+# SafeKid V2 - Protect Kids from AI-Generated Content on YouTube
 
-AI Video Blocker is an open-source Chrome Extension (Manifest V3) that helps parents protect children from "AI slop" (mass-produced, low-quality AI-generated videos) on YouTube.
+SafeKid is an open-source Chrome Extension (Manifest V3) that helps parents protect children from "AI slop" (mass-produced, low-quality AI-generated videos) on YouTube.
 
 [Tiếng Việt](./README.md) | [English](./README_EN.md)
 

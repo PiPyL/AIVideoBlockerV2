@@ -1,5 +1,5 @@
 /**
- * AI Video Blocker — Detector Module
+ * SafeKid — Detector Module
  * Tầng 1: YouTube labels + metadata rules
  * Tầng 2: Child-risk scoring + caption/transcript enrichment
  */

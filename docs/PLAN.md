@@ -1,4 +1,4 @@
-# Kế hoạch tích hợp Provider OpenRouter (AI Video Blocker V2)
+# Kế hoạch tích hợp Provider OpenRouter (SafeKid V2)
 
 ## 1. Mục tiêu và Định hướng
 - **Mục tiêu**: Thêm tuỳ chọn provider OpenRouter để tận dụng các model AI miễn phí, giúp phụ huynh không cần trả phí API mà vẫn sử dụng được tính năng phân loại video nâng cao.

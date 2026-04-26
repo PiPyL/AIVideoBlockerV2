@@ -1,5 +1,5 @@
 /**
- * AI Video Blocker — Gemini classification helpers
+ * SafeKid — Gemini classification helpers
  * Chứa logic thuần để service worker gọi API và unit test không cần Chrome runtime.
  */
 

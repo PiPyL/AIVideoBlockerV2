@@ -1,5 +1,5 @@
 /**
- * AI Video Blocker — Blocker Module
+ * SafeKid — Blocker Module
  * Xử lý phủ mờ video AI trên YouTube DOM
  */
 

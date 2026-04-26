@@ -1,5 +1,5 @@
 /**
- * AI Video Blocker — Storage Utilities
+ * SafeKid — Storage Utilities
  * Quản lý settings và cache qua chrome.storage.local
  */
 
