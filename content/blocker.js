@@ -20,12 +20,14 @@ const AIBlocker = {
   blockVideo(el, detection) {
     if (!el || el.dataset.aivbProcessed === 'true') return;
 
+    const blocked = this._shouldBlock(detection);
     el.dataset.aivbProcessed = 'true';
-    el.dataset.aivbIsAi = detection.isAI ? 'true' : 'false';
+    el.dataset.aivbIsAi = blocked ? 'true' : 'false';
     el.dataset.aivbConfidence = String(Math.round(detection.confidence * 100));
     el.dataset.aivbMethod = detection.method;
+    el.dataset.aivbRiskLevel = detection.riskLevel || 'safe';
 
-    if (!detection.isAI) return;
+    if (!blocked) return;
 
     el.classList.add(`${this.PREFIX}-detected`);
     this._applyPreviewOverlay(el, detection);
@@ -48,12 +50,12 @@ const AIBlocker = {
     overlay.id = this._createOverlayId('aivb-preview-overlay', el, detection);
     overlay.className = `${this.PREFIX}-preview-overlay`;
     overlay.setAttribute('role', 'note');
-    overlay.setAttribute('aria-label', 'Video AI đã bị chặn');
+    overlay.setAttribute('aria-label', this._getBlockTitle(detection));
     const primaryReason = detection.reasons?.[0] || this._getMethodLabel(detection.method);
     const content = this._createElement('div', `${this.PREFIX}-preview-content`);
     content.append(
-      this._createElement('div', `${this.PREFIX}-preview-title`, 'Video AI đã bị chặn'),
-      this._createElement('div', `${this.PREFIX}-preview-meta`, `${Math.round(detection.confidence * 100)}% • ${this._getMethodLabel(detection.method)}`),
+      this._createElement('div', `${this.PREFIX}-preview-title`, this._getBlockTitle(detection)),
+      this._createElement('div', `${this.PREFIX}-preview-meta`, this._getConfidenceLabel(detection)),
       this._createElement('div', `${this.PREFIX}-preview-reason`, primaryReason)
     );
     overlay.appendChild(content);
@@ -233,9 +235,9 @@ const AIBlocker = {
     const content = this._createElement('div', `${this.PREFIX}-watch-overlay-content`);
     content.append(
       this._createElement('div', `${this.PREFIX}-shield-icon-large`, '🛡️'),
-      this._createElement('h2', '', options.title || 'Video AI Đã Bị Chặn'),
-      this._createElement('p', '', options.description || 'Nội dung này được phát hiện là video AI'),
-      this._createElement('p', `${this.PREFIX}-confidence-text`, `Độ tin cậy: ${Math.round((options.confidence || 0) * 100)}% • ${this._getMethodLabel(options.method)}`)
+      this._createElement('h2', '', options.title || 'Video Đã Bị Chặn'),
+      this._createElement('p', '', options.description || 'Nội dung này không phù hợp với trẻ em'),
+      this._createElement('p', `${this.PREFIX}-confidence-text`, options.meta || `Độ tin cậy: ${Math.round((options.confidence || 0) * 100)}% • ${this._getMethodLabel(options.method)}`)
     );
 
     const reasons = this._createElement('div', `${this.PREFIX}-watch-reasons`);
@@ -285,10 +287,11 @@ const AIBlocker = {
     const overlay = document.createElement('div');
     overlay.className = `${this.PREFIX}-watch-overlay`;
     overlay.appendChild(this._createPlaybackOverlayContent({
-      title: 'Video AI Đã Bị Chặn',
-      description: 'Video này được phát hiện là nội dung tạo bởi AI',
+      title: this._getBlockTitle(detection),
+      description: this._getBlockDescription(detection),
       confidence: detection.confidence,
       method: detection.method,
+      meta: this._getConfidenceLabel(detection),
       reasons: detection.reasons,
       backButtonId: 'aivb-go-back'
     }));
@@ -327,10 +330,11 @@ const AIBlocker = {
     const overlay = document.createElement('div');
     overlay.className = `${this.PREFIX}-watch-overlay ${this.PREFIX}-shorts-overlay`;
     overlay.appendChild(this._createPlaybackOverlayContent({
-      title: 'Short AI Đã Bị Chặn',
-      description: 'Short này có dấu hiệu nội dung tạo bởi AI',
+      title: this._getBlockTitle(detection).replace('Video', 'Short'),
+      description: this._getBlockDescription(detection),
       confidence: detection.confidence,
       method: detection.method,
+      meta: this._getConfidenceLabel(detection),
       reasons: detection.reasons,
       backButtonId: 'aivb-go-back-shorts'
     }));
@@ -393,10 +397,40 @@ const AIBlocker = {
       'pattern': '🧩 Pattern Match',
       'channel': '📺 Channel AI',
       'disclosure': '📣 Disclosure',
+      'childRisk': '🛡️ Rủi ro trẻ em',
       'combination': '🧠 Multi-signal',
       'none': '❓ Không xác định'
     };
     return labels[method] || method;
+  },
+
+  _shouldBlock(detection = {}) {
+    if (typeof detection.shouldBlock === 'boolean') return detection.shouldBlock;
+    if (detection.riskLevel) return detection.riskLevel === 'block';
+    return Boolean(detection.isAI);
+  },
+
+  _getBlockTitle(detection = {}) {
+    if ((detection.childRiskScore || 0) >= (detection.syntheticScore || 0)) {
+      return 'Video Không Phù Hợp Đã Bị Chặn';
+    }
+    return 'Video AI Đã Bị Chặn';
+  },
+
+  _getBlockDescription(detection = {}) {
+    if ((detection.childRiskScore || 0) >= 0.3) {
+      return 'Nội dung này có dấu hiệu không phù hợp với trẻ em';
+    }
+    return 'Video này có dấu hiệu nội dung tạo bởi AI';
+  },
+
+  _getConfidenceLabel(detection = {}) {
+    const synthetic = Math.round((detection.syntheticScore || 0) * 100);
+    const childRisk = Math.round((detection.childRiskScore || 0) * 100);
+    if (detection.riskLevel) {
+      return `AI ${synthetic}% • Rủi ro ${childRisk}% • ${this._getMethodLabel(detection.method)}`;
+    }
+    return `${Math.round((detection.confidence || 0) * 100)}% • ${this._getMethodLabel(detection.method)}`;
   },
 
   /**
@@ -411,7 +445,7 @@ const AIBlocker = {
   _startPlaybackGuard(key) {
     if (this.playbackGuards[key]) return;
 
-    const enforce = () => this._pauseAndMuteMedia();
+    const enforce = () => this._pauseAndMuteMedia(key);
     const onPlay = (event) => {
       if (event.target?.tagName === 'VIDEO') enforce();
     };
@@ -440,13 +474,18 @@ const AIBlocker = {
     }
   },
 
-  _pauseAndMuteMedia() {
+  _pauseAndMuteMedia(key = 'guard') {
     document.querySelectorAll('video').forEach((video) => {
       if (!this.mediaState.has(video)) {
         this.mediaState.set(video, {
           muted: video.muted,
-          volume: video.volume
+          volume: video.volume,
+          autoplay: video.autoplay,
+          hadMutedAttribute: video.hasAttribute('muted'),
+          shouldResume: key === 'pending-scan' && !video.paused && !video.ended
         });
+      } else if (key === 'pending-scan' && !video.paused && !video.ended) {
+        this.mediaState.get(video).shouldResume = true;
       }
 
       try {
@@ -462,10 +501,17 @@ const AIBlocker = {
     if (!player) return;
 
     if (!this.playerState) {
+      const playbackState = this._callPlayerMethod(player, 'getPlayerState');
       this.playerState = {
         player,
-        muted: this._callPlayerMethod(player, 'isMuted')
+        muted: this._callPlayerMethod(player, 'isMuted'),
+        shouldResume: key === 'pending-scan' && (playbackState === 1 || playbackState === 3)
       };
+    } else if (key === 'pending-scan') {
+      const playbackState = this._callPlayerMethod(player, 'getPlayerState');
+      if (playbackState === 1 || playbackState === 3) {
+        this.playerState.shouldResume = true;
+      }
     }
 
     this._callPlayerMethod(player, 'pauseVideo');
@@ -479,7 +525,16 @@ const AIBlocker = {
 
       video.muted = state.muted;
       video.volume = state.volume;
-      if (!state.muted) video.removeAttribute('muted');
+      video.autoplay = state.autoplay;
+      if (state.hadMutedAttribute) {
+        video.setAttribute('muted', '');
+      } else {
+        video.removeAttribute('muted');
+      }
+
+      if (state.shouldResume && video.isConnected && video.paused && !video.ended) {
+        this._resumeVideo(video);
+      }
     });
 
     this.mediaState = new WeakMap();
@@ -488,7 +543,19 @@ const AIBlocker = {
     if (player?.isConnected && this.playerState.muted === false) {
       this._callPlayerMethod(player, 'unMute');
     }
+    if (player?.isConnected && this.playerState?.shouldResume) {
+      this._callPlayerMethod(player, 'playVideo');
+    }
     this.playerState = null;
+  },
+
+  _resumeVideo(video) {
+    try {
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {});
+      }
+    } catch (e) { /* ignore media resume errors */ }
   },
 
   _callPlayerMethod(player, method) {

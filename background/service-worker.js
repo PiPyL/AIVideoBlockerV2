@@ -83,26 +83,29 @@ async function getFullStats() {
   const cache = await StorageManager.getVideoCache();
   
   const cachedVideos = Object.values(cache);
-  const aiVideos = cachedVideos.filter(v => v.isAI);
+  const blockedVideos = cachedVideos.filter(v => v.shouldBlock || v.riskLevel === 'block' || v.isAI);
 
   return {
     totalBlocked: settings.stats.totalBlocked,
     totalScanned: settings.stats.totalScanned,
     lastActive: settings.stats.lastActive,
     cacheSize: cachedVideos.length,
-    cachedAI: aiVideos.length,
+    cachedAI: blockedVideos.length,
     whitelistedCount: settings.whitelistedChannels.length,
     blacklistedCount: settings.blacklistedChannels.length,
     methodBreakdown: {
-      label: aiVideos.filter(v => v.method === 'label').length,
-      keyword: aiVideos.filter(v => v.method === 'keyword').length,
-      pattern: aiVideos.filter(v => v.method === 'pattern').length,
-      channel: aiVideos.filter(v => v.method === 'channel').length,
-      disclosure: aiVideos.filter(v => v.method === 'disclosure').length,
-      combination: aiVideos.filter(v => v.method === 'combination').length
+      label: blockedVideos.filter(v => v.method === 'label').length,
+      keyword: blockedVideos.filter(v => v.method === 'keyword').length,
+      pattern: blockedVideos.filter(v => v.method === 'pattern').length,
+      channel: blockedVideos.filter(v => v.method === 'channel').length,
+      disclosure: blockedVideos.filter(v => v.method === 'disclosure').length,
+      childRisk: blockedVideos.filter(v => v.method === 'childRisk').length,
+      combination: blockedVideos.filter(v => v.method === 'combination').length
     },
     statsByContext: settings.stats.byContext || {},
     statsBySignal: settings.stats.bySignal || {},
+    statsByRiskLevel: settings.stats.byRiskLevel || {},
+    statsByRiskCategory: settings.stats.byRiskCategory || {},
     detectionProfile: settings.detectionProfile || 'recall-first',
     detectorVersion: StorageManager.DEFAULT_SETTINGS.detectorVersion
   };

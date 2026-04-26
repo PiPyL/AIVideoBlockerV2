@@ -121,6 +121,8 @@
     let scannedCount = 0;
     let detectedMethodCounts = {};
     let detectedSignalCounts = { strong: 0, medium: 0, weak: 0 };
+    const detectedRiskCategories = new Set();
+    let topRiskLevel = 'safe';
     const cache = await StorageManager.getVideoCache();
     const detectorVersion = AIDetector.DETECTOR_VERSION;
     const detectionSignature = getDetectionSignature(settings, detectorVersion);
@@ -159,12 +161,14 @@
           const cached = cache[videoId];
           const cacheValid = cached.detectorVersion === detectorVersion &&
             cached.detectionSignature === detectionSignature;
-          if (cacheValid && Date.now() - cached.timestamp < 24 * 60 * 60 * 1000) { // 24h cache
-            if (cached.isAI) {
+          if (cacheValid && Date.now() - cached.timestamp < getCacheTtl(cached)) {
+            if (shouldBlockDetection(cached)) {
               AIBlocker.blockVideo(el, cached);
               blockedCount++;
               detectedMethodCounts[cached.method] = (detectedMethodCounts[cached.method] || 0) + 1;
               mergeSignalCounts(detectedSignalCounts, cached.signalCounts);
+              mergeRiskCategories(detectedRiskCategories, cached.riskCategories);
+              topRiskLevel = pickHigherRiskLevel(topRiskLevel, cached.riskLevel);
             } else {
               el.dataset.aivbProcessed = 'true';
               el.dataset.aivbIsAi = 'false';
@@ -178,7 +182,7 @@
       const detection = AIDetector.analyzeVideoElement(el, settings);
       
       // Cache kết quả
-      if (videoId) {
+      if (videoId && shouldCacheVideoResult(detection)) {
         await StorageManager.cacheVideoResult(videoId, {
           ...detection,
           detectorVersion,
@@ -186,11 +190,13 @@
         });
       }
 
-      if (detection.isAI) {
+      if (shouldBlockDetection(detection)) {
         AIBlocker.blockVideo(el, detection);
         blockedCount++;
         detectedMethodCounts[detection.method] = (detectedMethodCounts[detection.method] || 0) + 1;
         mergeSignalCounts(detectedSignalCounts, detection.signalCounts);
+        mergeRiskCategories(detectedRiskCategories, detection.riskCategories);
+        topRiskLevel = pickHigherRiskLevel(topRiskLevel, detection.riskLevel);
       }
     }
 
@@ -200,12 +206,14 @@
         blocked: blockedCount,
         context,
         method: getTopMethod(detectedMethodCounts),
-        signalCounts: detectedSignalCounts
+        signalCounts: detectedSignalCounts,
+        riskLevel: topRiskLevel,
+        riskCategories: Array.from(detectedRiskCategories)
       });
     }
 
     if (blockedCount > 0) {
-      console.log(`${LOG_PREFIX} Blocked ${blockedCount} AI videos`);
+      console.log(`${LOG_PREFIX} Blocked ${blockedCount} videos`);
       // Notify service worker
       chrome.runtime.sendMessage({ type: 'VIDEOS_BLOCKED', count: blockedCount });
     }
@@ -235,7 +243,7 @@
       effectiveDetection = createChannelOverrideResult(channelName, 'Channel trong blacklist', detection);
     }
     
-    if (effectiveDetection.isAI) {
+    if (shouldBlockDetection(effectiveDetection)) {
       AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: false });
       AIBlocker.blockWatchPage(effectiveDetection);
       if (markPageDecisionRecorded(context, effectiveDetection)) {
@@ -244,7 +252,9 @@
           blocked: 1,
           context,
           method: effectiveDetection.method,
-          signalCounts: effectiveDetection.signalCounts
+          signalCounts: effectiveDetection.signalCounts,
+          riskLevel: effectiveDetection.riskLevel,
+          riskCategories: effectiveDetection.riskCategories
         });
         console.log(`${LOG_PREFIX} Watch page blocked:`, effectiveDetection.reasons);
       }
@@ -255,10 +265,14 @@
         await StorageManager.updateDetectionStats({
           scanned: 1,
           blocked: 0,
-          context
+          context,
+          riskLevel: effectiveDetection.riskLevel,
+          riskCategories: effectiveDetection.riskCategories
         });
       }
     }
+
+    scanCaptionAndReapply(context, effectiveDetection, 'watch');
   }
 
   async function scanShortsPage(context = 'shorts') {
@@ -283,7 +297,7 @@
       effectiveDetection = createChannelOverrideResult(channelName, 'Channel trong blacklist', detection);
     }
 
-    if (effectiveDetection.isAI) {
+    if (shouldBlockDetection(effectiveDetection)) {
       AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: false });
       AIBlocker.blockShortsPage(effectiveDetection);
       if (markPageDecisionRecorded(context, effectiveDetection)) {
@@ -292,7 +306,9 @@
           blocked: 1,
           context,
           method: effectiveDetection.method,
-          signalCounts: effectiveDetection.signalCounts
+          signalCounts: effectiveDetection.signalCounts,
+          riskLevel: effectiveDetection.riskLevel,
+          riskCategories: effectiveDetection.riskCategories
         });
         console.log(`${LOG_PREFIX} Shorts page blocked:`, effectiveDetection.reasons);
       }
@@ -303,9 +319,137 @@
         await StorageManager.updateDetectionStats({
           scanned: 1,
           blocked: 0,
-          context
+          context,
+          riskLevel: effectiveDetection.riskLevel,
+          riskCategories: effectiveDetection.riskCategories
         });
       }
+    }
+
+    scanCaptionAndReapply(context, effectiveDetection, 'shorts');
+  }
+
+  async function scanCaptionAndReapply(context, baseDetection, surface) {
+    if (!settings?.captionScan?.enabled) return;
+
+    const videoId = baseDetection?.videoId || extractVideoIdFromUrl(location.href);
+    if (!videoId) return;
+
+    try {
+      const captionText = await getCaptionText(videoId);
+      if (!captionText || videoId !== extractVideoIdFromUrl(location.href)) return;
+
+      const enriched = AIDetector.enrichWithText(baseDetection, captionText, settings, 'caption');
+      if (!shouldBlockDetection(enriched)) return;
+
+      if (surface === 'shorts') {
+        AIBlocker.blockShortsPage(enriched);
+      } else {
+        AIBlocker.blockWatchPage(enriched);
+      }
+
+      if (markPageDecisionRecorded(context, enriched)) {
+        await StorageManager.updateDetectionStats({
+          scanned: 0,
+          blocked: shouldBlockDetection(baseDetection) ? 0 : 1,
+          context,
+          method: enriched.method,
+          signalCounts: enriched.signalCounts,
+          riskLevel: enriched.riskLevel,
+          riskCategories: enriched.riskCategories
+        });
+      }
+
+      console.log(`${LOG_PREFIX} ${surface} caption risk blocked:`, enriched.reasons);
+    } catch (e) {
+      console.warn(`${LOG_PREFIX} Caption scan skipped:`, e);
+    }
+  }
+
+  async function getCaptionText(videoId) {
+    const track = getPreferredCaptionTrack(videoId);
+    if (!track?.baseUrl) return '';
+
+    const trackKey = getCaptionTrackKey(videoId, track);
+    const cached = await StorageManager.getCaptionCacheEntry(trackKey);
+    const captionTtl = 24 * 60 * 60 * 1000;
+    if (cached && Date.now() - cached.timestamp < captionTtl) {
+      return cached.text || '';
+    }
+
+    const text = await fetchCaptionText(track.baseUrl);
+    if (text) {
+      await StorageManager.cacheCaptionText(trackKey, {
+        text,
+        detectorVersion: AIDetector.DETECTOR_VERSION
+      });
+    }
+    return text;
+  }
+
+  function getPreferredCaptionTrack(videoId) {
+    const playerResponse = AIDetector.getPlayerResponse(videoId);
+    const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
+    if (!tracks.length) return null;
+
+    const preferredLanguages = settings.captionScan?.preferredLanguages || ['vi', 'en'];
+    for (const lang of preferredLanguages) {
+      const exact = tracks.find((track) => normalizeLang(track.languageCode) === normalizeLang(lang));
+      if (exact) return exact;
+
+      const prefix = tracks.find((track) => normalizeLang(track.languageCode).startsWith(`${normalizeLang(lang)}-`));
+      if (prefix) return prefix;
+    }
+
+    return tracks[0];
+  }
+
+  function getCaptionTrackKey(videoId, track) {
+    const parts = [
+      videoId,
+      AIDetector.DETECTOR_VERSION,
+      track.languageCode || '',
+      track.vssId || '',
+      track.kind || '',
+      track.name?.simpleText || ''
+    ];
+    return parts.join(':');
+  }
+
+  async function fetchCaptionText(baseUrl) {
+    const timeoutMs = Number(settings.captionScan?.timeoutMs || 2000);
+    const maxChars = Number(settings.captionScan?.maxChars || 5000);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const url = withQueryParam(baseUrl, 'fmt', 'json3');
+      const response = await fetch(url, { signal: controller.signal, credentials: 'include' });
+      if (!response.ok) return '';
+
+      const raw = await response.text();
+      const parsedText = parseCaptionResponse(raw);
+      return parsedText.slice(0, maxChars);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function parseCaptionResponse(raw) {
+    try {
+      const json = JSON.parse(raw);
+      const chunks = [];
+      for (const event of json.events || []) {
+        for (const segment of event.segs || []) {
+          if (segment.utf8) chunks.push(segment.utf8);
+        }
+      }
+      return chunks.join(' ').replace(/\s+/g, ' ').trim();
+    } catch (e) {
+      return decodeHtml(raw)
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
     }
   }
 
@@ -429,6 +573,24 @@
     return shortsMatch ? shortsMatch[1] : '';
   }
 
+  function shouldBlockDetection(detection = {}) {
+    if (!detection) return false;
+    if (typeof detection.shouldBlock === 'boolean') return detection.shouldBlock;
+    if (detection.riskLevel) return detection.riskLevel === 'block';
+    return Boolean(detection.isAI);
+  }
+
+  function shouldCacheVideoResult(detection = {}) {
+    if (shouldBlockDetection(detection)) return true;
+    return Boolean(detection.metadataComplete);
+  }
+
+  function getCacheTtl(detection = {}) {
+    return shouldBlockDetection(detection)
+      ? 24 * 60 * 60 * 1000
+      : 2 * 60 * 60 * 1000;
+  }
+
   function isAggregateVideoContainer(el) {
     if (!el?.matches?.('ytd-video-renderer')) return false;
     return el.querySelectorAll('ytm-shorts-lockup-view-model').length > 1;
@@ -502,6 +664,17 @@
     }
   }
 
+  function mergeRiskCategories(total, categories = []) {
+    for (const category of categories || []) {
+      total.add(category);
+    }
+  }
+
+  function pickHigherRiskLevel(current = 'safe', next = 'safe') {
+    const rank = { safe: 0, caution: 1, block: 2 };
+    return (rank[next] || 0) > (rank[current] || 0) ? next : current;
+  }
+
   function getTopMethod(methodCounts) {
     let topMethod = 'none';
     let topValue = 0;
@@ -516,11 +689,16 @@
 
   function getDetectionSignature(currentSettings, detectorVersion) {
     const keywords = currentSettings.aiKeywords || StorageManager.DEFAULT_SETTINGS.aiKeywords;
+    const syntheticKeywords = currentSettings.syntheticKeywords || keywords;
+    const childRiskKeywords = currentSettings.childRiskKeywords || StorageManager.DEFAULT_SETTINGS.childRiskKeywords;
     return JSON.stringify({
       detectorVersion,
       sensitivity: currentSettings.sensitivity || 'medium',
       detectionProfile: currentSettings.detectionProfile || 'recall-first',
-      aiKeywords: keywords
+      aiKeywords: keywords,
+      syntheticKeywords,
+      childRiskKeywords,
+      captionScan: currentSettings.captionScan || StorageManager.DEFAULT_SETTINGS.captionScan
     });
   }
 
@@ -528,7 +706,8 @@
     const detectorVersion = AIDetector.DETECTOR_VERSION;
     const signature = getDetectionSignature(settings, detectorVersion);
     const videoId = detection.videoId || extractVideoIdFromUrl(location.href) || getCurrentVideoKey();
-    const key = `${context}:${videoId}:${detection.isAI ? 'blocked' : 'allowed'}:${detection.method || 'none'}:${signature}`;
+    const decision = shouldBlockDetection(detection) ? 'blocked' : (detection.riskLevel || 'allowed');
+    const key = `${context}:${videoId}:${decision}:${detection.method || 'none'}:${signature}`;
 
     if (recordedPageDecisionKeys.has(key)) return false;
 
@@ -554,7 +733,10 @@
       'detectorVersion',
       'whitelistedChannels',
       'blacklistedChannels',
-      'aiKeywords'
+      'aiKeywords',
+      'syntheticKeywords',
+      'childRiskKeywords',
+      'captionScan'
     ];
 
     return relevantKeys.some((key) => JSON.stringify(previous[key]) !== JSON.stringify(next[key]));
@@ -589,12 +771,22 @@
     return {
       ...base,
       isAI: true,
+      shouldBlock: true,
       confidence: 1,
+      syntheticScore: Math.max(base.syntheticScore || 0, 1),
+      childRiskScore: Math.max(base.childRiskScore || 0, 0),
+      riskLevel: 'block',
+      riskCategories: base.riskCategories || [],
       method: 'channel',
       reasons: [reason],
       signalCounts: { strong: 1, medium: 0, weak: 0 },
+      axisSignalCounts: {
+        synthetic: { strong: 1, medium: 0, weak: 0 },
+        childRisk: base.axisSignalCounts?.childRisk || { strong: 0, medium: 0, weak: 0 }
+      },
       signals: [{
         type: 'channelOverride',
+        axis: 'synthetic',
         strength: 'strong',
         method: 'channel',
         weight: 1
@@ -604,6 +796,27 @@
       channelName: channelName || base.channelName || '',
       channelUrl: base.channelUrl || ''
     };
+  }
+
+  function normalizeLang(lang = '') {
+    return String(lang).toLowerCase().replace('_', '-');
+  }
+
+  function withQueryParam(rawUrl, key, value) {
+    try {
+      const url = new URL(rawUrl, location.href);
+      url.searchParams.set(key, value);
+      return url.toString();
+    } catch (e) {
+      const separator = rawUrl.includes('?') ? '&' : '?';
+      return `${rawUrl}${separator}${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+    }
+  }
+
+  function decodeHtml(text = '') {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
   }
 
   function getWatchChannelName() {

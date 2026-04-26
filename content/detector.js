@@ -1,39 +1,29 @@
 /**
  * AI Video Blocker — Detector Module
- * Tầng 1: YouTube Labels Detection
- * Tầng 2: NLP Heuristics (keyword matching, pattern analysis)
+ * Tầng 1: YouTube labels + metadata rules
+ * Tầng 2: Child-risk scoring + caption/transcript enrichment
  */
 
 const AIDetector = {
-  DETECTOR_VERSION: 4,
+  DETECTOR_VERSION: 6,
 
   /**
-   * Kết quả phát hiện
-   * @typedef {Object} DetectionResult
-   * @property {boolean} isAI
-   * @property {number} confidence - 0 to 1
-   * @property {string} method - 'label' | 'keyword' | 'pattern' | 'channel'
-   * @property {string[]} reasons
-   */
-
-  /**
-   * Phân tích một video element trên feed/search
-   * @param {HTMLElement} videoElement - ytd-rich-item-renderer hoặc ytd-video-renderer
+   * Phân tích một video element trên feed/search.
+   * @param {HTMLElement} videoElement
+   * @param {object} settings
    * @returns {DetectionResult}
    */
   analyzeVideoElement(videoElement, settings) {
     if (!videoElement || !settings?.enabled) return this._emptyResult();
 
     const videoInfo = this._extractVideoInfo(videoElement);
-    if (!videoInfo.title && !videoInfo.description) return this._emptyResult();
-
     const normalizedInfo = this._normalizeVideoInfo(videoInfo);
     const signals = this._detectSignals(videoElement, normalizedInfo, settings, 'feed');
     return this._scoreSignals(signals, settings, normalizedInfo);
   },
 
   /**
-   * Phân tích video page (khi đang xem video)
+   * Phân tích video page (khi đang xem video).
    */
   analyzeVideoPage(settings) {
     if (!settings?.enabled) return this._emptyResult();
@@ -55,27 +45,11 @@ const AIDetector = {
       document.createElement('div');
     const signals = this._detectSignals(watchMetadataRoot, normalizedInfo, settings, 'watch');
 
-    const pageDataResult = this._checkPageData(watchInfo.videoId);
-    if (pageDataResult.score > 0) {
-      signals.push({
-        type: 'pageData',
-        strength: 'strong',
-        weight: 0.9,
-        reason: pageDataResult.reasons.join(' • '),
-        method: 'disclosure'
-      });
-    }
+    const pageDataSignals = this._checkPageData(watchInfo.videoId, settings);
+    signals.push(...pageDataSignals);
 
-    const descResult = this._checkDescription();
-    if (descResult.score > 0) {
-      signals.push({
-        type: 'watchDescription',
-        strength: 'strong',
-        weight: 0.75,
-        reason: descResult.reasons.join(' • '),
-        method: 'disclosure'
-      });
-    }
+    const descSignals = this._checkDescription(settings);
+    signals.push(...descSignals);
 
     return this._scoreSignals(signals, settings, normalizedInfo);
   },
@@ -116,11 +90,44 @@ const AIDetector = {
     return this._scoreSignals(signals, settings, normalizedInfo);
   },
 
+  /**
+   * Hợp nhất transcript/caption hoặc metadata bổ sung vào kết quả đã có.
+   */
+  enrichWithText(baseDetection, text, settings, source = 'caption') {
+    const base = baseDetection || this._emptyResult();
+    if (!text || !settings?.enabled) return base;
+
+    const videoInfo = this._normalizeVideoInfo({
+      title: base.title || '',
+      channel: base.channelName || '',
+      channelUrl: base.channelUrl || '',
+      description: text,
+      videoId: base.videoId || '',
+      badges: []
+    });
+    const signals = [
+      ...this._detectSyntheticTextSignals(videoInfo, settings, source),
+      ...this._detectChildRiskSignals(videoInfo, settings, source)
+    ];
+
+    if (signals.length === 0) return base;
+
+    const mergedSignals = [
+      ...(base.rawSignals || this._hydrateRawSignals(base.signals || [])),
+      ...signals
+    ];
+    return this._scoreSignals(mergedSignals, settings, {
+      ...videoInfo,
+      title: base.title || videoInfo.title,
+      channel: base.channelName || videoInfo.channel,
+      channelUrl: base.channelUrl || videoInfo.channelUrl,
+      videoId: base.videoId || videoInfo.videoId,
+      metadataComplete: base.metadataComplete
+    });
+  },
+
   // ==================== PRIVATE METHODS ====================
 
-  /**
-   * Trích xuất thông tin từ video element
-   */
   _extractVideoInfo(el) {
     const titleEl = this._queryFirst(el, [
       '#video-title',
@@ -150,12 +157,11 @@ const AIDetector = {
     ]);
     const badgesEl = el.querySelectorAll('.badge-style-type-simple, ytd-badge-supported-renderer');
 
-    const title = (titleEl?.textContent || '').trim().toLowerCase();
+    const title = (titleEl?.textContent || '').trim();
     const channel = (channelEl?.textContent || '').trim();
     const channelUrl = channelEl?.href || '';
-    const description = (descEl?.textContent || '').trim().toLowerCase();
+    const description = (descEl?.textContent || '').trim();
 
-    // Extract video ID from link
     const linkEl = this._queryFirst(el, [
       'a#thumbnail',
       'a.ytd-thumbnail',
@@ -169,9 +175,7 @@ const AIDetector = {
     const shortsMatch = href.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
     const videoId = videoIdMatch ? videoIdMatch[1] : (shortsMatch ? shortsMatch[1] : '');
 
-    // Check badges
     const badges = Array.from(badgesEl).map(b => b.textContent.trim().toLowerCase());
-
     return { title, channel, channelUrl, description, videoId, badges };
   },
 
@@ -185,11 +189,17 @@ const AIDetector = {
         .trim();
     };
 
+    const title = videoInfo.title || '';
+    const description = videoInfo.description || '';
+    const channel = videoInfo.channel || '';
     return {
       ...videoInfo,
-      titleNormalized: normalize(videoInfo.title),
-      descriptionNormalized: normalize(videoInfo.description),
-      channelNormalized: normalize(videoInfo.channel)
+      titleNormalized: normalize(title),
+      descriptionNormalized: normalize(description),
+      channelNormalized: normalize(channel),
+      metadataComplete: typeof videoInfo.metadataComplete === 'boolean'
+        ? videoInfo.metadataComplete
+        : Boolean(title.trim() && (description.trim() || channel.trim()))
     };
   },
 
@@ -199,6 +209,7 @@ const AIDetector = {
     if (labelResult.found) {
       signals.push({
         type: 'youtubeLabel',
+        axis: 'synthetic',
         strength: 'strong',
         weight: 0.95,
         reason: `YouTube label: ${labelResult.labelText}`,
@@ -206,20 +217,29 @@ const AIDetector = {
       });
     }
 
-    const keywordResult = this._checkKeywords(videoInfo, settings);
-    signals.push(...keywordResult.signals);
+    const riskLabelResult = this._checkYouTubeRiskLabels(el);
+    if (riskLabelResult.found) {
+      signals.push({
+        type: 'youtubeRiskLabel',
+        axis: 'childRisk',
+        category: 'disturbing_kids_content',
+        strength: 'strong',
+        weight: 0.75,
+        reason: `YouTube safety label: ${riskLabelResult.labelText}`,
+        method: 'childRisk'
+      });
+    }
 
-    const patternResult = this._checkPatterns(videoInfo, settings);
-    signals.push(...patternResult.signals);
-
-    const channelResult = this._checkChannelSignals(videoInfo);
-    signals.push(...channelResult.signals);
+    signals.push(...this._detectSyntheticTextSignals(videoInfo, settings, 'metadata'));
+    signals.push(...this._checkChannelSignals(videoInfo));
+    signals.push(...this._detectChildRiskSignals(videoInfo, settings, 'metadata'));
 
     if (mode === 'watch') {
       const disclosureText = `${videoInfo.titleNormalized} ${videoInfo.descriptionNormalized}`;
-      if (/how this content was made|altered or synthetic|nội dung.*tổng hợp/.test(disclosureText)) {
+      if (/how this content was made|altered or synthetic|nội dung.*tổng hợp|nội dung.*thay đổi/.test(disclosureText)) {
         signals.push({
           type: 'watchDisclosure',
+          axis: 'synthetic',
           strength: 'strong',
           weight: 0.82,
           reason: 'Watch metadata có disclosure AI',
@@ -234,55 +254,133 @@ const AIDetector = {
   _scoreSignals(signals, settings, videoInfo = {}) {
     const result = this._emptyResult();
     this._attachVideoMetadata(result, videoInfo);
+    result.metadataComplete = Boolean(videoInfo.metadataComplete);
     if (!Array.isArray(signals) || signals.length === 0) return result;
 
-    const sensitivity = settings.sensitivity || 'medium';
-    const profile = settings.detectionProfile || 'recall-first';
-    const threshold = this._getThreshold(sensitivity, profile);
-    let confidence = 0;
-
     const signalCounts = { strong: 0, medium: 0, weak: 0 };
+    const axisSignalCounts = {
+      synthetic: { strong: 0, medium: 0, weak: 0 },
+      childRisk: { strong: 0, medium: 0, weak: 0 }
+    };
     const methodWeights = {};
+    const categoryWeights = {};
+    const scoredKeys = new Set();
+    let syntheticScore = 0;
+    let childRiskScore = 0;
 
     for (const signal of signals) {
-      confidence += signal.weight || 0;
+      const axis = signal.axis || 'synthetic';
+      const weight = Number(signal.weight || 0);
+      const scoredKey = `${axis}:${signal.category || ''}:${signal.reason || signal.type}`;
+      if (scoredKeys.has(scoredKey)) continue;
+      scoredKeys.add(scoredKey);
+
+      if (axis === 'childRisk') {
+        childRiskScore += weight;
+        if (signal.category) {
+          categoryWeights[signal.category] = (categoryWeights[signal.category] || 0) + weight;
+        }
+      } else {
+        syntheticScore += weight;
+      }
+
       result.reasons.push(signal.reason);
       signalCounts[signal.strength] = (signalCounts[signal.strength] || 0) + 1;
-      methodWeights[signal.method] = (methodWeights[signal.method] || 0) + (signal.weight || 0);
+      if (axisSignalCounts[axis]) {
+        axisSignalCounts[axis][signal.strength] = (axisSignalCounts[axis][signal.strength] || 0) + 1;
+      }
+      methodWeights[signal.method] = (methodWeights[signal.method] || 0) + weight;
     }
 
+    result.syntheticScore = Math.min(syntheticScore, 1);
+    result.childRiskScore = Math.min(childRiskScore, 1);
+    result.confidence = Math.max(result.syntheticScore, result.childRiskScore);
     result.signalCounts = signalCounts;
+    result.axisSignalCounts = axisSignalCounts;
+    result.riskCategories = Object.entries(categoryWeights)
+      .filter(([, weight]) => weight >= 0.18)
+      .sort((a, b) => b[1] - a[1])
+      .map(([category]) => category);
+    result.rawSignals = signals.slice();
     result.signals = signals.map((signal) => ({
       type: signal.type,
+      axis: signal.axis || 'synthetic',
       strength: signal.strength,
       method: signal.method,
+      category: signal.category,
       weight: signal.weight
     }));
-    result.confidence = Math.min(confidence, 1);
+
     result.method = this._pickMethod(methodWeights);
+    result.isAI = this._isSynthetic(result.syntheticScore, axisSignalCounts.synthetic, settings);
+    result.riskLevel = this._pickRiskLevel(result, axisSignalCounts);
+    result.shouldBlock = result.riskLevel === 'block' || result.isAI;
 
-    const hasStrong = signalCounts.strong >= 1;
-    const hasMediumCombo = signalCounts.medium >= 2;
-    const hasRecallCombo = profile === 'recall-first' && signalCounts.medium >= 1 && signalCounts.weak >= 1;
-    result.isAI = result.confidence >= threshold || hasStrong || hasMediumCombo || hasRecallCombo;
-    if ((hasMediumCombo || hasRecallCombo) && !hasStrong && result.method === 'keyword') {
+    if (result.shouldBlock && result.childRiskScore >= result.syntheticScore) {
+      result.method = 'childRisk';
+    } else if (result.isAI && result.method === 'keyword' && axisSignalCounts.synthetic.medium >= 2) {
       result.method = 'combination';
+    } else if (!result.isAI && result.riskLevel === 'safe') {
+      result.method = 'none';
     }
-    if (!result.isAI) result.method = 'none';
 
+    result.reasons = this._prioritizeReasons(result.reasons, signals);
     return result;
   },
 
-  /**
-   * Tầng 1: Kiểm tra YouTube native labels
-   */
+  _isSynthetic(score, syntheticCounts, settings) {
+    const sensitivity = settings.sensitivity || 'medium';
+    const profile = settings.detectionProfile || 'recall-first';
+    const threshold = this._getThreshold(sensitivity, profile);
+    const hasStrong = syntheticCounts.strong >= 1;
+    const hasMediumCombo = syntheticCounts.medium >= 2;
+    const hasRecallCombo = profile === 'recall-first' && syntheticCounts.medium >= 1 && syntheticCounts.weak >= 1;
+    return score >= threshold || hasStrong || hasMediumCombo || hasRecallCombo;
+  },
+
+  _pickRiskLevel(result, axisSignalCounts) {
+    const hasSyntheticLabel = result.signals.some((signal) => signal.type === 'youtubeLabel' || signal.type === 'watchDisclosure' || signal.type === 'pageData');
+    const hasMediumChildRisk = axisSignalCounts.childRisk.medium >= 1 || axisSignalCounts.childRisk.strong >= 1;
+
+    if ((hasSyntheticLabel && hasMediumChildRisk) ||
+        result.childRiskScore >= 0.55 ||
+        (result.syntheticScore >= 0.55 && result.childRiskScore >= 0.30)) {
+      return 'block';
+    }
+
+    if (result.syntheticScore >= 0.55 || (result.childRiskScore >= 0.30 && result.childRiskScore < 0.55)) {
+      return 'caution';
+    }
+
+    return 'safe';
+  },
+
+  _prioritizeReasons(reasons, signals) {
+    if (!Array.isArray(signals) || signals.length === 0) return reasons;
+
+    const ordered = [...signals].sort((a, b) => {
+      if ((a.axis === 'childRisk') !== (b.axis === 'childRisk')) {
+        return a.axis === 'childRisk' ? -1 : 1;
+      }
+      return (b.weight || 0) - (a.weight || 0);
+    });
+
+    const unique = [];
+    const seen = new Set();
+    for (const signal of ordered) {
+      if (!signal.reason || seen.has(signal.reason)) continue;
+      seen.add(signal.reason);
+      unique.push(signal.reason);
+    }
+    return unique;
+  },
+
   _checkYouTubeLabels(el) {
     const result = { found: false, labelText: '' };
     if (!el || el === document.body || el === document.documentElement) return result;
 
     const disclosurePattern = /altered\s*(or|&)\s*synthetic|how this content was made|nội dung.*(tổng hợp|thay đổi)/i;
 
-    // Method 1: Tìm disclosure renderer/metadata thật, không quét toàn bộ body/script.
     const labels = el.querySelectorAll([
       'ytd-info-panel-content-renderer',
       '.ytd-info-panel-container-renderer',
@@ -308,7 +406,6 @@ const AIDetector = {
       }
     }
 
-    // Method 2: XPath search trong root hẹp.
     try {
       const xpath = "descendant::*[contains(normalize-space(.),'Altered or synthetic') or contains(normalize-space(.),'How this content was made') or contains(normalize-space(.),'nội dung tổng hợp') or contains(normalize-space(.),'nội dung đã thay đổi')]";
       const xpathResult = document.evaluate(xpath, el, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
@@ -324,104 +421,181 @@ const AIDetector = {
     return result;
   },
 
-  /**
-   * Tầng 2a: Kiểm tra keywords trong title/description
-   */
-  _checkKeywords(videoInfo, settings) {
-    const result = { score: 0, reasons: [], signals: [] };
-    const text = `${videoInfo.titleNormalized} ${videoInfo.descriptionNormalized}`.toLowerCase();
-    const keywords = settings.aiKeywords || StorageManager.DEFAULT_SETTINGS.aiKeywords;
+  _checkYouTubeRiskLabels(el) {
+    const result = { found: false, labelText: '' };
+    if (!el || el === document.body || el === document.documentElement) return result;
 
-    // High confidence keywords
-    for (const kw of keywords.high) {
-      if (text.includes(kw.toLowerCase())) {
-        result.score += 0.55;
-        result.reasons.push(`Keyword [cao]: "${kw}"`);
-        result.signals.push({
-          type: 'keywordHigh',
-          strength: 'medium',
-          weight: 0.55,
-          reason: `Keyword [cao]: "${kw}"`,
-          method: 'keyword'
-        });
-      }
-    }
+    const riskPattern = /age[-\s]*restricted|not appropriate for viewers under 18|viewer discretion|mature content|nội dung.*(giới hạn độ tuổi|người lớn|không phù hợp.*18)/i;
+    const labels = el.querySelectorAll([
+      'ytd-info-panel-content-renderer',
+      '.ytd-info-panel-container-renderer',
+      'ytd-metadata-row-renderer',
+      'ytd-badge-supported-renderer',
+      'yt-formatted-string',
+      '[title]',
+      '[aria-label]'
+    ].join(','));
 
-    // Medium confidence keywords
-    for (const kw of keywords.medium) {
-      if (text.includes(kw.toLowerCase())) {
-        result.score += 0.3;
-        result.reasons.push(`Keyword [TB]: "${kw}"`);
-        result.signals.push({
-          type: 'keywordMedium',
-          strength: 'medium',
-          weight: 0.3,
-          reason: `Keyword [TB]: "${kw}"`,
-          method: 'keyword'
-        });
-      }
-    }
-
-    // Low confidence keywords (only in high sensitivity mode)
-    if (settings.sensitivity === 'high' || settings.detectionProfile === 'recall-first') {
-      for (const kw of keywords.low) {
-        if (text.includes(kw.toLowerCase())) {
-          result.score += 0.18;
-          result.reasons.push(`Keyword [thấp]: "${kw}"`);
-          result.signals.push({
-            type: 'keywordLow',
-            strength: 'weak',
-            weight: 0.18,
-            reason: `Keyword [thấp]: "${kw}"`,
-            method: 'keyword'
-          });
-        }
+    for (const label of labels) {
+      const text = [
+        label.textContent,
+        label.getAttribute?.('aria-label'),
+        label.getAttribute?.('title')
+      ].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+      if (riskPattern.test(text)) {
+        result.found = true;
+        result.labelText = text;
+        return result;
       }
     }
 
     return result;
   },
 
-  /**
-   * Tầng 2b: Kiểm tra regex patterns
-   */
-  _checkPatterns(videoInfo, settings) {
-    const result = { score: 0, reasons: [], signals: [] };
-    const text = `${videoInfo.titleNormalized} ${videoInfo.descriptionNormalized}`;
+  _detectSyntheticTextSignals(videoInfo, settings, source = 'metadata') {
+    const signals = [];
+    const text = `${videoInfo.titleNormalized} ${videoInfo.descriptionNormalized}`.toLowerCase();
+    const keywords = settings.syntheticKeywords || settings.aiKeywords || StorageManager.DEFAULT_SETTINGS.aiKeywords;
+
+    this._pushKeywordSignals(signals, text, keywords.high, {
+      axis: 'synthetic',
+      source,
+      strength: 'medium',
+      weight: 0.55,
+      method: 'keyword',
+      label: 'AI/synthetic [cao]'
+    });
+
+    this._pushKeywordSignals(signals, text, keywords.medium, {
+      axis: 'synthetic',
+      source,
+      strength: 'medium',
+      weight: 0.3,
+      method: 'keyword',
+      label: 'AI/synthetic [TB]'
+    });
+
+    if (settings.sensitivity === 'high' || settings.detectionProfile === 'recall-first') {
+      this._pushKeywordSignals(signals, text, keywords.low, {
+        axis: 'synthetic',
+        source,
+        strength: 'weak',
+        weight: 0.18,
+        method: 'keyword',
+        label: 'AI/synthetic [thấp]'
+      });
+    }
 
     const defaultPatterns = StorageManager.DEFAULT_SETTINGS.aiToolPatterns;
     for (const pattern of defaultPatterns) {
+      pattern.lastIndex = 0;
       if (pattern.test(text)) {
-        result.score += 0.42;
-        result.reasons.push(`Pattern match: ${pattern.source.substring(0, 40)}...`);
-        result.signals.push({
-          type: 'toolPattern',
+        signals.push({
+          type: `${source}SyntheticPattern`,
+          axis: 'synthetic',
           strength: 'medium',
           weight: 0.42,
-          reason: `Pattern match: ${pattern.source.substring(0, 40)}...`,
+          reason: `Pattern AI/synthetic: ${pattern.source.substring(0, 40)}...`,
           method: 'pattern'
         });
       }
     }
 
-    return result;
+    return signals;
   },
 
-  /**
-   * Phân tích tín hiệu từ channel
-   */
+  _detectChildRiskSignals(videoInfo, settings, source = 'metadata') {
+    const signals = [];
+    const text = `${videoInfo.titleNormalized} ${videoInfo.descriptionNormalized}`.toLowerCase();
+    const database = settings.childRiskKeywords || StorageManager.DEFAULT_SETTINGS.childRiskKeywords;
+
+    for (const [category, levels] of Object.entries(database)) {
+      this._pushKeywordSignals(signals, text, levels.high, {
+        axis: 'childRisk',
+        source,
+        category,
+        strength: 'strong',
+        weight: 0.62,
+        method: 'childRisk',
+        label: `Rủi ro trẻ em/${category} [cao]`
+      });
+      this._pushKeywordSignals(signals, text, levels.medium, {
+        axis: 'childRisk',
+        source,
+        category,
+        strength: 'medium',
+        weight: 0.34,
+        method: 'childRisk',
+        label: `Rủi ro trẻ em/${category} [TB]`
+      });
+      this._pushKeywordSignals(signals, text, levels.low, {
+        axis: 'childRisk',
+        source,
+        category,
+        strength: 'weak',
+        weight: 0.16,
+        method: 'childRisk',
+        label: `Rủi ro trẻ em/${category} [thấp]`
+      });
+    }
+
+    const patterns = StorageManager.DEFAULT_SETTINGS.childRiskPatterns || [];
+    for (const pattern of patterns) {
+      pattern.lastIndex = 0;
+      if (pattern.test(text)) {
+        signals.push({
+          type: `${source}DisturbingKidsPattern`,
+          axis: 'childRisk',
+          category: 'disturbing_kids_content',
+          strength: 'strong',
+          weight: 0.7,
+          reason: 'Pattern nội dung trẻ em bị biến tướng',
+          method: 'childRisk'
+        });
+      }
+    }
+
+    return signals;
+  },
+
+  _pushKeywordSignals(signals, text, keywords = [], options = {}) {
+    for (const kw of keywords || []) {
+      if (!this._containsKeyword(text, kw)) continue;
+
+      signals.push({
+        type: `${options.source || 'metadata'}Keyword`,
+        axis: options.axis || 'synthetic',
+        category: options.category,
+        strength: options.strength || 'weak',
+        weight: options.weight || 0.1,
+        reason: `${options.label}: "${kw}"`,
+        method: options.method || 'keyword'
+      });
+    }
+  },
+
+  _containsKeyword(text, keyword) {
+    const kw = this._normalizeText(keyword);
+    if (!kw) return false;
+
+    if (/^[#\wÀ-ỹ-]+$/i.test(kw) && !kw.includes(' ')) {
+      const escaped = this._escapeRegExp(kw);
+      return new RegExp(`(^|[^\\p{L}\\p{N}_#-])${escaped}($|[^\\p{L}\\p{N}_-])`, 'iu').test(text);
+    }
+
+    return text.includes(kw);
+  },
+
   _checkChannelSignals(videoInfo) {
-    const result = { score: 0, reasons: [], signals: [] };
+    const result = [];
     const channelLower = videoInfo.channelNormalized.toLowerCase();
 
-    // Channel name chứa AI-related terms
     const aiChannelKeywords = ['ai video', 'ai art', 'ai studio', 'ai creator', 'ai film', 'ai movie'];
     for (const kw of aiChannelKeywords) {
       if (channelLower.includes(kw)) {
-        result.score += 0.22;
-        result.reasons.push(`Channel name chứa: "${kw}"`);
-        result.signals.push({
+        result.push({
           type: 'channelKeyword',
+          axis: 'synthetic',
           strength: 'weak',
           weight: 0.22,
           reason: `Channel name chứa: "${kw}"`,
@@ -430,11 +604,10 @@ const AIDetector = {
       }
     }
 
-    if (/official|studio|films?|animation/.test(channelLower) && /ai/.test(channelLower)) {
-      result.score += 0.2;
-      result.reasons.push('Channel AI theo cụm nhận diện mở rộng');
-      result.signals.push({
+    if (/official|studio|films?|animation/.test(channelLower) && /\bai\b/.test(channelLower)) {
+      result.push({
         type: 'channelHeuristic',
+        axis: 'synthetic',
         strength: 'weak',
         weight: 0.2,
         reason: 'Channel AI theo cụm nhận diện mở rộng',
@@ -445,39 +618,78 @@ const AIDetector = {
     return result;
   },
 
-  /**
-   * Kiểm tra ytInitialPlayerResponse trên video page
-   */
-  _checkPageData(videoId = '') {
-    const result = { score: 0, reasons: [] };
+  _checkPageData(videoId = '', settings = {}) {
+    const signals = [];
 
     try {
-      const scripts = document.querySelectorAll('script');
-      for (const script of scripts) {
-        const content = script.textContent || '';
-        const playerResponse = this._extractPlayerResponse(content);
-        if (!playerResponse) continue;
+      const playerResponse = this.getPlayerResponse(videoId);
+      if (!playerResponse) return signals;
 
-        const responseVideoId = playerResponse.videoDetails?.videoId || '';
-        if (videoId && responseVideoId && responseVideoId !== videoId) continue;
+      const metadataText = this._normalizeText(JSON.stringify([
+        playerResponse.microformat?.playerMicroformatRenderer?.category,
+        playerResponse.microformat?.playerMicroformatRenderer?.description,
+        playerResponse.videoDetails?.shortDescription,
+        playerResponse.playabilityStatus,
+        playerResponse.playerOverlays,
+        playerResponse.cards
+      ]));
 
-        const metadataText = JSON.stringify([
-          playerResponse.microformat?.playerMicroformatRenderer?.category,
-          playerResponse.microformat?.playerMicroformatRenderer?.description,
-          playerResponse.videoDetails?.shortDescription,
-          playerResponse.playerOverlays,
-          playerResponse.cards
-        ]);
-
-        if (/altered\s*(or|&)\s*synthetic|how this content was made|nội dung.*(tổng hợp|thay đổi)/i.test(metadataText)) {
-          result.score += 0.85;
-          result.reasons.push('YouTube page data: AI disclosure found');
-          break;
-        }
+      if (/altered\s*(or|&)\s*synthetic|how this content was made|nội dung.*(tổng hợp|thay đổi)/i.test(metadataText)) {
+        signals.push({
+          type: 'pageData',
+          axis: 'synthetic',
+          strength: 'strong',
+          weight: 0.9,
+          reason: 'YouTube page data: AI disclosure found',
+          method: 'disclosure'
+        });
       }
+
+      if (/age[-\s]*restricted|not appropriate for viewers under 18|mature content|nội dung.*(giới hạn độ tuổi|người lớn|không phù hợp.*18)/i.test(metadataText)) {
+        signals.push({
+          type: 'pageDataRisk',
+          axis: 'childRisk',
+          category: 'disturbing_kids_content',
+          strength: 'strong',
+          weight: 0.75,
+          reason: 'YouTube page data: age/safety restriction found',
+          method: 'childRisk'
+        });
+      }
+
+      const pageInfo = this._normalizeVideoInfo({
+        title: '',
+        channel: '',
+        description: metadataText,
+        channelUrl: '',
+        videoId,
+        badges: []
+      });
+      signals.push(...this._detectChildRiskSignals(pageInfo, settings, 'pageData'));
     } catch (e) { /* silent */ }
 
-    return result;
+    return signals;
+  },
+
+  getPlayerResponse(videoId = '') {
+    const fromWindow = globalThis.ytInitialPlayerResponse;
+    if (fromWindow) {
+      const responseVideoId = fromWindow.videoDetails?.videoId || '';
+      if (!videoId || !responseVideoId || responseVideoId === videoId) return fromWindow;
+    }
+
+    const scripts = document.querySelectorAll?.('script') || [];
+    for (const script of scripts) {
+      const content = script.textContent || '';
+      const playerResponse = this._extractPlayerResponse(content);
+      if (!playerResponse) continue;
+
+      const responseVideoId = playerResponse.videoDetails?.videoId || '';
+      if (videoId && responseVideoId && responseVideoId !== videoId) continue;
+      return playerResponse;
+    }
+
+    return null;
   },
 
   _extractPlayerResponse(scriptText = '') {
@@ -530,29 +742,25 @@ const AIDetector = {
     return '';
   },
 
-  /**
-   * Kiểm tra description panel trên video page
-   */
-  _checkDescription() {
-    const result = { score: 0, reasons: [] };
-
+  _checkDescription(settings = {}) {
     const descContainer = document.querySelector('#description-inner, ytd-text-inline-expander, #structured-description');
-    if (!descContainer) return result;
+    if (!descContainer) return [];
 
-    const text = descContainer.textContent.toLowerCase();
-    if (/altered\s*(or|&)\s*synthetic/i.test(text) ||
-        /how this content was made/i.test(text) ||
-        /nội dung.*tổng hợp/i.test(text)) {
-      result.score += 0.7;
-      result.reasons.push('Description: AI content disclosure');
-    }
-
-    return result;
+    const text = descContainer.textContent || '';
+    const info = this._normalizeVideoInfo({
+      title: '',
+      channel: '',
+      description: text,
+      channelUrl: '',
+      videoId: '',
+      badges: []
+    });
+    return [
+      ...this._detectSyntheticTextSignals(info, settings, 'description'),
+      ...this._detectChildRiskSignals(info, settings, 'description')
+    ];
   },
 
-  /**
-   * Lấy threshold dựa trên sensitivity
-   */
   _getThreshold(sensitivity, profile = 'balanced') {
     const base = profile === 'recall-first'
       ? { low: 0.58, medium: 0.42, high: 0.28 }
@@ -618,6 +826,7 @@ const AIDetector = {
     if (hasExplicitHashtag || hasCreationPhrase || hasToolPhrase) {
       return {
         type: 'shortsHashtag',
+        axis: 'synthetic',
         strength: 'medium',
         weight: 0.5,
         reason: 'Shorts có hashtag/cụm từ AI tạo sinh rõ ràng',
@@ -630,6 +839,7 @@ const AIDetector = {
     if (hasGenericAiToken) {
       return {
         type: 'shortsGenericAiToken',
+        axis: 'synthetic',
         strength: 'weak',
         weight: 0.18,
         reason: 'Shorts có token AI chung chung',
@@ -669,11 +879,22 @@ const AIDetector = {
   _emptyResult() {
     return {
       isAI: false,
+      shouldBlock: false,
       confidence: 0,
+      syntheticScore: 0,
+      childRiskScore: 0,
+      riskLevel: 'safe',
+      riskCategories: [],
       method: 'none',
       reasons: [],
       signalCounts: { strong: 0, medium: 0, weak: 0 },
+      axisSignalCounts: {
+        synthetic: { strong: 0, medium: 0, weak: 0 },
+        childRisk: { strong: 0, medium: 0, weak: 0 }
+      },
       signals: [],
+      rawSignals: [],
+      metadataComplete: false,
       detectorVersion: this.DETECTOR_VERSION
     };
   },
@@ -684,6 +905,26 @@ const AIDetector = {
     result.channelName = videoInfo.channel || '';
     result.channelUrl = videoInfo.channelUrl || '';
     return result;
+  },
+
+  _hydrateRawSignals(signals = []) {
+    return signals.map((signal) => ({
+      ...signal,
+      reason: signal.reason || `${signal.method || 'signal'}:${signal.type || 'unknown'}`
+    }));
+  },
+
+  _normalizeText(text = '') {
+    return String(text)
+      .normalize('NFKC')
+      .toLowerCase()
+      .replace(/[*_~`"'“”‘’|]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  },
+
+  _escapeRegExp(text = '') {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 };
 

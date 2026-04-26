@@ -277,6 +277,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         max = Number(count);
       }
     }
-    return key;
+    const labels = {
+      label: 'YouTube label',
+      keyword: 'Từ khóa AI',
+      pattern: 'Pattern',
+      channel: 'Channel',
+      disclosure: 'Disclosure',
+      childRisk: 'Rủi ro trẻ em',
+      combination: 'Kết hợp'
+    };
+    return labels[key] || key;
   }
 });
