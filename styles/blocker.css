@@ -1,0 +1,295 @@
+/* ============================================
+   AI Video Blocker — Injected Styles
+   Styles cho blur, hide, badge, overlay
+   ============================================ */
+
+/* --- BLUR MODE --- */
+.aivb-blur {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.aivb-blur > *:not(.aivb-overlay) {
+  filter: blur(20px) grayscale(0.5) !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  transition: filter 0.3s ease;
+}
+
+/* --- HIDE MODE --- */
+.aivb-hidden {
+  display: none !important;
+}
+
+/* --- OVERLAY (Blur mode) --- */
+.aivb-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.88)) !important;
+  backdrop-filter: blur(8px) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  cursor: default !important;
+  animation: aivb-fadeIn 0.3s ease !important;
+}
+
+.aivb-overlay-content {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 16px !important;
+  text-align: center !important;
+  max-width: 90% !important;
+}
+
+.aivb-shield-icon {
+  font-size: 28px !important;
+  line-height: 1 !important;
+  animation: aivb-pulse 2s infinite !important;
+}
+
+.aivb-overlay-title {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #f87171 !important;
+  letter-spacing: 0.3px !important;
+}
+
+.aivb-overlay-subtitle {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+  font-size: 10px !important;
+  color: #94a3b8 !important;
+}
+
+/* --- OVERLAY ACTIONS --- */
+.aivb-overlay-actions {
+  display: flex !important;
+  gap: 6px !important;
+  margin-top: 4px !important;
+}
+
+.aivb-btn-reveal,
+.aivb-btn-whitelist {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+  font-size: 10px !important;
+  padding: 4px 10px !important;
+  border: none !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.aivb-btn-reveal {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.aivb-btn-reveal:hover {
+  background: rgba(239, 68, 68, 0.4) !important;
+  transform: scale(1.05) !important;
+}
+
+.aivb-btn-whitelist {
+  background: rgba(34, 197, 94, 0.2) !important;
+  color: #86efac !important;
+  border: 1px solid rgba(34, 197, 94, 0.3) !important;
+}
+
+.aivb-btn-whitelist:hover {
+  background: rgba(34, 197, 94, 0.4) !important;
+  transform: scale(1.05) !important;
+}
+
+/* --- REASONS TAGS --- */
+.aivb-overlay-reasons {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 3px !important;
+  justify-content: center !important;
+  margin-top: 4px !important;
+  max-height: 40px !important;
+  overflow: hidden !important;
+}
+
+.aivb-reason-tag {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+  font-size: 8px !important;
+  padding: 2px 6px !important;
+  background: rgba(99, 102, 241, 0.2) !important;
+  color: #a5b4fc !important;
+  border-radius: 4px !important;
+  white-space: nowrap !important;
+}
+
+/* --- BADGE MODE --- */
+.aivb-badge {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  z-index: 100 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  padding: 3px 8px !important;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9)) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  animation: aivb-fadeIn 0.3s ease !important;
+}
+
+.aivb-badge-icon {
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
+
+.aivb-badge-text {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: white !important;
+}
+
+/* --- WATCH PAGE OVERLAY --- */
+.aivb-watch-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.94)) !important;
+  backdrop-filter: blur(12px) !important;
+  animation: aivb-fadeIn 0.4s ease !important;
+}
+
+.aivb-shorts-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483647 !important;
+}
+
+.aivb-shorts-badge {
+  position: fixed !important;
+  top: 16px !important;
+  right: 16px !important;
+  z-index: 2147483647 !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(220, 38, 38, 0.95)) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+.aivb-watch-overlay-content {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 40px !important;
+  max-width: 480px !important;
+  text-align: center !important;
+}
+
+.aivb-shield-icon-large {
+  font-size: 64px !important;
+  animation: aivb-pulse 2s infinite !important;
+}
+
+.aivb-watch-overlay-content h2 {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  color: #f87171 !important;
+  margin: 0 !important;
+}
+
+.aivb-watch-overlay-content p {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+  font-size: 14px !important;
+  color: #cbd5e1 !important;
+  margin: 0 !important;
+}
+
+.aivb-confidence-text {
+  font-size: 12px !important;
+  color: #94a3b8 !important;
+}
+
+.aivb-watch-reasons {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  padding: 12px 16px !important;
+  background: rgba(99, 102, 241, 0.1) !important;
+  border-radius: 8px !important;
+  width: 100% !important;
+}
+
+.aivb-reason-item {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+  font-size: 12px !important;
+  color: #a5b4fc !important;
+  text-align: left !important;
+}
+
+.aivb-watch-actions {
+  display: flex !important;
+  gap: 12px !important;
+  margin-top: 8px !important;
+}
+
+.aivb-btn-watch-reveal,
+.aivb-btn-go-back {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+  font-size: 14px !important;
+  padding: 10px 20px !important;
+  border: none !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease !important;
+}
+
+.aivb-btn-watch-reveal {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.aivb-btn-watch-reveal:hover {
+  background: rgba(239, 68, 68, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+.aivb-btn-go-back {
+  background: rgba(99, 102, 241, 0.2) !important;
+  color: #a5b4fc !important;
+  border: 1px solid rgba(99, 102, 241, 0.3) !important;
+}
+
+.aivb-btn-go-back:hover {
+  background: rgba(99, 102, 241, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* --- ANIMATIONS --- */
+@keyframes aivb-fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes aivb-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}

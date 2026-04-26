@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Video Blocker</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <!-- LOCK SCREEN -->
+    <div id="lock-screen" class="screen" style="display: none;">
+      <div class="lock-content">
+        <div class="lock-icon">🔒</div>
+        <h2>Nhập mật khẩu phụ huynh</h2>
+        <input type="password" id="password-input" placeholder="Mật khẩu..." autocomplete="off">
+        <button id="btn-unlock" class="btn-primary">Mở khóa</button>
+        <p id="lock-error" class="error-text" style="display: none;">Sai mật khẩu!</p>
+      </div>
+    </div>
+
+    <!-- MAIN SCREEN -->
+    <div id="main-screen" class="screen">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <span class="header-icon">🛡️</span>
+          <div>
+            <h1>AI Video Blocker</h1>
+            <p class="header-subtitle">Bảo vệ trẻ em khỏi video AI</p>
+          </div>
+        </div>
+        <label class="toggle-switch" id="toggle-enabled">
+          <input type="checkbox" id="checkbox-enabled">
+          <span class="toggle-slider"></span>
+        </label>
+      </header>
+
+      <!-- Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-value" id="stat-blocked">0</span>
+          <span class="stat-label">Đã chặn</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value" id="stat-scanned">0</span>
+          <span class="stat-label">Đã quét</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value" id="stat-accuracy">—</span>
+          <span class="stat-label">Phát hiện</span>
+        </div>
+      </div>
+
+      <!-- Settings Sections -->
+      <div class="settings-container">
+
+        <!-- Sensitivity -->
+        <div class="setting-group">
+          <div class="setting-header">
+            <span>⚡ Độ nhạy phát hiện</span>
+          </div>
+          <div class="radio-group" id="sensitivity-group">
+            <label class="radio-option">
+              <input type="radio" name="sensitivity" value="low">
+              <span class="radio-label">
+                <strong>Thấp</strong>
+                <small>Chỉ chặn khi rất chắc chắn</small>
+              </span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="sensitivity" value="medium" checked>
+              <span class="radio-label">
+                <strong>Trung bình</strong>
+                <small>Cân bằng giữa chặn và cho phép</small>
+              </span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="sensitivity" value="high">
+              <span class="radio-label">
+                <strong>Cao</strong>
+                <small>Chặn khi có nghi ngờ nhẹ</small>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Detection Profile -->
+        <div class="setting-group">
+          <div class="setting-header">
+            <span>🎯 Hồ sơ nhận diện</span>
+          </div>
+          <div class="radio-group" id="profile-group">
+            <label class="radio-option">
+              <input type="radio" name="detectionProfile" value="balanced">
+              <span class="radio-label">
+                <strong>Cân bằng</strong>
+                <small>Giảm chặn nhầm, độ lọc vừa phải</small>
+              </span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="detectionProfile" value="recall-first" checked>
+              <span class="radio-label">
+                <strong>Ưu tiên bắt AI</strong>
+                <small>Tăng độ nhạy để giảm lọt video AI</small>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Block Mode -->
+        <div class="setting-group">
+          <div class="setting-header">
+            <span>🎭 Chế độ chặn</span>
+          </div>
+          <div class="radio-group" id="blockmode-group">
+            <label class="radio-option">
+              <input type="radio" name="blockMode" value="blur" checked>
+              <span class="radio-label">
+                <strong>Làm mờ</strong>
+                <small>Mờ video + hiện cảnh báo</small>
+              </span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="blockMode" value="hide">
+              <span class="radio-label">
+                <strong>Ẩn hoàn toàn</strong>
+                <small>Video biến mất khỏi feed</small>
+              </span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="blockMode" value="badge">
+              <span class="radio-label">
+                <strong>Chỉ gắn nhãn</strong>
+                <small>Feed gắn nhãn, Watch/Shorts vẫn chặn</small>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Parental Password -->
+        <div class="setting-group">
+          <div class="setting-header">
+            <span>🔐 Mật khẩu phụ huynh</span>
+          </div>
+          <div class="password-section">
+            <input type="password" id="new-password" placeholder="Đặt mật khẩu mới..." autocomplete="new-password">
+            <button id="btn-set-password" class="btn-small">Lưu</button>
+          </div>
+          <p id="password-status" class="status-text"></p>
+        </div>
+
+        <!-- Whitelist -->
+        <div class="setting-group">
+          <div class="setting-header">
+            <span>✅ Channel cho phép</span>
+            <span class="count-badge" id="whitelist-count">0</span>
+          </div>
+          <div class="channel-input-row">
+            <input type="text" id="whitelist-input" placeholder="Tên channel...">
+            <button id="btn-add-whitelist" class="btn-small btn-green">+</button>
+          </div>
+          <div class="channel-list" id="whitelist-container"></div>
+        </div>
+
+        <!-- Blacklist -->
+        <div class="setting-group">
+          <div class="setting-header">
+            <span>🚫 Channel luôn chặn</span>
+            <span class="count-badge count-red" id="blacklist-count">0</span>
+          </div>
+          <div class="channel-input-row">
+            <input type="text" id="blacklist-input" placeholder="Tên channel...">
+            <button id="btn-add-blacklist" class="btn-small btn-red">+</button>
+          </div>
+          <div class="channel-list" id="blacklist-container"></div>
+        </div>
+
+        <!-- Detection Breakdown -->
+        <div class="setting-group">
+          <div class="setting-header">
+            <span>📊 Tín hiệu nhận diện</span>
+          </div>
+          <div class="breakdown-grid">
+            <div class="break-item">
+              <span class="break-key">Strong</span>
+              <span class="break-value" id="break-strong">0</span>
+            </div>
+            <div class="break-item">
+              <span class="break-key">Medium</span>
+              <span class="break-value" id="break-medium">0</span>
+            </div>
+            <div class="break-item">
+              <span class="break-key">Weak</span>
+              <span class="break-value" id="break-weak">0</span>
+            </div>
+            <div class="break-item">
+              <span class="break-key">Method top</span>
+              <span class="break-value" id="break-method">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="footer-actions">
+        <button id="btn-rescan" class="btn-secondary">🔄 Quét lại</button>
+        <span class="version-text">v1.0.0</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
