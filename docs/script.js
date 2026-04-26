@@ -135,7 +135,17 @@ async function updateDownloadLink() {
             return;
         }
 
-        // 2. Dự phòng: Nếu không có Assets, lấy link Source Code ZIP của Release đó
+        // 2. Tìm trong nội dung Release (body) nếu file được đính kèm ở đó
+        if (data.body) {
+            const bodyZipMatch = data.body.match(/https?:\/\/[^\s)]+\.zip/i);
+            if (bodyZipMatch) {
+                downloadBtn.href = bodyZipMatch[0];
+                console.log('✅ Đã cập nhật link từ nội dung Release:', bodyZipMatch[0]);
+                return;
+            }
+        }
+
+        // 3. Dự phòng: Nếu không có Assets, lấy link Source Code ZIP của Release đó
         if (data.zipball_url) {
             downloadBtn.href = data.zipball_url;
             console.log('⚠️ Không thấy Assets, đã dùng link Source ZIP của Release ' + data.tag_name);

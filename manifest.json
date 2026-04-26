@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "safekid-extension",
+  "name": "SafeKid",
   "version": "1.0.1",
   "description": "Tự động phát hiện và ẩn video AI trên YouTube. Bảo vệ trẻ em khỏi nội dung AI không phù hợp.",
   "icons": {
