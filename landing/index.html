@@ -40,7 +40,7 @@
                 <a href="#how-it-works">Cách hoạt động</a>
                 <a href="#testimonials">Đánh giá</a>
             </nav>
-            <a href="https://github.com/PiPyL/AIVideoBlockerV2/raw/main/aivideoblocker-v2.zip" class="btn btn-primary" target="_blank" rel="noopener">Tải bản ZIP (Thủ công)</a>
+            <button onclick="openInstallModal()" class="btn btn-primary">Tải bản ZIP (Thủ công)</button>
         </div>
     </header>
 
@@ -52,10 +52,10 @@
                 <h1>Bảo vệ trẻ em khỏi <span class="text-highlight">video AI độc hại</span> trên YouTube</h1>
                 <p>Bạn có biết 70% video đề xuất cho trẻ em hiện nay là do AI tạo ra với nội dung vô nghĩa? Tiện ích mở rộng của chúng tôi tự động phát hiện và chặn nội dung này, giúp môi trường mạng của con bạn an toàn hơn.</p>
                 <div class="hero-cta">
-                    <a href="https://github.com/PiPyL/AIVideoBlockerV2/raw/main/aivideoblocker-v2.zip" class="btn btn-primary btn-large pulse-animation" target="_blank" rel="noopener">
+                    <button onclick="openInstallModal()" class="btn btn-primary btn-large pulse-animation">
                         <i data-lucide="download"></i>
                         Tải file ZIP miễn phí
-                    </a>
+                    </button>
                     <p class="trust-text"><i data-lucide="lock" class="icon-small"></i> Bảo mật 100% - Không theo dõi dữ liệu</p>
                 </div>
             </div>
@@ -153,9 +153,9 @@
             <div class="glass-card cta-card">
                 <h2>Hãy để con có một tuổi thơ kỹ thuật số an toàn</h2>
                 <p>Tham gia cùng hàng ngàn phụ huynh đang bảo vệ con em mình trên Internet.</p>
-                <a href="https://github.com/PiPyL/AIVideoBlockerV2/raw/main/aivideoblocker-v2.zip" class="btn btn-primary btn-large pulse-animation" target="_blank" rel="noopener">
+                <button onclick="openInstallModal()" class="btn btn-primary btn-large pulse-animation">
                     Tải về máy ngay (File ZIP)
-                </a>
+                </button>
             </div>
         </div>
     </section>
@@ -175,6 +175,54 @@
             </div>
         </div>
     </footer>
+
+    <!-- Install Guide Modal -->
+    <div id="installModal" class="modal">
+        <div class="modal-overlay" onclick="closeInstallModal()"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeInstallModal()">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="modal-header">
+                <h2>Hướng dẫn cài đặt thủ công</h2>
+                <p>Do tiện ích đang chờ duyệt trên Chrome Store, bạn vui lòng cài đặt theo 4 bước đơn giản sau:</p>
+            </div>
+            
+            <div class="modal-steps">
+                <div class="install-step">
+                    <div class="step-badge">1</div>
+                    <div class="step-info">
+                        <strong>Tải và giải nén</strong>
+                        <p>Tải file ZIP bên dưới về máy tính và giải nén ra một thư mục.</p>
+                        <a href="https://github.com/PiPyL/AIVideoBlockerV2/raw/main/aivideoblocker-v2.zip" class="btn btn-primary download-btn" download>
+                            <i data-lucide="download"></i> Click để tải file ZIP
+                        </a>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-badge">2</div>
+                    <div class="step-info">
+                        <strong>Mở trang Quản lý tiện ích</strong>
+                        <p>Mở trình duyệt Chrome, copy và dán đường dẫn này vào thanh địa chỉ: <code class="highlight-code">chrome://extensions/</code> (sau đó nhấn Enter).</p>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-badge">3</div>
+                    <div class="step-info">
+                        <strong>Bật Chế độ nhà phát triển</strong>
+                        <p>Nhìn lên góc <strong>phải, phía trên</strong> màn hình và bật công tắc <strong>Chế độ dành cho nhà phát triển</strong> (Developer mode).</p>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-badge">4</div>
+                    <div class="step-info">
+                        <strong>Tải thư mục lên</strong>
+                        <p>Nhấn vào nút <strong>Tải tiện ích đã giải nén</strong> (Load unpacked) ở góc trái và chọn thư mục bạn vừa giải nén ở Bước 1. Xong!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="script.js" defer></script>
