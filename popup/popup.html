@@ -24,7 +24,7 @@
       <!-- Header -->
       <header class="header">
         <div class="header-left">
-          <span class="header-icon">🛡️</span>
+          <img src="../icons/icon48.png" alt="Logo" class="header-icon-img">
           <div>
             <h1>AI Video Blocker</h1>
             <p class="header-subtitle">Bảo vệ trẻ em khỏi video AI</p>
@@ -110,40 +110,114 @@
           </div>
         </div>
 
-        <!-- Gemini API -->
-        <div class="setting-group">
-          <div class="setting-header">
-            <span>🤖 Gemini API nâng cao</span>
-            <label class="toggle-switch toggle-small" id="toggle-gemini-enabled">
-              <input type="checkbox" id="checkbox-gemini-enabled">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <p class="gemini-warning">
-            Khi bật, title/description/caption và thumbnail nếu chọn có thể được gửi tới Google Gemini API.
-          </p>
-          <div class="gemini-form">
-            <div class="gemini-key-row">
-              <input type="password" id="gemini-api-key" placeholder="Nhập Gemini API key..." autocomplete="off">
-              <button id="btn-test-gemini" class="btn-small">Kiểm tra</button>
+        <!-- AI Provider Setup -->
+        <div class="setting-group" id="ai-provider-group">
+          <div class="setting-header" style="cursor: pointer;" id="ai-provider-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>🤖 Phân tích AI nâng cao</span>
+              <span class="count-badge" id="active-provider-badge" style="font-weight: 600;">Tắt</span>
             </div>
-            <select id="gemini-model" class="gemini-select">
-              <option value="gemini-3.1-flash-lite-preview">gemini-3.1-flash-lite-preview</option>
-              <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
-              <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
-            </select>
-            <label class="checkbox-row">
-              <input type="checkbox" id="checkbox-gemini-thumbnail">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label class="toggle-switch toggle-small" id="toggle-ai-enabled" style="margin-right: 8px;">
+                <input type="checkbox" id="checkbox-ai-enabled">
+                <span class="toggle-slider"></span>
+              </label>
+              <span id="ai-provider-chevron" style="transition: transform 0.3s; font-size: 10px; color: var(--text-muted);">▼</span>
+            </div>
+          </div>
+          
+          <div class="provider-details" id="ai-provider-details" style="display: none; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+            <p class="gemini-warning" style="margin-bottom: 12px; color: var(--text-secondary); background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.2);">
+              Khi bật, nội dung text (tiêu đề, mô tả, phụ đề) và hình ảnh (nếu chọn) sẽ được phân tích bởi AI để phát hiện video độc hại chính xác hơn.
+            </p>
+            
+            <div class="provider-selector" style="margin-bottom: 15px;">
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 11px; color: var(--text-secondary);">CHỌN NGUỒN PHÂN TÍCH</label>
+              <div class="radio-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <label class="radio-option">
+                  <input type="radio" name="activeProvider" value="openrouter" checked>
+                  <span class="radio-label">
+                    <strong>OpenRouter</strong>
+                    <small>Nhiều model miễn phí</small>
+                  </span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="activeProvider" value="gemini">
+                  <span class="radio-label">
+                    <strong>Gemini API</strong>
+                    <small>Cần API key riêng</small>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <!-- OpenRouter Form -->
+            <div class="gemini-form" id="openrouter-form">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">OPENROUTER API KEY</label>
+                <a href="https://openrouter.ai/docs/quickstart" target="_blank" style="font-size: 10px; color: var(--accent-indigo-light); text-decoration: none;">Lấy key miễn phí</a>
+              </div>
+              <div class="gemini-key-row">
+                <input type="password" id="openrouter-api-key" placeholder="Nhập OpenRouter API key..." autocomplete="off">
+                <button id="btn-test-openrouter" class="btn-small">Kiểm tra</button>
+              </div>
+              <select id="openrouter-model" class="gemini-select">
+                <option value="openrouter/free">OpenRouter Auto (Miễn phí - Khuyên dùng)</option>
+                <option value="google/gemma-4-31b-it:free">Google: Gemma 4 31B (Miễn phí)</option>
+                <option value="qwen/qwen3-coder:free">Qwen: Qwen3 Coder (Miễn phí)</option>
+                <option value="openai/gpt-oss-20b:free">OpenAI: GPT-OSS 20B (Miễn phí)</option>
+                <option value="nvidia/nemotron-nano-9b-v2:free">NVIDIA: Nemotron 9B (Miễn phí)</option>
+              </select>
+              <div class="gemini-cache-row" style="margin-top: 6px;">
+                <span>Fallback: <small>Tự động chọn model miễn phí khác nếu lỗi</small></span>
+              </div>
+              <div class="gemini-cache-row" style="margin-top: 6px;">
+                <span>Trạng thái: <strong id="openrouter-status-text">Chưa cấu hình</strong></span>
+                <div class="gemini-actions">
+                  <button id="btn-clear-openrouter-key" class="btn-small btn-red">Xóa key</button>
+                </div>
+              </div>
+              <p id="openrouter-status" class="status-text"></p>
+            </div>
+
+            <!-- Gemini Form -->
+            <div class="gemini-form" id="gemini-form" style="display: none;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">GEMINI API KEY</label>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size: 10px; color: var(--accent-indigo-light); text-decoration: none;">Lấy key miễn phí</a>
+              </div>
+              <div class="gemini-key-row">
+                <input type="password" id="gemini-api-key" placeholder="Nhập Gemini API key..." autocomplete="off">
+                <button id="btn-test-gemini" class="btn-small">Kiểm tra</button>
+              </div>
+              <select id="gemini-model" class="gemini-select">
+                <option value="gemini-3.1-flash-lite-preview">gemini-3.1-flash-lite-preview</option>
+                <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
+                <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+              </select>
+              <div class="gemini-cache-row" style="margin-top: 6px;">
+                <span>Trạng thái: <strong id="gemini-status-text">Chưa cấu hình</strong></span>
+                <div class="gemini-actions">
+                  <button id="btn-clear-gemini-key" class="btn-small btn-red">Xóa key</button>
+                </div>
+              </div>
+              <p id="gemini-status" class="status-text"></p>
+            </div>
+
+            <div style="height: 1px; background: var(--border); margin: 12px 0;"></div>
+
+            <!-- Common AI Settings -->
+            <label class="checkbox-row" style="margin-bottom: 10px;">
+              <input type="checkbox" id="checkbox-ai-thumbnail">
               <span>Phân tích thêm thumbnail <small>chính xác hơn nhưng chậm hơn</small></span>
             </label>
             <div class="gemini-cache-row">
-              <span>Cache Gemini: <strong id="gemini-cache-count">0</strong></span>
+              <span>Cache phân tích AI: <strong id="ai-cache-count">0</strong></span>
               <div class="gemini-actions">
-                <button id="btn-clear-gemini-cache" class="btn-small">Xóa cache</button>
-                <button id="btn-clear-gemini-key" class="btn-small btn-red">Xóa key</button>
+                <button id="btn-clear-ai-cache" class="btn-small">Xóa cache</button>
               </div>
             </div>
-            <p id="gemini-status" class="status-text"></p>
+            
           </div>
         </div>
 

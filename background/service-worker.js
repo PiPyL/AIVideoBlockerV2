@@ -4,11 +4,12 @@
  */
 
 // Import storage utilities
-importScripts('/utils/storage.js', '/utils/gemini.js');
+importScripts('/utils/storage.js', '/utils/gemini.js', '/utils/openrouter.js');
 
 const LOG_PREFIX = '[AIBlocker:SW]';
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const geminiInFlight = new Map();
+const openrouterInFlight = new Map();
 
 // ==================== MESSAGE HANDLING ====================
 
@@ -70,6 +71,18 @@ async function handleMessage(msg, sender) {
 
     case 'CLEAR_GEMINI_CACHE':
       return await clearGeminiCache();
+
+    case 'OPENROUTER_CLASSIFY_VIDEO':
+      return await handleOpenRouterClassify(msg.payload || msg);
+
+    case 'TEST_OPENROUTER_KEY':
+      return await testOpenRouterKey(msg);
+
+    case 'SAVE_OPENROUTER_KEY':
+      return await saveOpenRouterKey(msg);
+
+    case 'CLEAR_OPENROUTER_KEY':
+      return await clearOpenRouterKey();
 
     default:
       return { error: 'Unknown message type' };
@@ -133,10 +146,13 @@ async function getFullStats() {
       disclosure: blockedVideos.filter(v => v.method === 'disclosure').length,
       childRisk: blockedVideos.filter(v => v.method === 'childRisk').length,
       gemini: blockedVideos.filter(v => v.method === 'gemini').length,
+      openrouter: blockedVideos.filter(v => v.method === 'openrouter').length,
       combination: blockedVideos.filter(v => v.method === 'combination').length
     },
     geminiCacheSize: Object.keys(geminiCache).length,
     geminiEnabled: Boolean(settings.gemini?.enabled && geminiHasApiKey),
+    openrouterEnabled: Boolean(settings.openrouter?.enabled && await hasOpenRouterApiKey()),
+    activeProvider: settings.activeProvider || 'gemini',
     statsByContext: settings.stats.byContext || {},
     statsBySignal: settings.stats.bySignal || {},
     statsByRiskLevel: settings.stats.byRiskLevel || {},
@@ -163,16 +179,47 @@ async function updateSettingsSecure(partial = {}) {
     sanitized.gemini = gemini;
   }
 
-  const updated = await StorageManager.updateSettings(sanitized);
-  const hasKey = await hasGeminiApiKey();
-  if (updated.gemini?.hasApiKey !== hasKey) {
-    return await StorageManager.updateSettings({
-      gemini: {
-        ...updated.gemini,
-        hasApiKey: hasKey,
-        enabled: hasKey ? updated.gemini.enabled : false
+  if (sanitized.openrouter) {
+    const openrouter = { ...sanitized.openrouter };
+    if (Object.prototype.hasOwnProperty.call(openrouter, 'apiKey')) {
+      const apiKey = String(openrouter.apiKey || '').trim();
+      delete openrouter.apiKey;
+      if (apiKey) {
+        await setOpenRouterApiKey(apiKey);
+        openrouter.hasApiKey = true;
       }
-    });
+    }
+    sanitized.openrouter = openrouter;
+  }
+
+  const updated = await StorageManager.updateSettings(sanitized);
+  
+  const hasKey = await hasGeminiApiKey();
+  const hasOrKey = await hasOpenRouterApiKey();
+  
+  let needsUpdate = false;
+  const fixObj = {};
+  
+  if (updated.gemini?.hasApiKey !== hasKey) {
+    fixObj.gemini = {
+      ...updated.gemini,
+      hasApiKey: hasKey,
+      enabled: hasKey ? updated.gemini.enabled : false
+    };
+    needsUpdate = true;
+  }
+  
+  if (updated.openrouter?.hasApiKey !== hasOrKey) {
+    fixObj.openrouter = {
+      ...updated.openrouter,
+      hasApiKey: hasOrKey,
+      enabled: hasOrKey ? updated.openrouter.enabled : false
+    };
+    needsUpdate = true;
+  }
+
+  if (needsUpdate) {
+    return await StorageManager.updateSettings(fixObj);
   }
   return updated;
 }
@@ -241,6 +288,31 @@ async function migrateLegacyGeminiSecret() {
   }
 }
 
+async function migrateLegacyOpenRouterSecret() {
+  const data = await chrome.storage.local.get(['settings', 'openrouterSecrets']);
+  const storedSettings = data.settings || {};
+  const legacyOpenRouter = storedSettings.openrouter || {};
+  const legacyApiKey = String(legacyOpenRouter.apiKey || data.openrouterSecrets?.apiKey || '').trim();
+  const existingSecret = await readOpenRouterSecret();
+
+  if (legacyApiKey && !existingSecret?.apiKey) {
+    await writeOpenRouterSecret(legacyApiKey);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(legacyOpenRouter, 'apiKey') || data.openrouterSecrets?.apiKey) {
+    const cleanedOpenRouter = { ...legacyOpenRouter };
+    delete cleanedOpenRouter.apiKey;
+    cleanedOpenRouter.hasApiKey = Boolean(legacyApiKey || existingSecret?.apiKey);
+    await chrome.storage.local.set({
+      settings: {
+        ...storedSettings,
+        openrouter: cleanedOpenRouter
+      },
+      openrouterSecrets: {}
+    });
+  }
+}
+
 async function hasGeminiApiKey() {
   const secret = await readGeminiSecret();
   if (secret?.apiKey) return true;
@@ -299,6 +371,66 @@ async function deleteGeminiSecret() {
 
   const db = await openSecretDb();
   await idbRequest(db.transaction('secrets', 'readwrite').objectStore('secrets').delete('geminiApiKey'));
+}
+
+async function hasOpenRouterApiKey() {
+  const secret = await readOpenRouterSecret();
+  if (secret?.apiKey) return true;
+
+  const data = await chrome.storage.local.get('settings');
+  return Boolean(data.settings?.openrouter?.apiKey);
+}
+
+async function getOpenRouterApiKey() {
+  await migrateLegacyOpenRouterSecret();
+  const secret = await readOpenRouterSecret();
+  return String(secret?.apiKey || '').trim();
+}
+
+async function setOpenRouterApiKey(apiKey) {
+  await writeOpenRouterSecret(apiKey);
+}
+
+async function deleteOpenRouterApiKey() {
+  await deleteOpenRouterSecret();
+  await chrome.storage.local.set({ openrouterSecrets: {} });
+}
+
+async function readOpenRouterSecret() {
+  if (typeof indexedDB === 'undefined') {
+    return getMemorySecretStore().openRouterApiKey || null;
+  }
+
+  const db = await openSecretDb();
+  return await idbRequest(db.transaction('secrets', 'readonly').objectStore('secrets').get('openRouterApiKey'));
+}
+
+async function writeOpenRouterSecret(apiKey) {
+  const record = {
+    id: 'openRouterApiKey',
+    apiKey: String(apiKey || '').trim(),
+    updatedAt: Date.now()
+  };
+
+  if (!record.apiKey) return;
+
+  if (typeof indexedDB === 'undefined') {
+    getMemorySecretStore().openRouterApiKey = record;
+    return;
+  }
+
+  const db = await openSecretDb();
+  await idbRequest(db.transaction('secrets', 'readwrite').objectStore('secrets').put(record));
+}
+
+async function deleteOpenRouterSecret() {
+  if (typeof indexedDB === 'undefined') {
+    delete getMemorySecretStore().openRouterApiKey;
+    return;
+  }
+
+  const db = await openSecretDb();
+  await idbRequest(db.transaction('secrets', 'readwrite').objectStore('secrets').delete('openRouterApiKey'));
 }
 
 function getMemorySecretStore() {
@@ -536,6 +668,254 @@ async function clearGeminiCache() {
   return { ok: true };
 }
 
+// ==================== OPENROUTER API ====================
+
+async function saveOpenRouterKey(msg = {}) {
+  const apiKey = String(msg.apiKey || '').trim();
+  if (!apiKey) return { ok: false, reason: 'missing_api_key' };
+
+  const testResult = await testOpenRouterKey({ apiKey, model: msg.model });
+  if (!testResult.ok) return testResult;
+
+  await setOpenRouterApiKey(apiKey);
+  const settings = await StorageManager.getSettings();
+  await StorageManager.updateSettings({
+    openrouter: {
+      ...settings.openrouter,
+      hasApiKey: true,
+      enabled: msg.enabled !== false,
+      model: msg.model || settings.openrouter?.model || OpenRouterClassifier.DEFAULT_MODEL
+    }
+  });
+
+  return { ok: true, model: testResult.model || msg.model || OpenRouterClassifier.DEFAULT_MODEL };
+}
+
+async function clearOpenRouterKey() {
+  await deleteOpenRouterApiKey();
+  const settings = await StorageManager.getSettings();
+  await StorageManager.updateSettings({
+    openrouter: {
+      ...settings.openrouter,
+      enabled: false,
+      hasApiKey: false
+    }
+  });
+  return { ok: true };
+}
+
+async function testOpenRouterKey(msg = {}) {
+  const settings = await StorageManager.getSettings();
+  const apiKey = String(msg.apiKey || '').trim() || await getOpenRouterApiKey();
+  const orSettings = OpenRouterClassifier.normalizeSettings({
+    ...(settings.openrouter || {}),
+    apiKey,
+    model: msg.model || settings.openrouter?.model || OpenRouterClassifier.DEFAULT_MODEL
+  }, settings.detectorVersion || StorageManager.DEFAULT_SETTINGS.detectorVersion);
+
+  if (!orSettings.apiKey) {
+    return { ok: false, reason: 'missing_api_key' };
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3500);
+
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${orSettings.apiKey}`,
+        'HTTP-Referer': 'https://github.com/ai-video-blocker',
+        'X-Title': 'AI Video Blocker'
+      },
+      body: JSON.stringify(OpenRouterClassifier.buildTestRequestBody(orSettings.model)),
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        reason: getGeminiHttpReason(response.status), // We can reuse standard HTTP reasoning
+        status: response.status
+      };
+    }
+
+    return { ok: true, model: orSettings.model };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: error?.name === 'AbortError' ? 'timeout' : 'request_failed',
+      message: error?.message || ''
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function handleOpenRouterClassify(payload = {}) {
+  const videoId = String(payload.videoId || '').trim();
+  if (!videoId) return { ok: false, skipped: true, reason: 'missing_video_id' };
+
+  if (shouldBlockLocal(payload.localDetection)) {
+    return { ok: true, skipped: true, reason: 'local_block' };
+  }
+
+  const settings = await StorageManager.getSettings();
+  const apiKey = await getOpenRouterApiKey();
+  const orSettings = OpenRouterClassifier.normalizeSettings(
+    { ...settings.openrouter, apiKey },
+    payload.detectorVersion || settings.detectorVersion || StorageManager.DEFAULT_SETTINGS.detectorVersion
+  );
+
+  if (!orSettings.enabled) return { ok: false, skipped: true, reason: 'disabled' };
+  if (!orSettings.apiKey) return { ok: false, skipped: true, reason: 'missing_api_key' };
+
+  const cacheKey = OpenRouterClassifier.getCacheKey({
+    videoId,
+    model: orSettings.model,
+    promptVersion: orSettings.promptVersion,
+    detectorVersion: orSettings.detectorVersion
+  });
+
+  const cached = await StorageManager.getGeminiCacheEntry(cacheKey);
+  if (OpenRouterClassifier.isCacheEntryValid(cached)) {
+    if (cached.status === 'error') {
+      return { ok: false, cached: true, transient: true, reason: cached.error?.reason || 'transient_error' };
+    }
+    return { ok: true, cached: true, detection: cached.detection };
+  }
+
+  if (openrouterInFlight.has(cacheKey)) {
+    return await openrouterInFlight.get(cacheKey);
+  }
+
+  const request = runOpenRouterClassificationWithFallback(payload, orSettings, cacheKey);
+  openrouterInFlight.set(cacheKey, request);
+  try {
+    return await request;
+  } finally {
+    openrouterInFlight.delete(cacheKey);
+  }
+}
+
+async function runOpenRouterClassificationWithFallback(payload, orSettings, cacheKey) {
+  let modelsToTry = [orSettings.model];
+  if (orSettings.autoFallback && Array.isArray(orSettings.fallbackModels)) {
+    const fallbacks = orSettings.fallbackModels.filter(m => m && m !== orSettings.model);
+    modelsToTry = modelsToTry.concat(fallbacks);
+  }
+
+  let lastErrorResult = null;
+
+  for (let i = 0; i < modelsToTry.length; i++) {
+    const model = modelsToTry[i];
+    const settingsForAttempt = { ...orSettings, model };
+    
+    const result = await runOpenRouterClassificationAttempt(payload, settingsForAttempt, cacheKey);
+    
+    if (result.ok) {
+      return result;
+    }
+    
+    // Only fallback for transient errors like 429, 502, 503, 504.
+    const isFallbackableError = result.status === 429 || result.status >= 500 || result.reason === 'timeout' || result.reason === 'invalid_response';
+    
+    lastErrorResult = result;
+    
+    if (!isFallbackableError) {
+      break; // Cannot fallback
+    }
+  }
+  
+  // If we get here, all attempts failed
+  return await cacheGeminiError(cacheKey, {
+    reason: lastErrorResult?.reason || 'transient_error',
+    status: lastErrorResult?.status || 0,
+    message: lastErrorResult?.message || 'All models failed',
+    model: lastErrorResult?.model || orSettings.model,
+    videoId: payload.videoId
+  });
+}
+
+async function runOpenRouterClassificationAttempt(payload, orSettings, cacheKey) {
+  const input = normalizeOpenRouterInput(payload, orSettings);
+  const body = OpenRouterClassifier.buildRequestBody(input, orSettings);
+  const timeoutMs = orSettings.timeoutMs || 5000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${orSettings.apiKey}`,
+        'HTTP-Referer': 'https://github.com/ai-video-blocker',
+        'X-Title': 'AI Video Blocker'
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      const reason = getGeminiHttpReason(response.status); // Reuse same HTTP reason logic
+      return {
+        ok: false,
+        cached: false,
+        transient: true, // Let outer loop decide
+        reason,
+        status: response.status,
+        videoId: input.videoId,
+        model: orSettings.model
+      };
+    }
+
+    const apiResponse = await response.json();
+    const detection = OpenRouterClassifier.normalizeApiResponse(apiResponse, input);
+    const status = OpenRouterClassifier.getCacheStatusForDetection(detection);
+    
+    await StorageManager.cacheGeminiResult(cacheKey, {
+      status,
+      videoId: input.videoId,
+      model: orSettings.model,
+      promptVersion: orSettings.promptVersion,
+      detectorVersion: orSettings.detectorVersion,
+      detection
+    });
+
+    return { ok: true, cached: false, detection };
+  } catch (error) {
+    const reason = error?.name === 'AbortError' ? 'timeout' : 'invalid_response';
+    return {
+      ok: false,
+      cached: false,
+      transient: true,
+      reason,
+      status: 0,
+      message: error?.message || '',
+      videoId: input.videoId,
+      model: orSettings.model
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function normalizeOpenRouterInput(payload = {}, orSettings = {}) {
+  return {
+    videoId: String(payload.videoId || ''),
+    title: payload.title || payload.localDetection?.title || '',
+    channel: payload.channel || payload.channelName || payload.localDetection?.channelName || '',
+    description: payload.description || '',
+    captionExcerpt: String(payload.captionExcerpt || payload.caption || '').slice(0, 4000),
+    localDetection: payload.localDetection || {},
+    detectorVersion: orSettings.detectorVersion,
+    model: orSettings.model,
+    promptVersion: orSettings.promptVersion
+  };
+}
+
 function normalizeGeminiInput(payload = {}, geminiSettings = {}) {
   return {
     videoId: String(payload.videoId || ''),
@@ -671,6 +1051,7 @@ async function rescanAllTabs() {
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log(`${LOG_PREFIX} Installed:`, details.reason);
   await migrateLegacyGeminiSecret();
+  await migrateLegacyOpenRouterSecret();
 
   if (details.reason === 'install') {
     // Khởi tạo settings mặc định
@@ -688,6 +1069,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.runtime.onStartup.addListener(async () => {
   console.log(`${LOG_PREFIX} Started`);
   await migrateLegacyGeminiSecret();
+  await migrateLegacyOpenRouterSecret();
   await updateBadge(0);
 });
 

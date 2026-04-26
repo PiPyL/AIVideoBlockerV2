@@ -15,7 +15,12 @@
   let currentPath = location.pathname;
   let currentVideoKey = getCurrentVideoKey();
   const recordedPageDecisionKeys = new Set();
-  const geminiPendingKeys = new Set();
+  const aiPendingKeys = new Set();
+
+  // Track blocked video to prevent race condition on reload
+  let lastBlockedWatchVideoId = null;
+  let lastBlockedWatchDetection = null;
+  let initCompletedAt = 0;
 
   // ==================== INITIALIZATION ====================
 
@@ -77,6 +82,8 @@
     // Handle SPA navigation (YouTube dùng History API)
     setupNavigationListener();
 
+    // Mark thời điểm init hoàn tất để guard chống race condition
+    initCompletedAt = Date.now();
     console.log(`${LOG_PREFIX} Initialized successfully`);
   }
 
@@ -128,7 +135,7 @@
     const cache = await StorageManager.getVideoCache();
     const detectorVersion = AIDetector.DETECTOR_VERSION;
     const detectionSignature = getDetectionSignature(settings, detectorVersion);
-    const geminiCachedByVideoId = await getGeminiCachedDetections(videoElements);
+    const aiCachedByVideoId = await getAiCachedDetections(videoElements);
 
     for (const el of videoElements) {
       if (isAggregateVideoContainer(el)) continue;
@@ -180,14 +187,14 @@
           }
         }
 
-        const geminiCached = geminiCachedByVideoId[videoId];
-        if (geminiCached && shouldBlockDetection(geminiCached)) {
-          AIBlocker.blockVideo(el, geminiCached);
+        const aiCached = aiCachedByVideoId[videoId];
+        if (aiCached && shouldBlockDetection(aiCached)) {
+          AIBlocker.blockVideo(el, aiCached);
           blockedCount++;
-          detectedMethodCounts.gemini = (detectedMethodCounts.gemini || 0) + 1;
-          mergeSignalCounts(detectedSignalCounts, geminiCached.signalCounts);
-          mergeRiskCategories(detectedRiskCategories, geminiCached.riskCategories);
-          topRiskLevel = pickHigherRiskLevel(topRiskLevel, geminiCached.riskLevel);
+          detectedMethodCounts[aiCached.method || 'gemini'] = (detectedMethodCounts[aiCached.method || 'gemini'] || 0) + 1;
+          mergeSignalCounts(detectedSignalCounts, aiCached.signalCounts);
+          mergeRiskCategories(detectedRiskCategories, aiCached.riskCategories);
+          topRiskLevel = pickHigherRiskLevel(topRiskLevel, aiCached.riskLevel);
           continue;
         }
       }
@@ -237,12 +244,24 @@
     // Đợi video player load
     await waitForElement('#movie_player, #player-container-inner', 5000);
 
+    const videoId = extractVideoIdFromUrl(location.href);
+
+    // Guard: nếu video này đã bị block trước đó (ví dụ: sau reload),
+    // re-apply blocking ngay lập tức trước khi phân tích lại
+    if (videoId && videoId === lastBlockedWatchVideoId && lastBlockedWatchDetection) {
+      AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: false });
+      AIBlocker.blockWatchPage(lastBlockedWatchDetection);
+      console.log(`${LOG_PREFIX} Watch page re-blocked from cache:`, videoId);
+      // Vẫn scan tiếp để cập nhật detection mới nhất
+    }
+
     const detection = AIDetector.analyzeVideoPage(settings);
     const channelName = detection.channelName || getWatchChannelName();
     const channelPolicy = getChannelPolicy(channelName);
     let effectiveDetection = detection;
 
     if (channelPolicy === 'whitelist') {
+      clearWatchBlockCache(videoId);
       AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: true });
       AIBlocker.unblockWatchPage();
       await StorageManager.updateDetectionStats({
@@ -258,6 +277,10 @@
     }
     
     if (shouldBlockDetection(effectiveDetection)) {
+      // Lưu trạng thái block để dùng khi navigation events fire lại
+      lastBlockedWatchVideoId = videoId;
+      lastBlockedWatchDetection = effectiveDetection;
+
       AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: false });
       AIBlocker.blockWatchPage(effectiveDetection);
       if (markPageDecisionRecorded(context, effectiveDetection)) {
@@ -273,16 +296,24 @@
         console.log(`${LOG_PREFIX} Watch page blocked:`, effectiveDetection.reasons);
       }
     } else {
-      AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: true });
-      AIBlocker.unblockWatchPage();
-      if (markPageDecisionRecorded(context, effectiveDetection)) {
-        await StorageManager.updateDetectionStats({
-          scanned: 1,
-          blocked: 0,
-          context,
-          riskLevel: effectiveDetection.riskLevel,
-          riskCategories: effectiveDetection.riskCategories
-        });
+      // Chỉ unblock nếu video này KHÔNG nằm trong cache block
+      // (tránh trường hợp metadata chưa ready → false negative)
+      if (videoId && videoId === lastBlockedWatchVideoId && lastBlockedWatchDetection) {
+        // Metadata có thể chưa đầy đủ, giữ block từ cache
+        console.log(`${LOG_PREFIX} Keeping block from cache despite current scan safe (metadata may be incomplete):`, videoId);
+      } else {
+        clearWatchBlockCache(videoId);
+        AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: true });
+        AIBlocker.unblockWatchPage();
+        if (markPageDecisionRecorded(context, effectiveDetection)) {
+          await StorageManager.updateDetectionStats({
+            scanned: 1,
+            blocked: 0,
+            context,
+            riskLevel: effectiveDetection.riskLevel,
+            riskCategories: effectiveDetection.riskCategories
+          });
+        }
       }
     }
 
@@ -387,7 +418,7 @@
       console.warn(`${LOG_PREFIX} Caption scan skipped:`, e);
     }
 
-    scanGeminiAndReapply(context, workingDetection, surface, captionText);
+    scanAIAndReapply(context, workingDetection, surface, captionText);
   }
 
   async function getCaptionText(videoId) {
@@ -477,8 +508,11 @@
     }
   }
 
-  async function getGeminiCachedDetections(videoElements) {
-    if (!settings?.gemini?.enabled || !settings?.gemini?.hasApiKey) return {};
+  async function getAiCachedDetections(videoElements) {
+    const activeProvider = settings?.activeProvider || 'gemini';
+    const providerSettings = settings?.[activeProvider];
+    
+    if (!providerSettings?.enabled || !providerSettings?.hasApiKey) return {};
 
     const videoIds = [...new Set(Array.from(videoElements)
       .filter((el) => !isAggregateVideoContainer(el))
@@ -498,32 +532,37 @@
     }
   }
 
-  async function scanGeminiAndReapply(context, baseDetection, surface, captionText = '') {
-    if (!settings?.gemini?.enabled || !settings?.gemini?.hasApiKey) return;
+  async function scanAIAndReapply(context, baseDetection, surface, captionText = '') {
+    const activeProvider = settings?.activeProvider || 'gemini';
+    const providerSettings = settings?.[activeProvider];
+
+    if (!providerSettings?.enabled || !providerSettings?.hasApiKey) return;
     if (shouldBlockDetection(baseDetection)) return;
 
     const videoId = baseDetection?.videoId || extractVideoIdFromUrl(location.href);
     if (!videoId) return;
 
     const pendingKey = [
+      activeProvider,
       surface,
       videoId,
-      settings.gemini.model || '',
-      settings.gemini.includeThumbnail ? 'thumb' : 'text'
+      providerSettings.model || '',
+      providerSettings.includeThumbnail ? 'thumb' : 'text'
     ].join(':');
-    if (geminiPendingKeys.has(pendingKey)) return;
-    geminiPendingKeys.add(pendingKey);
+    if (aiPendingKeys.has(pendingKey)) return;
+    aiPendingKeys.add(pendingKey);
 
     try {
+      const type = activeProvider === 'openrouter' ? 'OPENROUTER_CLASSIFY_VIDEO' : 'GEMINI_CLASSIFY_VIDEO';
       const response = await sendRuntimeMessage({
-        type: 'GEMINI_CLASSIFY_VIDEO',
-        payload: buildGeminiPayload(videoId, baseDetection, surface, captionText)
+        type,
+        payload: buildAIPayload(videoId, baseDetection, surface, captionText, activeProvider)
       });
 
       if (!response?.ok || !response.detection) return;
       if (videoId !== extractVideoIdFromUrl(location.href)) return;
 
-      const merged = mergeGeminiDetection(baseDetection, response.detection);
+      const merged = mergeAIDetection(baseDetection, response.detection, activeProvider);
       if (!shouldBlockDetection(merged)) return;
 
       if (surface === 'shorts') {
@@ -549,12 +588,13 @@
     } catch (e) {
       console.warn(`${LOG_PREFIX} Gemini scan skipped:`, e?.message || e);
     } finally {
-      geminiPendingKeys.delete(pendingKey);
+      aiPendingKeys.delete(pendingKey);
     }
   }
 
-  function buildGeminiPayload(videoId, detection = {}, surface = 'watch', captionText = '') {
-    const maxCaptionChars = Number(settings.gemini?.maxCaptionChars || 4000);
+  function buildAIPayload(videoId, detection = {}, surface = 'watch', captionText = '', provider = 'gemini') {
+    const providerSettings = settings?.[provider] || {};
+    const maxCaptionChars = Number(providerSettings.maxCaptionChars || 4000);
     return {
       videoId,
       title: detection.title || getCurrentVideoTitle(surface),
@@ -577,29 +617,29 @@
     };
   }
 
-  function mergeGeminiDetection(baseDetection = {}, geminiDetection = {}) {
+  function mergeAIDetection(baseDetection = {}, aiDetection = {}, provider = 'gemini') {
     return {
       ...baseDetection,
-      ...geminiDetection,
-      videoId: baseDetection.videoId || geminiDetection.videoId || extractVideoIdFromUrl(location.href),
-      title: baseDetection.title || geminiDetection.title || '',
-      channelName: baseDetection.channelName || geminiDetection.channelName || '',
+      ...aiDetection,
+      videoId: baseDetection.videoId || aiDetection.videoId || extractVideoIdFromUrl(location.href),
+      title: baseDetection.title || aiDetection.title || '',
+      channelName: baseDetection.channelName || aiDetection.channelName || '',
       channelUrl: baseDetection.channelUrl || '',
-      isAI: Boolean(baseDetection.isAI || geminiDetection.isAI),
-      shouldBlock: shouldBlockDetection(geminiDetection) || shouldBlockDetection(baseDetection),
-      syntheticScore: Math.max(baseDetection.syntheticScore || 0, geminiDetection.syntheticScore || geminiDetection.aiConfidence || 0),
-      childRiskScore: Math.max(baseDetection.childRiskScore || 0, geminiDetection.childRiskScore || 0),
-      confidence: Math.max(baseDetection.confidence || 0, geminiDetection.confidence || 0),
-      method: 'gemini',
-      reasons: geminiDetection.reasons?.length ? geminiDetection.reasons : ['Gemini đánh giá cần chặn video này'],
-      signals: geminiDetection.signals || [],
-      signalCounts: geminiDetection.signalCounts || { strong: 1, medium: 0, weak: 0 },
-      axisSignalCounts: geminiDetection.axisSignalCounts || baseDetection.axisSignalCounts || {
+      isAI: Boolean(baseDetection.isAI || aiDetection.isAI),
+      shouldBlock: shouldBlockDetection(aiDetection) || shouldBlockDetection(baseDetection),
+      syntheticScore: Math.max(baseDetection.syntheticScore || 0, aiDetection.syntheticScore || aiDetection.aiConfidence || 0),
+      childRiskScore: Math.max(baseDetection.childRiskScore || 0, aiDetection.childRiskScore || 0),
+      confidence: Math.max(baseDetection.confidence || 0, aiDetection.confidence || 0),
+      method: provider,
+      reasons: aiDetection.reasons?.length ? aiDetection.reasons : [`${provider === 'gemini' ? 'Gemini' : 'OpenRouter'} đánh giá cần chặn video này`],
+      signals: aiDetection.signals || [],
+      signalCounts: aiDetection.signalCounts || { strong: 1, medium: 0, weak: 0 },
+      axisSignalCounts: aiDetection.axisSignalCounts || baseDetection.axisSignalCounts || {
         synthetic: { strong: 0, medium: 0, weak: 0 },
         childRisk: { strong: 0, medium: 0, weak: 0 }
       },
-      riskCategories: geminiDetection.riskCategories || baseDetection.riskCategories || [],
-      riskLevel: geminiDetection.riskLevel || baseDetection.riskLevel || 'safe'
+      riskCategories: aiDetection.riskCategories || baseDetection.riskCategories || [],
+      riskLevel: aiDetection.riskLevel || baseDetection.riskLevel || 'safe'
     };
   }
 
@@ -734,6 +774,15 @@
 
     // Fallback: listen to yt-navigate-finish event
     document.addEventListener('yt-navigate-finish', () => {
+      // Guard: nếu init() vừa hoàn thành (< 2s), skip navigation reset
+      // để tránh race condition khi reload page
+      const timeSinceInit = Date.now() - initCompletedAt;
+      if (timeSinceInit < 2000) {
+        console.log(`${LOG_PREFIX} yt-navigate-finish skipped (init just completed ${timeSinceInit}ms ago)`);
+        scheduleFullScan(500, { force: false });
+        return;
+      }
+
       console.log(`${LOG_PREFIX} yt-navigate-finish event`);
       prepareForNavigationScan();
       scheduleFullScan(500, { force: true });
@@ -826,14 +875,35 @@
   }
 
   function prepareForNavigationScan() {
+    const nextVideoId = extractVideoIdFromUrl(location.href);
+    const isStillBlockedVideo = nextVideoId && nextVideoId === lastBlockedWatchVideoId;
+
     resetProcessedVideoItems();
-    AIBlocker.resetPageBlocks({ restoreMedia: false });
+
+    // Chỉ reset page blocks nếu đã chuyển sang video KHÁC
+    // Nếu vẫn cùng video (reload), giữ nguyên blocking
+    if (!isStillBlockedVideo) {
+      clearWatchBlockCache(null);
+      AIBlocker.resetPageBlocks({ restoreMedia: false });
+    } else {
+      console.log(`${LOG_PREFIX} Keeping block during navigation (same video): ${nextVideoId}`);
+    }
 
     if (location.pathname === '/watch' || location.pathname.startsWith('/shorts/')) {
       AIBlocker.holdPlayback('pending-scan');
     } else {
+      clearWatchBlockCache(null);
       AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: true });
     }
+  }
+
+  function clearWatchBlockCache(forVideoId = undefined) {
+    // Khi forVideoId khớp với video đang block → giữ nguyên (do scan safe nhưng cùng video)
+    // Khi forVideoId = null → xóa hết (chuyển route khác hoàn toàn)
+    // Khi forVideoId = khác → xóa cache (chuyển video mới)
+    if (forVideoId && forVideoId === lastBlockedWatchVideoId) return;
+    lastBlockedWatchVideoId = null;
+    lastBlockedWatchDetection = null;
   }
 
   function resetProcessedVideoItems() {

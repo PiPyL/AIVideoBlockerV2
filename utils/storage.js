@@ -35,6 +35,7 @@ const StorageManager = {
         disclosure: 0,
         childRisk: 0,
         gemini: 0,
+        openrouter: 0,
         none: 0
       },
       bySignal: {
@@ -58,6 +59,7 @@ const StorageManager = {
         disturbing_kids_content: 0
       }
     },
+    activeProvider: 'gemini',
     gemini: {
       enabled: false,
       hasApiKey: false,
@@ -67,6 +69,19 @@ const StorageManager = {
       thumbnailTimeoutMs: 6000,
       maxCaptionChars: 4000,
       promptVersion: 1
+    },
+    openrouter: {
+      enabled: false,
+      hasApiKey: false,
+      model: 'openrouter/free',
+      autoFallback: true,
+      fallbackModels: [
+        'google/gemma-4-31b-it:free',
+        'qwen/qwen3-coder:free',
+        'openai/gpt-oss-20b:free',
+        'nvidia/nemotron-nano-9b-v2:free'
+      ],
+      timeoutMs: 5000
     },
     // Backward-compatible synthetic/AI keyword database.
     aiKeywords: {
@@ -180,6 +195,8 @@ const StorageManager = {
       settings.childRiskPatterns = this.DEFAULT_SETTINGS.childRiskPatterns;
       settings.captionScan = { ...this.DEFAULT_SETTINGS.captionScan, ...(storedSettings.captionScan || {}) };
       settings.gemini = this._sanitizeGeminiSettings(storedSettings.gemini);
+      settings.openrouter = this._sanitizeOpenRouterSettings(storedSettings.openrouter);
+      if (!settings.activeProvider) settings.activeProvider = this.DEFAULT_SETTINGS.activeProvider;
       settings.stats = this._mergeStats(storedSettings.stats);
       if (storedVersion < this.DEFAULT_SETTINGS.detectorVersion) {
         settings.detectorVersion = this.DEFAULT_SETTINGS.detectorVersion;
@@ -214,11 +231,18 @@ const StorageManager = {
         ...cleanedPartial.gemini
       });
     }
+    if (cleanedPartial.openrouter) {
+      updated.openrouter = this._sanitizeOpenRouterSettings({
+        ...current.openrouter,
+        ...cleanedPartial.openrouter
+      });
+    }
     const persistableSettings = { ...updated };
     delete persistableSettings.aiToolPatterns;
     delete persistableSettings.childRiskPatterns;
     delete persistableSettings.blockMode;
     persistableSettings.gemini = this._sanitizeGeminiSettings(persistableSettings.gemini);
+    persistableSettings.openrouter = this._sanitizeOpenRouterSettings(persistableSettings.openrouter);
     await chrome.storage.local.set({ settings: persistableSettings });
     return updated;
   },
@@ -436,6 +460,9 @@ const StorageManager = {
     if (sanitized.gemini) {
       sanitized.gemini = this._sanitizeGeminiSettings(sanitized.gemini);
     }
+    if (sanitized.openrouter) {
+      sanitized.openrouter = this._sanitizeOpenRouterSettings(sanitized.openrouter);
+    }
     return sanitized;
   },
 
@@ -445,6 +472,17 @@ const StorageManager = {
     delete source.apiKey;
     return {
       ...this.DEFAULT_SETTINGS.gemini,
+      ...source,
+      hasApiKey
+    };
+  },
+
+  _sanitizeOpenRouterSettings(openrouter = {}) {
+    const source = { ...(openrouter || {}) };
+    const hasApiKey = Boolean(source.hasApiKey || source.apiKey);
+    delete source.apiKey;
+    return {
+      ...this.DEFAULT_SETTINGS.openrouter,
       ...source,
       hasApiKey
     };

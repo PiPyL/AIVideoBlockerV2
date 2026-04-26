@@ -39,15 +39,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const btnRescan = $('#btn-rescan');
 
-  const checkboxGeminiEnabled = $('#checkbox-gemini-enabled');
+  const checkboxAiEnabled = $('#checkbox-ai-enabled');
+  const aiProviderHeader = $('#ai-provider-header');
+  const aiProviderDetails = $('#ai-provider-details');
+  const aiProviderChevron = $('#ai-provider-chevron');
+  const activeProviderBadge = $('#active-provider-badge');
+
+  const geminiForm = $('#gemini-form');
+  const openrouterForm = $('#openrouter-form');
+
   const geminiApiKey = $('#gemini-api-key');
   const btnTestGemini = $('#btn-test-gemini');
   const geminiModel = $('#gemini-model');
-  const checkboxGeminiThumbnail = $('#checkbox-gemini-thumbnail');
-  const geminiCacheCount = $('#gemini-cache-count');
-  const btnClearGeminiCache = $('#btn-clear-gemini-cache');
   const btnClearGeminiKey = $('#btn-clear-gemini-key');
+  const geminiStatusText = $('#gemini-status-text');
   const geminiStatus = $('#gemini-status');
+
+  const openrouterApiKey = $('#openrouter-api-key');
+  const btnTestOpenrouter = $('#btn-test-openrouter');
+  const openrouterModel = $('#openrouter-model');
+  const btnClearOpenrouterKey = $('#btn-clear-openrouter-key');
+  const openrouterStatusText = $('#openrouter-status-text');
+  const openrouterStatus = $('#openrouter-status');
+
+  const checkboxAiThumbnail = $('#checkbox-ai-thumbnail');
+  const aiCacheCount = $('#ai-cache-count');
+  const btnClearAiCache = $('#btn-clear-ai-cache');
 
   // ==================== INITIALIZATION ====================
 
@@ -99,13 +116,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     const profileRadio = document.querySelector(`input[name="detectionProfile"][value="${s.detectionProfile || 'recall-first'}"]`);
     if (profileRadio) profileRadio.checked = true;
 
-    // Gemini API
+    // AI Provider Setup
     const gemini = s.gemini || {};
-    checkboxGeminiEnabled.checked = Boolean(gemini.enabled && gemini.hasApiKey);
+    const openrouter = s.openrouter || {};
+    const activeProvider = s.activeProvider || 'openrouter';
+
+    // Set Provider Radio
+    const providerRadio = document.querySelector(`input[name="activeProvider"][value="${activeProvider}"]`);
+    if (providerRadio) providerRadio.checked = true;
+
+    // Toggle Forms Visibility
+    geminiForm.style.display = activeProvider === 'gemini' ? 'flex' : 'none';
+    openrouterForm.style.display = activeProvider === 'openrouter' ? 'flex' : 'none';
+
+    const activeSettings = activeProvider === 'gemini' ? gemini : openrouter;
+    checkboxAiEnabled.checked = Boolean(activeSettings.enabled && activeSettings.hasApiKey);
+    activeProviderBadge.textContent = checkboxAiEnabled.checked ? (activeProvider === 'gemini' ? 'Gemini' : 'OpenRouter') : 'Tắt';
+    activeProviderBadge.style.color = checkboxAiEnabled.checked ? 'white' : 'var(--text-muted)';
+    activeProviderBadge.style.background = checkboxAiEnabled.checked ? 'var(--accent-indigo)' : 'rgba(99, 102, 241, 0.1)';
+
+    // OpenRouter
+    openrouterApiKey.value = '';
+    openrouterApiKey.placeholder = openrouter.hasApiKey ? 'API key đã lưu an toàn' : 'Nhập OpenRouter API key...';
+    openrouterModel.value = openrouter.model || 'google/gemini-2.0-flash-lite-preview-02-05:free';
+    openrouterStatusText.textContent = openrouter.hasApiKey ? 'Đã lưu Key' : 'Chưa cấu hình';
+    openrouterStatusText.style.color = openrouter.hasApiKey ? 'var(--accent-green)' : 'var(--text-secondary)';
+
+    // Gemini
     geminiApiKey.value = '';
     geminiApiKey.placeholder = gemini.hasApiKey ? 'API key đã lưu an toàn' : 'Nhập Gemini API key...';
     geminiModel.value = gemini.model || 'gemini-3.1-flash-lite-preview';
-    checkboxGeminiThumbnail.checked = Boolean(gemini.includeThumbnail);
+    geminiStatusText.textContent = gemini.hasApiKey ? 'Đã lưu Key' : 'Chưa cấu hình';
+    geminiStatusText.style.color = gemini.hasApiKey ? 'var(--accent-green)' : 'var(--text-secondary)';
+
+    // Common
+    checkboxAiThumbnail.checked = activeProvider === 'gemini' ? Boolean(gemini.includeThumbnail) : Boolean(openrouter.includeThumbnail);
 
     // Channel lists
     renderChannelList(whitelistContainer, s.whitelistedChannels, 'whitelist');
@@ -134,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         breakMedium.textContent = formatNumber(stats.statsBySignal?.medium || 0);
         breakWeak.textContent = formatNumber(stats.statsBySignal?.weak || 0);
         breakMethod.textContent = topMethod(stats.methodBreakdown || {});
-        geminiCacheCount.textContent = formatNumber(stats.geminiCacheSize || 0);
+        aiCacheCount.textContent = formatNumber(stats.geminiCacheSize || 0);
       }
     } catch (e) {
       // Extension might not be active on current tab
@@ -162,59 +207,121 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  checkboxGeminiEnabled.addEventListener('change', async () => {
-    settings = await getSettings();
-    const gemini = { ...(settings.gemini || {}) };
-
-    if (checkboxGeminiEnabled.checked && !gemini.hasApiKey && !geminiApiKey.value.trim()) {
-      checkboxGeminiEnabled.checked = false;
-      setGeminiStatus('Nhập API key rồi bấm Kiểm tra trước khi bật.', 'error');
-      return;
-    }
-
-    if (checkboxGeminiEnabled.checked && geminiApiKey.value.trim()) {
-      await testAndSaveGeminiKey(true);
-      return;
-    }
-
-    await saveGeminiPartial({ enabled: checkboxGeminiEnabled.checked });
-    setGeminiStatus(checkboxGeminiEnabled.checked ? 'Gemini API đã bật.' : 'Gemini API đã tắt.', 'success');
+  // AI Provider Collapsible
+  aiProviderHeader.addEventListener('click', (e) => {
+    if (e.target.tagName.toLowerCase() === 'input' || e.target.classList.contains('toggle-slider')) return;
+    const isHidden = aiProviderDetails.style.display === 'none';
+    aiProviderDetails.style.display = isHidden ? 'block' : 'none';
+    aiProviderChevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
   });
 
+  // Provider Selection
+  $$('input[name="activeProvider"]').forEach(radio => {
+    radio.addEventListener('change', async () => {
+      const activeProvider = radio.value;
+      geminiForm.style.display = activeProvider === 'gemini' ? 'flex' : 'none';
+      openrouterForm.style.display = activeProvider === 'openrouter' ? 'flex' : 'none';
+      await updateSetting({ activeProvider });
+      
+      settings = await getSettings();
+      await loadUI(settings);
+    });
+  });
+
+  // AI Enabled Toggle
+  checkboxAiEnabled.addEventListener('change', async () => {
+    settings = await getSettings();
+    const activeProvider = settings.activeProvider || 'openrouter';
+    const providerSettings = settings[activeProvider] || {};
+    const apiKeyInput = activeProvider === 'gemini' ? geminiApiKey : openrouterApiKey;
+    const setStatus = activeProvider === 'gemini' ? setGeminiStatus : setOpenrouterStatus;
+
+    if (checkboxAiEnabled.checked && !providerSettings.hasApiKey && !apiKeyInput.value.trim()) {
+      checkboxAiEnabled.checked = false;
+      setStatus('Nhập API key rồi bấm Kiểm tra trước khi bật.', 'error');
+      return;
+    }
+
+    if (checkboxAiEnabled.checked && apiKeyInput.value.trim()) {
+      if (activeProvider === 'gemini') await testAndSaveGeminiKey(true);
+      else await testAndSaveOpenrouterKey(true);
+      return;
+    }
+
+    await saveProviderPartial(activeProvider, { enabled: checkboxAiEnabled.checked });
+    setStatus(checkboxAiEnabled.checked ? `${activeProvider} API đã bật.` : `${activeProvider} API đã tắt.`, 'success');
+    await loadUI(await getSettings());
+  });
+
+  // OpenRouter Events
+  btnTestOpenrouter.addEventListener('click', async () => {
+    await testAndSaveOpenrouterKey(true);
+  });
+
+  openrouterModel.addEventListener('change', async () => {
+    await saveProviderPartial('openrouter', { model: openrouterModel.value });
+    setOpenrouterStatus('Đã lưu model OpenRouter.', 'success');
+  });
+
+  btnClearOpenrouterKey.addEventListener('click', async () => {
+    btnClearOpenrouterKey.disabled = true;
+    await sendMessage({ type: 'CLEAR_OPENROUTER_KEY' });
+    openrouterApiKey.value = '';
+    
+    settings = await getSettings();
+    if (settings.activeProvider === 'openrouter') checkboxAiEnabled.checked = false;
+    
+    await loadUI(settings);
+    setOpenrouterStatus('Đã xóa API key OpenRouter khỏi kho secret.', 'success');
+    btnClearOpenrouterKey.disabled = false;
+  });
+
+  // Gemini Events
   btnTestGemini.addEventListener('click', async () => {
     await testAndSaveGeminiKey(true);
   });
 
   geminiModel.addEventListener('change', async () => {
-    await saveGeminiPartial({ model: geminiModel.value });
+    await saveProviderPartial('gemini', { model: geminiModel.value });
     setGeminiStatus('Đã lưu model Gemini.', 'success');
-  });
-
-  checkboxGeminiThumbnail.addEventListener('change', async () => {
-    await saveGeminiPartial({
-      includeThumbnail: checkboxGeminiThumbnail.checked,
-      timeoutMs: checkboxGeminiThumbnail.checked ? 6000 : 3500
-    });
-    setGeminiStatus(checkboxGeminiThumbnail.checked ? 'Đã bật phân tích thumbnail.' : 'Đã tắt phân tích thumbnail.', 'success');
-  });
-
-  btnClearGeminiCache.addEventListener('click', async () => {
-    btnClearGeminiCache.disabled = true;
-    await sendMessage({ type: 'CLEAR_GEMINI_CACHE' });
-    await loadStats();
-    setGeminiStatus('Đã xóa cache Gemini.', 'success');
-    btnClearGeminiCache.disabled = false;
   });
 
   btnClearGeminiKey.addEventListener('click', async () => {
     btnClearGeminiKey.disabled = true;
     await sendMessage({ type: 'CLEAR_GEMINI_KEY' });
     geminiApiKey.value = '';
-    checkboxGeminiEnabled.checked = false;
+    
     settings = await getSettings();
+    if (settings.activeProvider === 'gemini') checkboxAiEnabled.checked = false;
+    
     await loadUI(settings);
-    setGeminiStatus('Đã xóa API key khỏi kho secret.', 'success');
+    setGeminiStatus('Đã xóa API key Gemini khỏi kho secret.', 'success');
     btnClearGeminiKey.disabled = false;
+  });
+
+  // Common Events
+  checkboxAiThumbnail.addEventListener('change', async () => {
+    settings = await getSettings();
+    const activeProvider = settings.activeProvider || 'openrouter';
+    await saveProviderPartial(activeProvider, {
+      includeThumbnail: checkboxAiThumbnail.checked,
+      timeoutMs: checkboxAiThumbnail.checked ? (activeProvider === 'gemini' ? 6000 : 8000) : (activeProvider === 'gemini' ? 3500 : 5000)
+    });
+    const setStatus = activeProvider === 'gemini' ? setGeminiStatus : setOpenrouterStatus;
+    setStatus(checkboxAiThumbnail.checked ? 'Đã bật phân tích thumbnail.' : 'Đã tắt phân tích thumbnail.', 'success');
+  });
+
+  btnClearAiCache.addEventListener('click', async () => {
+    btnClearAiCache.disabled = true;
+    await sendMessage({ type: 'CLEAR_GEMINI_CACHE' }); // the backend uses this to clear the common AI cache
+    await loadStats();
+    
+    settings = await getSettings();
+    const activeProvider = settings.activeProvider || 'openrouter';
+    const setStatus = activeProvider === 'gemini' ? setGeminiStatus : setOpenrouterStatus;
+    setStatus('Đã xóa cache phân tích AI.', 'success');
+    
+    btnClearAiCache.disabled = false;
   });
 
   // Set password
@@ -321,14 +428,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     return settings;
   }
 
-  async function saveGeminiPartial(partial) {
+  async function saveProviderPartial(provider, partial) {
     settings = await getSettings();
-    const currentGemini = settings.gemini || {};
-    const nextGemini = {
-      ...currentGemini,
+    const current = settings[provider] || {};
+    const next = {
+      ...current,
       ...partial
     };
-    return await updateSetting({ gemini: nextGemini });
+    return await updateSetting({ [provider]: next });
   }
 
   async function testAndSaveGeminiKey(enableAfterSuccess = false) {
@@ -338,7 +445,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (!apiKey && !hasSavedKey) {
       setGeminiStatus('Chưa có API key để kiểm tra.', 'error');
-      checkboxGeminiEnabled.checked = false;
+      if (settings.activeProvider === 'gemini') checkboxAiEnabled.checked = false;
       return;
     }
 
@@ -351,8 +458,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         type: 'SAVE_GEMINI_KEY',
         apiKey,
         model: geminiModel.value,
-        enabled: enableAfterSuccess || checkboxGeminiEnabled.checked,
-        includeThumbnail: checkboxGeminiThumbnail.checked
+        enabled: enableAfterSuccess || (settings.activeProvider === 'gemini' ? checkboxAiEnabled.checked : settings.gemini.enabled),
+        includeThumbnail: checkboxAiThumbnail.checked
       })
       : await sendMessage({
         type: 'TEST_GEMINI_KEY',
@@ -363,47 +470,98 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnTestGemini.textContent = 'Kiểm tra';
 
     if (!result?.ok) {
-      checkboxGeminiEnabled.checked = false;
-      setGeminiStatus(getGeminiErrorText(result), 'error');
+      if (settings.activeProvider === 'gemini') checkboxAiEnabled.checked = false;
+      setGeminiStatus(getApiErrorText(result, 'Gemini'), 'error');
       return;
     }
 
     if (!apiKey) {
-      await saveGeminiPartial({
-        enabled: enableAfterSuccess || checkboxGeminiEnabled.checked,
+      await saveProviderPartial('gemini', {
+        enabled: enableAfterSuccess || (settings.activeProvider === 'gemini' ? checkboxAiEnabled.checked : settings.gemini.enabled),
         model: geminiModel.value,
-        includeThumbnail: checkboxGeminiThumbnail.checked,
-        timeoutMs: checkboxGeminiThumbnail.checked ? 6000 : 3500
+        includeThumbnail: checkboxAiThumbnail.checked,
+        timeoutMs: checkboxAiThumbnail.checked ? 6000 : 3500
       });
     } else {
-      settings = await getSettings();
       await sendMessage({ type: 'RESCAN_ALL' });
     }
-    geminiApiKey.value = '';
-    geminiApiKey.placeholder = 'API key đã lưu an toàn';
-    checkboxGeminiEnabled.checked = true;
-    setGeminiStatus('API key hợp lệ. Gemini API đã bật.', 'success');
+    
+    settings = await getSettings();
+    await loadUI(settings);
+    setGeminiStatus('API key hợp lệ.', 'success');
+  }
+
+  async function testAndSaveOpenrouterKey(enableAfterSuccess = false) {
+    const apiKey = openrouterApiKey.value.trim();
+    settings = await getSettings();
+    const hasSavedKey = Boolean(settings.openrouter?.hasApiKey);
+
+    if (!apiKey && !hasSavedKey) {
+      setOpenrouterStatus('Chưa có API key để kiểm tra.', 'error');
+      if (settings.activeProvider === 'openrouter') checkboxAiEnabled.checked = false;
+      return;
+    }
+
+    btnTestOpenrouter.disabled = true;
+    btnTestOpenrouter.textContent = 'Đang kiểm...';
+    setOpenrouterStatus('Đang kiểm tra API key...', 'neutral');
+
+    const result = apiKey
+      ? await sendMessage({
+        type: 'SAVE_OPENROUTER_KEY',
+        apiKey,
+        model: openrouterModel.value,
+        enabled: enableAfterSuccess || (settings.activeProvider === 'openrouter' ? checkboxAiEnabled.checked : settings.openrouter.enabled)
+      })
+      : await sendMessage({
+        type: 'TEST_OPENROUTER_KEY',
+        model: openrouterModel.value
+      });
+
+    btnTestOpenrouter.disabled = false;
+    btnTestOpenrouter.textContent = 'Kiểm tra';
+
+    if (!result?.ok) {
+      if (settings.activeProvider === 'openrouter') checkboxAiEnabled.checked = false;
+      setOpenrouterStatus(getApiErrorText(result, 'OpenRouter'), 'error');
+      return;
+    }
+
+    if (!apiKey) {
+      await saveProviderPartial('openrouter', {
+        enabled: enableAfterSuccess || (settings.activeProvider === 'openrouter' ? checkboxAiEnabled.checked : settings.openrouter.enabled),
+        model: openrouterModel.value
+      });
+    } else {
+      await sendMessage({ type: 'RESCAN_ALL' });
+    }
+    
+    settings = await getSettings();
+    await loadUI(settings);
+    setOpenrouterStatus('API key hợp lệ.', 'success');
   }
 
   function setGeminiStatus(text, tone = 'neutral') {
     geminiStatus.textContent = text || '';
-    const colors = {
-      success: '#22c55e',
-      error: '#ef4444',
-      neutral: '#94a3b8'
-    };
+    const colors = { success: '#22c55e', error: '#ef4444', neutral: '#94a3b8' };
     geminiStatus.style.color = colors[tone] || colors.neutral;
   }
+  
+  function setOpenrouterStatus(text, tone = 'neutral') {
+    openrouterStatus.textContent = text || '';
+    const colors = { success: '#22c55e', error: '#ef4444', neutral: '#94a3b8' };
+    openrouterStatus.style.color = colors[tone] || colors.neutral;
+  }
 
-  function getGeminiErrorText(result = {}) {
+  function getApiErrorText(result = {}, provider = 'API') {
     const labels = {
       missing_api_key: 'Thiếu API key.',
       invalid_api_key: 'API key không hợp lệ hoặc chưa có quyền.',
-      model_unavailable: 'Model preview chưa khả dụng cho key này.',
+      model_unavailable: 'Model chưa khả dụng cho key này.',
       rate_limited: 'Key đang bị giới hạn quota, thử lại sau.',
-      service_unavailable: 'Gemini tạm thời không phản hồi.',
+      service_unavailable: `${provider} tạm thời không phản hồi.`,
       timeout: 'Kiểm tra key quá thời gian chờ.',
-      request_failed: 'Không gọi được Gemini API.'
+      request_failed: `Không gọi được ${provider}.`
     };
     return labels[result.reason] || `Không kiểm tra được API key${result.status ? ` (${result.status})` : ''}.`;
   }
@@ -446,6 +604,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       disclosure: 'Disclosure',
       childRisk: 'Rủi ro trẻ em',
       gemini: 'Gemini API',
+      openrouter: 'OpenRouter API',
       combination: 'Kết hợp'
     };
     return labels[key] || key;

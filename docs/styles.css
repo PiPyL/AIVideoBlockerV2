@@ -154,6 +154,12 @@ a {
     color: var(--text-main);
 }
 
+.brand-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
 .nav-links {
     display: flex;
     gap: 2rem;

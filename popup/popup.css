@@ -128,8 +128,14 @@ body::-webkit-scrollbar-thumb {
   font-size: 28px;
 }
 
+.header-icon-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
 .header h1 {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: 0;
   background: linear-gradient(135deg, var(--accent-red-light), var(--accent-indigo-light));
@@ -139,7 +145,7 @@ body::-webkit-scrollbar-thumb {
 }
 
 .header-subtitle {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-muted);
   font-weight: 500;
 }
