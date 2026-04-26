@@ -1,5 +1,5 @@
 /**
- * AI Video Blocker — Popup Script
+ * SafeKid — Popup Script
  * Quản lý settings UI, parental lock, channel lists
  */
 

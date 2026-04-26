@@ -1,5 +1,5 @@
 /**
- * AI Video Blocker — Service Worker (Background)
+ * SafeKid — Service Worker (Background)
  * Điều phối extension, xử lý messages, quản lý badge
  */
 
@@ -727,7 +727,7 @@ async function testOpenRouterKey(msg = {}) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${orSettings.apiKey}`,
         'HTTP-Referer': 'https://github.com/ai-video-blocker',
-        'X-Title': 'AI Video Blocker'
+        'X-Title': 'SafeKid'
       },
       body: JSON.stringify(OpenRouterClassifier.buildTestRequestBody(orSettings.model)),
       signal: controller.signal
@@ -852,7 +852,7 @@ async function runOpenRouterClassificationAttempt(payload, orSettings, cacheKey)
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${orSettings.apiKey}`,
         'HTTP-Referer': 'https://github.com/ai-video-blocker',
-        'X-Title': 'AI Video Blocker'
+        'X-Title': 'SafeKid'
       },
       body: JSON.stringify(body),
       signal: controller.signal
@@ -1057,8 +1057,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     // Khởi tạo settings mặc định
     await StorageManager.updateSettings(StorageManager.DEFAULT_SETTINGS);
     
-    // Mở welcome page (optional)
-    // chrome.tabs.create({ url: 'welcome/welcome.html' });
+    // Mở web page
+    chrome.tabs.create({ url: 'http://safekid.autowork.com.vn' });
   }
 
   // Clear badge

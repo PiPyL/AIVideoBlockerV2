@@ -1,5 +1,5 @@
 /**
- * AI Video Blocker — OpenRouter classification helpers
+ * SafeKid — OpenRouter classification helpers
  * Chứa logic thuần để gọi OpenRouter API.
  */
 

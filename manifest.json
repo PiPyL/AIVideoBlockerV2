@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "AI Video Blocker — Bảo vệ trẻ em",
+  "name": "SafeKid — Bảo vệ trẻ em",
   "version": "1.0.1",
   "description": "Tự động phát hiện và ẩn video AI trên YouTube. Bảo vệ trẻ em khỏi nội dung AI không phù hợp.",
   "icons": {
@@ -45,6 +45,6 @@
       "16": "icons/icon16.png",
       "48": "icons/icon48.png"
     },
-    "default_title": "AI Video Blocker"
+    "default_title": "SafeKid"
   }
 }

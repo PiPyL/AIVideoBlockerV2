@@ -19,7 +19,7 @@ AI Video Blocker là một Chrome Extension (Manifest V3) mã nguồn mở, giú
 Hiện tại extension đang trong quá trình chờ duyệt trên Chrome Web Store. Bạn có thể cài đặt thủ công:
 
 1. Tải file [aivideoblocker-v2.zip](https://github.com/PiPyL/AIVideoBlockerV2/raw/main/aivideoblocker-v2.zip) và giải nén.
-2. Truy cập `chrome://extensions/` trên trình duyệt Chrome.
+2. Truy cập `chrome://extensions/` trên trình duyệt.
 3. Bật **Developer mode** (Chế độ nhà phát triển) ở góc trên bên phải.
 4. Chọn **Load unpacked** (Tải tiện ích đã giải nén) và chọn thư mục vừa giải nén.
 
