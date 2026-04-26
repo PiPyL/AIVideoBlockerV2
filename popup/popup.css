@@ -33,7 +33,7 @@
 
 body {
   width: 360px;
-  max-height: 540px;
+  max-height: 640px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -131,7 +131,7 @@ body::-webkit-scrollbar-thumb {
 .header h1 {
   font-size: 15px;
   font-weight: 800;
-  letter-spacing: -0.3px;
+  letter-spacing: 0;
   background: linear-gradient(135deg, var(--accent-red-light), var(--accent-indigo-light));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -187,6 +187,20 @@ body::-webkit-scrollbar-thumb {
 .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(20px);
   background: white;
+}
+
+.toggle-small {
+  width: 34px;
+  height: 20px;
+}
+
+.toggle-small .toggle-slider::before {
+  width: 14px;
+  height: 14px;
+}
+
+.toggle-small input:checked + .toggle-slider::before {
+  transform: translateX(14px);
 }
 
 /* ==================== STATS BAR ==================== */
@@ -343,6 +357,75 @@ body::-webkit-scrollbar-thumb {
   color: var(--accent-green);
   margin-top: 4px;
   min-height: 14px;
+}
+
+/* ==================== GEMINI ==================== */
+
+.gemini-warning {
+  font-size: 9px;
+  line-height: 1.45;
+  color: var(--accent-red-light);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  margin-bottom: 8px;
+}
+
+.gemini-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gemini-key-row,
+.gemini-cache-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gemini-key-row input,
+.gemini-select {
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 11px;
+  outline: none;
+}
+
+.gemini-key-row input:focus,
+.gemini-select:focus {
+  border-color: var(--accent-indigo);
+}
+
+.gemini-cache-row {
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.checkbox-row input {
+  margin-top: 1px;
+}
+
+.checkbox-row small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 9px;
 }
 
 /* ==================== CHANNEL LISTS ==================== */

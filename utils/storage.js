@@ -9,7 +9,7 @@ const StorageManager = {
     enabled: true,
     sensitivity: 'medium', // 'low' | 'medium' | 'high'
     detectionProfile: 'recall-first', // 'balanced' | 'recall-first'
-    detectorVersion: 6,
+    detectorVersion: 7,
     parentalPassword: '',
     isLocked: false,
     whitelistedChannels: [],
@@ -34,6 +34,7 @@ const StorageManager = {
         combination: 0,
         disclosure: 0,
         childRisk: 0,
+        gemini: 0,
         none: 0
       },
       bySignal: {
@@ -56,6 +57,16 @@ const StorageManager = {
         profanity: 0,
         disturbing_kids_content: 0
       }
+    },
+    gemini: {
+      enabled: false,
+      apiKey: '',
+      model: 'gemini-3.1-flash-lite-preview',
+      includeThumbnail: false,
+      timeoutMs: 3500,
+      thumbnailTimeoutMs: 6000,
+      maxCaptionChars: 4000,
+      promptVersion: 1
     },
     // Backward-compatible synthetic/AI keyword database.
     aiKeywords: {
@@ -168,6 +179,7 @@ const StorageManager = {
       settings.aiToolPatterns = this.DEFAULT_SETTINGS.aiToolPatterns;
       settings.childRiskPatterns = this.DEFAULT_SETTINGS.childRiskPatterns;
       settings.captionScan = { ...this.DEFAULT_SETTINGS.captionScan, ...(storedSettings.captionScan || {}) };
+      settings.gemini = { ...this.DEFAULT_SETTINGS.gemini, ...(storedSettings.gemini || {}) };
       settings.stats = this._mergeStats(storedSettings.stats);
       if (storedVersion < this.DEFAULT_SETTINGS.detectorVersion) {
         settings.detectorVersion = this.DEFAULT_SETTINGS.detectorVersion;
@@ -183,6 +195,7 @@ const StorageManager = {
       return {
         ...this.DEFAULT_SETTINGS,
         syntheticKeywords: this.DEFAULT_SETTINGS.aiKeywords,
+        gemini: this.DEFAULT_SETTINGS.gemini,
         stats: this._mergeStats()
       };
     }
@@ -267,6 +280,53 @@ const StorageManager = {
     } else {
       await chrome.storage.local.set({ captionCache: cache });
     }
+  },
+
+  async getGeminiCache() {
+    try {
+      const data = await chrome.storage.local.get('geminiCache');
+      return data.geminiCache || {};
+    } catch (e) {
+      return {};
+    }
+  },
+
+  async getGeminiCacheEntry(key) {
+    if (!key) return null;
+    const cache = await this.getGeminiCache();
+    return cache[key] || null;
+  },
+
+  async getGeminiCacheEntries(keys = []) {
+    const cache = await this.getGeminiCache();
+    const result = {};
+    for (const key of keys) {
+      if (cache[key]) result[key] = cache[key];
+    }
+    return result;
+  },
+
+  async cacheGeminiResult(key, result) {
+    if (!key) return;
+
+    const cache = await this.getGeminiCache();
+    cache[key] = {
+      ...result,
+      timestamp: Date.now()
+    };
+
+    const entries = Object.entries(cache);
+    if (entries.length > 3000) {
+      const sorted = entries.sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
+      await chrome.storage.local.set({ geminiCache: Object.fromEntries(sorted.slice(-2400)) });
+    } else {
+      await chrome.storage.local.set({ geminiCache: cache });
+    }
+  },
+
+  async clearGeminiCache() {
+    await chrome.storage.local.set({ geminiCache: {} });
+    return { ok: true };
   },
 
   /**

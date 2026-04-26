@@ -4,14 +4,21 @@
  */
 
 // Import storage utilities
-importScripts('/utils/storage.js');
+importScripts('/utils/storage.js', '/utils/gemini.js');
 
 const LOG_PREFIX = '[AIBlocker:SW]';
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const geminiInFlight = new Map();
 
 // ==================== MESSAGE HANDLING ====================
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  handleMessage(msg, sender).then(sendResponse);
+  handleMessage(msg, sender)
+    .then(sendResponse)
+    .catch((error) => {
+      console.warn(`${LOG_PREFIX} Message failed:`, error?.message || error);
+      sendResponse({ ok: false, error: error?.message || 'Unhandled background error' });
+    });
   return true; // async
 });
 
@@ -40,6 +47,18 @@ async function handleMessage(msg, sender) {
     case 'RESCAN_ALL':
       await rescanAllTabs();
       return { ok: true };
+
+    case 'GEMINI_CLASSIFY_VIDEO':
+      return await handleGeminiClassify(msg.payload || msg);
+
+    case 'GET_GEMINI_CACHE_BATCH':
+      return await getGeminiCacheBatch(msg.videoIds || []);
+
+    case 'TEST_GEMINI_KEY':
+      return await testGeminiKey(msg);
+
+    case 'CLEAR_GEMINI_CACHE':
+      return await clearGeminiCache();
 
     default:
       return { error: 'Unknown message type' };
@@ -81,6 +100,7 @@ async function whitelistChannel(channel, url) {
 async function getFullStats() {
   const settings = await StorageManager.getSettings();
   const cache = await StorageManager.getVideoCache();
+  const geminiCache = await StorageManager.getGeminiCache();
   
   const cachedVideos = Object.values(cache);
   const blockedVideos = cachedVideos.filter(v => v.shouldBlock || v.riskLevel === 'block' || v.isAI);
@@ -100,8 +120,11 @@ async function getFullStats() {
       channel: blockedVideos.filter(v => v.method === 'channel').length,
       disclosure: blockedVideos.filter(v => v.method === 'disclosure').length,
       childRisk: blockedVideos.filter(v => v.method === 'childRisk').length,
+      gemini: blockedVideos.filter(v => v.method === 'gemini').length,
       combination: blockedVideos.filter(v => v.method === 'combination').length
     },
+    geminiCacheSize: Object.keys(geminiCache).length,
+    geminiEnabled: Boolean(settings.gemini?.enabled && settings.gemini?.apiKey),
     statsByContext: settings.stats.byContext || {},
     statsBySignal: settings.stats.bySignal || {},
     statsByRiskLevel: settings.stats.byRiskLevel || {},
@@ -109,6 +132,325 @@ async function getFullStats() {
     detectionProfile: settings.detectionProfile || 'recall-first',
     detectorVersion: StorageManager.DEFAULT_SETTINGS.detectorVersion
   };
+}
+
+// ==================== GEMINI API ====================
+
+async function handleGeminiClassify(payload = {}) {
+  const videoId = String(payload.videoId || '').trim();
+  if (!videoId) return { ok: false, skipped: true, reason: 'missing_video_id' };
+
+  if (shouldBlockLocal(payload.localDetection)) {
+    return { ok: true, skipped: true, reason: 'local_block' };
+  }
+
+  const settings = await StorageManager.getSettings();
+  const geminiSettings = GeminiClassifier.normalizeSettings(
+    settings.gemini,
+    payload.detectorVersion || settings.detectorVersion || StorageManager.DEFAULT_SETTINGS.detectorVersion
+  );
+
+  if (!geminiSettings.enabled) return { ok: false, skipped: true, reason: 'disabled' };
+  if (!geminiSettings.apiKey) return { ok: false, skipped: true, reason: 'missing_api_key' };
+
+  const cacheKey = GeminiClassifier.getCacheKey({
+    videoId,
+    model: geminiSettings.model,
+    promptVersion: geminiSettings.promptVersion,
+    includeThumbnail: geminiSettings.includeThumbnail,
+    detectorVersion: geminiSettings.detectorVersion
+  });
+
+  const cached = await StorageManager.getGeminiCacheEntry(cacheKey);
+  if (GeminiClassifier.isCacheEntryValid(cached)) {
+    if (cached.status === 'error') {
+      return { ok: false, cached: true, transient: true, reason: cached.error?.reason || 'transient_error' };
+    }
+    return { ok: true, cached: true, detection: cached.detection };
+  }
+
+  if (geminiInFlight.has(cacheKey)) {
+    return await geminiInFlight.get(cacheKey);
+  }
+
+  const request = runGeminiClassification(payload, geminiSettings, cacheKey);
+  geminiInFlight.set(cacheKey, request);
+  try {
+    return await request;
+  } finally {
+    geminiInFlight.delete(cacheKey);
+  }
+}
+
+async function runGeminiClassification(payload, geminiSettings, cacheKey) {
+  const input = normalizeGeminiInput(payload, geminiSettings);
+  let thumbnail = null;
+
+  if (geminiSettings.includeThumbnail) {
+    thumbnail = await fetchThumbnailAsBase64(input.videoId, payload.thumbnailUrl);
+  }
+
+  const body = GeminiClassifier.buildRequestBody(input, geminiSettings, thumbnail);
+  const timeoutMs = GeminiClassifier.getEffectiveTimeoutMs(geminiSettings);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(getGeminiEndpoint(geminiSettings.model), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': geminiSettings.apiKey
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      const reason = getGeminiHttpReason(response.status);
+      if (!isCacheableGeminiError(reason, response.status)) {
+        return {
+          ok: false,
+          cached: false,
+          transient: false,
+          reason,
+          status: response.status
+        };
+      }
+      return await cacheGeminiError(cacheKey, {
+        reason,
+        status: response.status,
+        model: geminiSettings.model,
+        videoId: input.videoId
+      });
+    }
+
+    const apiResponse = await response.json();
+    const detection = GeminiClassifier.normalizeApiResponse(apiResponse, input);
+    const status = GeminiClassifier.getCacheStatusForDetection(detection);
+    await StorageManager.cacheGeminiResult(cacheKey, {
+      status,
+      videoId: input.videoId,
+      model: geminiSettings.model,
+      promptVersion: geminiSettings.promptVersion,
+      includeThumbnail: geminiSettings.includeThumbnail,
+      detectorVersion: geminiSettings.detectorVersion,
+      detection
+    });
+
+    return { ok: true, cached: false, detection };
+  } catch (error) {
+    const reason = error?.name === 'AbortError' ? 'timeout' : 'invalid_response';
+    return await cacheGeminiError(cacheKey, {
+      reason,
+      message: error?.message || '',
+      model: geminiSettings.model,
+      videoId: input.videoId
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function getGeminiCacheBatch(videoIds = []) {
+  const ids = [...new Set((videoIds || []).filter(Boolean))];
+  if (ids.length === 0) return { ok: true, detections: {} };
+
+  const settings = await StorageManager.getSettings();
+  const geminiSettings = GeminiClassifier.normalizeSettings(
+    settings.gemini,
+    settings.detectorVersion || StorageManager.DEFAULT_SETTINGS.detectorVersion
+  );
+
+  if (!geminiSettings.enabled || !geminiSettings.apiKey) {
+    return { ok: true, detections: {} };
+  }
+
+  const keyByVideoId = new Map(ids.map((videoId) => [
+    videoId,
+    GeminiClassifier.getCacheKey({
+      videoId,
+      model: geminiSettings.model,
+      promptVersion: geminiSettings.promptVersion,
+      includeThumbnail: geminiSettings.includeThumbnail,
+      detectorVersion: geminiSettings.detectorVersion
+    })
+  ]));
+  const entries = await StorageManager.getGeminiCacheEntries(Array.from(keyByVideoId.values()));
+  const detections = {};
+
+  for (const [videoId, key] of keyByVideoId.entries()) {
+    const entry = entries[key];
+    if (!GeminiClassifier.isCacheEntryValid(entry)) continue;
+    if (entry.status === 'error') continue;
+    if (entry.detection) detections[videoId] = entry.detection;
+  }
+
+  return { ok: true, detections };
+}
+
+async function testGeminiKey(msg = {}) {
+  const settings = await StorageManager.getSettings();
+  const geminiSettings = GeminiClassifier.normalizeSettings({
+    ...(settings.gemini || {}),
+    apiKey: msg.apiKey || settings.gemini?.apiKey || '',
+    model: msg.model || settings.gemini?.model || GeminiClassifier.DEFAULT_MODEL
+  }, settings.detectorVersion || StorageManager.DEFAULT_SETTINGS.detectorVersion);
+
+  if (!geminiSettings.apiKey) {
+    return { ok: false, reason: 'missing_api_key' };
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2500);
+
+  try {
+    const response = await fetch(getGeminiEndpoint(geminiSettings.model), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': geminiSettings.apiKey
+      },
+      body: JSON.stringify(GeminiClassifier.buildTestRequestBody()),
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        reason: getGeminiHttpReason(response.status),
+        status: response.status
+      };
+    }
+
+    return { ok: true, model: geminiSettings.model };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: error?.name === 'AbortError' ? 'timeout' : 'request_failed',
+      message: error?.message || ''
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function clearGeminiCache() {
+  await StorageManager.clearGeminiCache();
+  return { ok: true };
+}
+
+function normalizeGeminiInput(payload = {}, geminiSettings = {}) {
+  return {
+    videoId: String(payload.videoId || ''),
+    title: payload.title || payload.localDetection?.title || '',
+    channel: payload.channel || payload.channelName || payload.localDetection?.channelName || '',
+    description: payload.description || '',
+    captionExcerpt: String(payload.captionExcerpt || payload.caption || '').slice(0, geminiSettings.maxCaptionChars),
+    localDetection: payload.localDetection || {},
+    detectorVersion: geminiSettings.detectorVersion,
+    model: geminiSettings.model,
+    promptVersion: geminiSettings.promptVersion,
+    includeThumbnail: geminiSettings.includeThumbnail
+  };
+}
+
+function getGeminiEndpoint(model) {
+  const cleanModel = GeminiClassifier.normalizeModel(model);
+  return `${GEMINI_API_BASE}/${encodeURIComponent(cleanModel)}:generateContent`;
+}
+
+function shouldBlockLocal(detection = {}) {
+  if (!detection) return false;
+  if (typeof detection.shouldBlock === 'boolean') return detection.shouldBlock;
+  if (detection.riskLevel) return detection.riskLevel === 'block';
+  return Boolean(detection.isAI);
+}
+
+function getGeminiHttpReason(status) {
+  if (status === 404) return 'model_unavailable';
+  if (status === 429) return 'rate_limited';
+  if (status === 503) return 'service_unavailable';
+  if (status === 401 || status === 403) return 'invalid_api_key';
+  return 'api_error';
+}
+
+function isCacheableGeminiError(reason, status) {
+  if (['model_unavailable', 'rate_limited', 'service_unavailable'].includes(reason)) return true;
+  return Number(status || 0) >= 500;
+}
+
+async function cacheGeminiError(cacheKey, error = {}) {
+  await StorageManager.cacheGeminiResult(cacheKey, {
+    status: 'error',
+    error: {
+      reason: error.reason || 'transient_error',
+      status: error.status,
+      message: error.message || ''
+    },
+    videoId: error.videoId || '',
+    model: error.model || ''
+  });
+
+  return {
+    ok: false,
+    cached: false,
+    transient: true,
+    reason: error.reason || 'transient_error',
+    status: error.status
+  };
+}
+
+async function fetchThumbnailAsBase64(videoId, preferredUrl = '') {
+  const urls = [
+    preferredUrl,
+    videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '',
+    videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : ''
+  ].filter(Boolean);
+  const uniqueUrls = [...new Set(urls)];
+
+  for (const url of uniqueUrls) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 1500);
+    try {
+      const response = await fetch(url, {
+        signal: controller.signal,
+        credentials: 'omit',
+        cache: 'force-cache'
+      });
+      if (!response.ok) continue;
+
+      const contentType = response.headers?.get?.('content-type') || 'image/jpeg';
+      if (!contentType.startsWith('image/')) continue;
+
+      const buffer = await response.arrayBuffer();
+      if (!buffer || buffer.byteLength > 2 * 1024 * 1024) continue;
+
+      return {
+        data: arrayBufferToBase64(buffer),
+        mimeType: contentType.split(';')[0] || 'image/jpeg'
+      };
+    } catch (e) {
+      // Thumbnail là optional; lỗi ảnh không được làm chậm/chặn local flow.
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  return null;
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+  if (typeof btoa === 'function') return btoa(binary);
+  if (typeof Buffer !== 'undefined') return Buffer.from(bytes).toString('base64');
+  return binary;
 }
 
 // ==================== TAB MANAGEMENT ====================

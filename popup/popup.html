@@ -110,6 +110,40 @@
           </div>
         </div>
 
+        <!-- Gemini API -->
+        <div class="setting-group">
+          <div class="setting-header">
+            <span>🤖 Gemini API nâng cao</span>
+            <label class="toggle-switch toggle-small" id="toggle-gemini-enabled">
+              <input type="checkbox" id="checkbox-gemini-enabled">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <p class="gemini-warning">
+            Khi bật, title/description/caption và thumbnail nếu chọn có thể được gửi tới Google Gemini API.
+          </p>
+          <div class="gemini-form">
+            <div class="gemini-key-row">
+              <input type="password" id="gemini-api-key" placeholder="Nhập Gemini API key..." autocomplete="off">
+              <button id="btn-test-gemini" class="btn-small">Kiểm tra</button>
+            </div>
+            <select id="gemini-model" class="gemini-select">
+              <option value="gemini-3.1-flash-lite-preview">gemini-3.1-flash-lite-preview</option>
+              <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
+              <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+            </select>
+            <label class="checkbox-row">
+              <input type="checkbox" id="checkbox-gemini-thumbnail">
+              <span>Phân tích thêm thumbnail <small>chính xác hơn nhưng chậm hơn</small></span>
+            </label>
+            <div class="gemini-cache-row">
+              <span>Cache Gemini: <strong id="gemini-cache-count">0</strong></span>
+              <button id="btn-clear-gemini-cache" class="btn-small">Xóa cache</button>
+            </div>
+            <p id="gemini-status" class="status-text"></p>
+          </div>
+        </div>
+
         <!-- Parental Password -->
         <div class="setting-group">
           <div class="setting-header">

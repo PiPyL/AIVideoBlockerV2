@@ -5,7 +5,7 @@
  */
 
 const AIDetector = {
-  DETECTOR_VERSION: 6,
+  DETECTOR_VERSION: 7,
 
   /**
    * Phân tích một video element trên feed/search.

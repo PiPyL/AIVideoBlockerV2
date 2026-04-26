@@ -15,6 +15,7 @@
   let currentPath = location.pathname;
   let currentVideoKey = getCurrentVideoKey();
   const recordedPageDecisionKeys = new Set();
+  const geminiPendingKeys = new Set();
 
   // ==================== INITIALIZATION ====================
 
@@ -126,6 +127,7 @@
     const cache = await StorageManager.getVideoCache();
     const detectorVersion = AIDetector.DETECTOR_VERSION;
     const detectionSignature = getDetectionSignature(settings, detectorVersion);
+    const geminiCachedByVideoId = await getGeminiCachedDetections(videoElements);
 
     for (const el of videoElements) {
       if (isAggregateVideoContainer(el)) continue;
@@ -175,6 +177,17 @@
             }
             continue;
           }
+        }
+
+        const geminiCached = geminiCachedByVideoId[videoId];
+        if (geminiCached && shouldBlockDetection(geminiCached)) {
+          AIBlocker.blockVideo(el, geminiCached);
+          blockedCount++;
+          detectedMethodCounts.gemini = (detectedMethodCounts.gemini || 0) + 1;
+          mergeSignalCounts(detectedSignalCounts, geminiCached.signalCounts);
+          mergeRiskCategories(detectedRiskCategories, geminiCached.riskCategories);
+          topRiskLevel = pickHigherRiskLevel(topRiskLevel, geminiCached.riskLevel);
+          continue;
         }
       }
 
@@ -330,40 +343,50 @@
   }
 
   async function scanCaptionAndReapply(context, baseDetection, surface) {
-    if (!settings?.captionScan?.enabled) return;
-
     const videoId = baseDetection?.videoId || extractVideoIdFromUrl(location.href);
     if (!videoId) return;
 
+    let workingDetection = baseDetection;
+    let captionText = '';
+
     try {
-      const captionText = await getCaptionText(videoId);
-      if (!captionText || videoId !== extractVideoIdFromUrl(location.href)) return;
-
-      const enriched = AIDetector.enrichWithText(baseDetection, captionText, settings, 'caption');
-      if (!shouldBlockDetection(enriched)) return;
-
-      if (surface === 'shorts') {
-        AIBlocker.blockShortsPage(enriched);
-      } else {
-        AIBlocker.blockWatchPage(enriched);
+      if (settings?.captionScan?.enabled) {
+        captionText = await getCaptionText(videoId);
       }
 
-      if (markPageDecisionRecorded(context, enriched)) {
-        await StorageManager.updateDetectionStats({
-          scanned: 0,
-          blocked: shouldBlockDetection(baseDetection) ? 0 : 1,
-          context,
-          method: enriched.method,
-          signalCounts: enriched.signalCounts,
-          riskLevel: enriched.riskLevel,
-          riskCategories: enriched.riskCategories
-        });
-      }
+      if (captionText && videoId === extractVideoIdFromUrl(location.href)) {
+        const enriched = AIDetector.enrichWithText(baseDetection, captionText, settings, 'caption');
+        if (shouldBlockDetection(enriched)) {
+          if (surface === 'shorts') {
+            AIBlocker.blockShortsPage(enriched);
+          } else {
+            AIBlocker.blockWatchPage(enriched);
+          }
 
-      console.log(`${LOG_PREFIX} ${surface} caption risk blocked:`, enriched.reasons);
+          if (markPageDecisionRecorded(context, enriched)) {
+            await StorageManager.updateDetectionStats({
+              scanned: 0,
+              blocked: shouldBlockDetection(baseDetection) ? 0 : 1,
+              context,
+              method: enriched.method,
+              signalCounts: enriched.signalCounts,
+              riskLevel: enriched.riskLevel,
+              riskCategories: enriched.riskCategories
+            });
+            chrome.runtime.sendMessage({ type: 'VIDEOS_BLOCKED', count: 1 });
+          }
+
+          console.log(`${LOG_PREFIX} ${surface} caption risk blocked:`, enriched.reasons);
+          return;
+        }
+
+        workingDetection = enriched;
+      }
     } catch (e) {
       console.warn(`${LOG_PREFIX} Caption scan skipped:`, e);
     }
+
+    scanGeminiAndReapply(context, workingDetection, surface, captionText);
   }
 
   async function getCaptionText(videoId) {
@@ -451,6 +474,164 @@
         .replace(/\s+/g, ' ')
         .trim();
     }
+  }
+
+  async function getGeminiCachedDetections(videoElements) {
+    if (!settings?.gemini?.enabled || !settings?.gemini?.apiKey) return {};
+
+    const videoIds = [...new Set(Array.from(videoElements)
+      .filter((el) => !isAggregateVideoContainer(el))
+      .map(extractVideoId)
+      .filter(Boolean))];
+
+    if (videoIds.length === 0) return {};
+
+    try {
+      const response = await sendRuntimeMessage({
+        type: 'GET_GEMINI_CACHE_BATCH',
+        videoIds
+      });
+      return response?.detections || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  async function scanGeminiAndReapply(context, baseDetection, surface, captionText = '') {
+    if (!settings?.gemini?.enabled || !settings?.gemini?.apiKey) return;
+    if (shouldBlockDetection(baseDetection)) return;
+
+    const videoId = baseDetection?.videoId || extractVideoIdFromUrl(location.href);
+    if (!videoId) return;
+
+    const pendingKey = [
+      surface,
+      videoId,
+      settings.gemini.model || '',
+      settings.gemini.includeThumbnail ? 'thumb' : 'text'
+    ].join(':');
+    if (geminiPendingKeys.has(pendingKey)) return;
+    geminiPendingKeys.add(pendingKey);
+
+    try {
+      const response = await sendRuntimeMessage({
+        type: 'GEMINI_CLASSIFY_VIDEO',
+        payload: buildGeminiPayload(videoId, baseDetection, surface, captionText)
+      });
+
+      if (!response?.ok || !response.detection) return;
+      if (videoId !== extractVideoIdFromUrl(location.href)) return;
+
+      const merged = mergeGeminiDetection(baseDetection, response.detection);
+      if (!shouldBlockDetection(merged)) return;
+
+      if (surface === 'shorts') {
+        AIBlocker.blockShortsPage(merged);
+      } else {
+        AIBlocker.blockWatchPage(merged);
+      }
+
+      if (markPageDecisionRecorded(context, merged)) {
+        await StorageManager.updateDetectionStats({
+          scanned: 0,
+          blocked: 1,
+          context,
+          method: 'gemini',
+          signalCounts: merged.signalCounts,
+          riskLevel: merged.riskLevel,
+          riskCategories: merged.riskCategories
+        });
+        chrome.runtime.sendMessage({ type: 'VIDEOS_BLOCKED', count: 1 });
+      }
+
+      console.log(`${LOG_PREFIX} ${surface} Gemini blocked:`, merged.reasons);
+    } catch (e) {
+      console.warn(`${LOG_PREFIX} Gemini scan skipped:`, e?.message || e);
+    } finally {
+      geminiPendingKeys.delete(pendingKey);
+    }
+  }
+
+  function buildGeminiPayload(videoId, detection = {}, surface = 'watch', captionText = '') {
+    const maxCaptionChars = Number(settings.gemini?.maxCaptionChars || 4000);
+    return {
+      videoId,
+      title: detection.title || getCurrentVideoTitle(surface),
+      channel: detection.channelName || (surface === 'shorts' ? getShortsChannelName() : getWatchChannelName()),
+      description: getCurrentDescriptionText(videoId, surface),
+      captionExcerpt: String(captionText || '').slice(0, maxCaptionChars),
+      thumbnailUrl: getThumbnailUrl(videoId),
+      detectorVersion: AIDetector.DETECTOR_VERSION,
+      localDetection: {
+        isAI: Boolean(detection.isAI),
+        shouldBlock: shouldBlockDetection(detection),
+        syntheticScore: detection.syntheticScore || 0,
+        childRiskScore: detection.childRiskScore || 0,
+        riskLevel: detection.riskLevel || 'safe',
+        riskCategories: detection.riskCategories || [],
+        reasons: detection.reasons || [],
+        title: detection.title || '',
+        channelName: detection.channelName || ''
+      }
+    };
+  }
+
+  function mergeGeminiDetection(baseDetection = {}, geminiDetection = {}) {
+    return {
+      ...baseDetection,
+      ...geminiDetection,
+      videoId: baseDetection.videoId || geminiDetection.videoId || extractVideoIdFromUrl(location.href),
+      title: baseDetection.title || geminiDetection.title || '',
+      channelName: baseDetection.channelName || geminiDetection.channelName || '',
+      channelUrl: baseDetection.channelUrl || '',
+      isAI: Boolean(baseDetection.isAI || geminiDetection.isAI),
+      shouldBlock: shouldBlockDetection(geminiDetection) || shouldBlockDetection(baseDetection),
+      syntheticScore: Math.max(baseDetection.syntheticScore || 0, geminiDetection.syntheticScore || geminiDetection.aiConfidence || 0),
+      childRiskScore: Math.max(baseDetection.childRiskScore || 0, geminiDetection.childRiskScore || 0),
+      confidence: Math.max(baseDetection.confidence || 0, geminiDetection.confidence || 0),
+      method: 'gemini',
+      reasons: geminiDetection.reasons?.length ? geminiDetection.reasons : ['Gemini đánh giá cần chặn video này'],
+      signals: geminiDetection.signals || [],
+      signalCounts: geminiDetection.signalCounts || { strong: 1, medium: 0, weak: 0 },
+      axisSignalCounts: geminiDetection.axisSignalCounts || baseDetection.axisSignalCounts || {
+        synthetic: { strong: 0, medium: 0, weak: 0 },
+        childRisk: { strong: 0, medium: 0, weak: 0 }
+      },
+      riskCategories: geminiDetection.riskCategories || baseDetection.riskCategories || [],
+      riskLevel: geminiDetection.riskLevel || baseDetection.riskLevel || 'safe'
+    };
+  }
+
+  function getCurrentDescriptionText(videoId, surface = 'watch') {
+    const playerResponse = AIDetector.getPlayerResponse(videoId);
+    const responseDescription = playerResponse?.videoDetails?.shortDescription ||
+      playerResponse?.microformat?.playerMicroformatRenderer?.description?.simpleText ||
+      playerResponse?.microformat?.playerMicroformatRenderer?.description ||
+      '';
+
+    if (responseDescription) return normalizeLongText(responseDescription).slice(0, 2500);
+
+    const selector = surface === 'shorts'
+      ? 'ytd-reel-player-overlay-renderer #description, ytd-reel-video-renderer[is-active] #description, #shorts-container #description'
+      : '#description-inner, ytd-text-inline-expander, #structured-description, ytd-watch-metadata #description';
+    const node = document.querySelector(selector);
+    return normalizeLongText(node?.textContent || '').slice(0, 2500);
+  }
+
+  function getCurrentVideoTitle(surface = 'watch') {
+    const selector = surface === 'shorts'
+      ? 'ytd-reel-video-renderer[is-active] #shorts-title, #shorts-title, h2#shorts-video-title'
+      : 'h1.ytd-watch-metadata yt-formatted-string, h1.ytd-video-primary-info-renderer';
+    const node = document.querySelector(selector);
+    return normalizeLongText(node?.textContent || document.title.replace(/\s*-\s*YouTube\s*$/i, ''));
+  }
+
+  function getThumbnailUrl(videoId) {
+    return videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '';
+  }
+
+  function normalizeLongText(text = '') {
+    return String(text || '').replace(/\s+/g, ' ').trim();
   }
 
   // ==================== DOM OBSERVATION ====================
@@ -627,6 +808,14 @@
     }, delay);
   }
 
+  function sendRuntimeMessage(message) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(message, (response) => {
+        resolve(response || {});
+      });
+    });
+  }
+
   function prepareForNavigationScan() {
     resetProcessedVideoItems();
     AIBlocker.resetPageBlocks({ restoreMedia: false });
@@ -698,7 +887,12 @@
       aiKeywords: keywords,
       syntheticKeywords,
       childRiskKeywords,
-      captionScan: currentSettings.captionScan || StorageManager.DEFAULT_SETTINGS.captionScan
+      captionScan: currentSettings.captionScan || StorageManager.DEFAULT_SETTINGS.captionScan,
+      gemini: {
+        enabled: Boolean(currentSettings.gemini?.enabled),
+        model: currentSettings.gemini?.model || '',
+        includeThumbnail: Boolean(currentSettings.gemini?.includeThumbnail)
+      }
     });
   }
 
@@ -720,7 +914,10 @@
   }
 
   function normalizeStoredSettings(value = {}) {
-    return { ...StorageManager.DEFAULT_SETTINGS, ...(value || {}) };
+    const normalized = { ...StorageManager.DEFAULT_SETTINGS, ...(value || {}) };
+    normalized.gemini = { ...StorageManager.DEFAULT_SETTINGS.gemini, ...(value?.gemini || {}) };
+    normalized.captionScan = { ...StorageManager.DEFAULT_SETTINGS.captionScan, ...(value?.captionScan || {}) };
+    return normalized;
   }
 
   function shouldRescanForSettingsChange(previousSettings = {}, nextSettings = {}) {
@@ -736,7 +933,8 @@
       'aiKeywords',
       'syntheticKeywords',
       'childRiskKeywords',
-      'captionScan'
+      'captionScan',
+      'gemini'
     ];
 
     return relevantKeys.some((key) => JSON.stringify(previous[key]) !== JSON.stringify(next[key]));
