@@ -114,9 +114,13 @@ const GeminiClassifier = {
 
     return [
       'Bạn là bộ phân loại an toàn cho extension phụ huynh trên YouTube.',
-      'Mục tiêu: phát hiện video AI/tổng hợp và nội dung không phù hợp với trẻ dưới 13 tuổi.',
-      'Chỉ dựa trên metadata/caption/thumbnail được cung cấp. Không bịa thêm sự kiện ngoài input.',
-      'Chặn nếu video có khả năng AI/tổng hợp cao hoặc có rủi ro trẻ em cao.',
+      'Mục tiêu: phát hiện video ĐƯỢC TẠO BẰNG AI (Generative AI, Deepfake) và nội dung không phù hợp với trẻ dưới 13 tuổi.',
+      'QUY TẮC LOẠI TRỪ (KHÔNG CHẶN):',
+      '1. Âm nhạc: Nhạc điện tử (EDM), Vocaloid, Auto-tune, nhạc cụ tổng hợp (synthesizer).',
+      '2. Hình ảnh: Gameplay video game, hoạt hình truyền thống/3D, Anime, CGI, VFX, Virtual YouTuber (VTuber).',
+      '3. Tin tức/Giáo dục: Video do người thật làm để review, hướng dẫn, tin tức bàn luận về chủ đề AI.',
+      'CHỈ CHẶN lỗi AI khi có bằng chứng rõ ràng video là "AI slop" (kênh rác dùng AI voice/video tự động sản xuất hàng loạt), Deepfake lừa đảo, hoặc nội dung Generative AI cố tình giả mạo thật.',
+      'Chỉ dựa trên thông tin được cung cấp. Tuyệt đối KHÔNG tự kết luận video được YouTube gắn nhãn nếu input không ghi rõ.',
       'Child-risk gồm sexual, violence, horror, self_harm, dangerous_acts, drugs, profanity, disturbing_kids_content.',
       'Trả về JSON đúng schema. reason và evidence phải ngắn, không chứa dữ liệu nhạy cảm thừa.',
       '',
