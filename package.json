@@ -1,6 +1,6 @@
 {
   "name": "ai-video-blocker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "YouTube AI-Video Blocker Chrome Extension",
   "scripts": {
     "test": "node --test tests/*.test.js"
