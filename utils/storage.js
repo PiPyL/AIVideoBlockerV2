@@ -60,7 +60,7 @@ const StorageManager = {
     },
     gemini: {
       enabled: false,
-      apiKey: '',
+      hasApiKey: false,
       model: 'gemini-3.1-flash-lite-preview',
       includeThumbnail: false,
       timeoutMs: 3500,
@@ -179,7 +179,7 @@ const StorageManager = {
       settings.aiToolPatterns = this.DEFAULT_SETTINGS.aiToolPatterns;
       settings.childRiskPatterns = this.DEFAULT_SETTINGS.childRiskPatterns;
       settings.captionScan = { ...this.DEFAULT_SETTINGS.captionScan, ...(storedSettings.captionScan || {}) };
-      settings.gemini = { ...this.DEFAULT_SETTINGS.gemini, ...(storedSettings.gemini || {}) };
+      settings.gemini = this._sanitizeGeminiSettings(storedSettings.gemini);
       settings.stats = this._mergeStats(storedSettings.stats);
       if (storedVersion < this.DEFAULT_SETTINGS.detectorVersion) {
         settings.detectorVersion = this.DEFAULT_SETTINGS.detectorVersion;
@@ -195,7 +195,7 @@ const StorageManager = {
       return {
         ...this.DEFAULT_SETTINGS,
         syntheticKeywords: this.DEFAULT_SETTINGS.aiKeywords,
-        gemini: this.DEFAULT_SETTINGS.gemini,
+        gemini: this._sanitizeGeminiSettings(),
         stats: this._mergeStats()
       };
     }
@@ -206,11 +206,19 @@ const StorageManager = {
    */
   async updateSettings(partial) {
     const current = await this.getSettings();
-    const updated = { ...current, ...partial };
+    const cleanedPartial = this._sanitizeSettingsPartial(partial);
+    const updated = { ...current, ...cleanedPartial };
+    if (cleanedPartial.gemini) {
+      updated.gemini = this._sanitizeGeminiSettings({
+        ...current.gemini,
+        ...cleanedPartial.gemini
+      });
+    }
     const persistableSettings = { ...updated };
     delete persistableSettings.aiToolPatterns;
     delete persistableSettings.childRiskPatterns;
     delete persistableSettings.blockMode;
+    persistableSettings.gemini = this._sanitizeGeminiSettings(persistableSettings.gemini);
     await chrome.storage.local.set({ settings: persistableSettings });
     return updated;
   },
@@ -420,6 +428,25 @@ const StorageManager = {
       bySignal: { ...defaults.bySignal, ...(storedStats.bySignal || {}) },
       byRiskLevel: { ...defaults.byRiskLevel, ...(storedStats.byRiskLevel || {}) },
       byRiskCategory: { ...defaults.byRiskCategory, ...(storedStats.byRiskCategory || {}) }
+    };
+  },
+
+  _sanitizeSettingsPartial(partial = {}) {
+    const sanitized = { ...(partial || {}) };
+    if (sanitized.gemini) {
+      sanitized.gemini = this._sanitizeGeminiSettings(sanitized.gemini);
+    }
+    return sanitized;
+  },
+
+  _sanitizeGeminiSettings(gemini = {}) {
+    const source = { ...(gemini || {}) };
+    const hasApiKey = Boolean(source.hasApiKey || source.apiKey);
+    delete source.apiKey;
+    return {
+      ...this.DEFAULT_SETTINGS.gemini,
+      ...source,
+      hasApiKey
     };
   }
 };

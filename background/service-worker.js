@@ -32,10 +32,11 @@ async function handleMessage(msg, sender) {
       return await whitelistChannel(msg.channel, msg.url);
 
     case 'GET_SETTINGS':
+      await migrateLegacyGeminiSecret();
       return await StorageManager.getSettings();
 
     case 'UPDATE_SETTINGS':
-      return await StorageManager.updateSettings(msg.settings);
+      return await updateSettingsSecure(msg.settings);
 
     case 'VERIFY_PASSWORD':
       const valid = await StorageManager.verifyPassword(msg.password);
@@ -56,6 +57,12 @@ async function handleMessage(msg, sender) {
 
     case 'TEST_GEMINI_KEY':
       return await testGeminiKey(msg);
+
+    case 'SAVE_GEMINI_KEY':
+      return await saveGeminiKey(msg);
+
+    case 'CLEAR_GEMINI_KEY':
+      return await clearGeminiKey();
 
     case 'CLEAR_GEMINI_CACHE':
       return await clearGeminiCache();
@@ -101,6 +108,7 @@ async function getFullStats() {
   const settings = await StorageManager.getSettings();
   const cache = await StorageManager.getVideoCache();
   const geminiCache = await StorageManager.getGeminiCache();
+  const geminiHasApiKey = await hasGeminiApiKey();
   
   const cachedVideos = Object.values(cache);
   const blockedVideos = cachedVideos.filter(v => v.shouldBlock || v.riskLevel === 'block' || v.isAI);
@@ -124,7 +132,7 @@ async function getFullStats() {
       combination: blockedVideos.filter(v => v.method === 'combination').length
     },
     geminiCacheSize: Object.keys(geminiCache).length,
-    geminiEnabled: Boolean(settings.gemini?.enabled && settings.gemini?.apiKey),
+    geminiEnabled: Boolean(settings.gemini?.enabled && geminiHasApiKey),
     statsByContext: settings.stats.byContext || {},
     statsBySignal: settings.stats.bySignal || {},
     statsByRiskLevel: settings.stats.byRiskLevel || {},
@@ -145,8 +153,9 @@ async function handleGeminiClassify(payload = {}) {
   }
 
   const settings = await StorageManager.getSettings();
+  const apiKey = await getGeminiApiKey();
   const geminiSettings = GeminiClassifier.normalizeSettings(
-    settings.gemini,
+    { ...settings.gemini, apiKey },
     payload.detectorVersion || settings.detectorVersion || StorageManager.DEFAULT_SETTINGS.detectorVersion
   );
 
@@ -257,12 +266,13 @@ async function getGeminiCacheBatch(videoIds = []) {
   if (ids.length === 0) return { ok: true, detections: {} };
 
   const settings = await StorageManager.getSettings();
+  const geminiHasApiKey = await hasGeminiApiKey();
   const geminiSettings = GeminiClassifier.normalizeSettings(
     settings.gemini,
     settings.detectorVersion || StorageManager.DEFAULT_SETTINGS.detectorVersion
   );
 
-  if (!geminiSettings.enabled || !geminiSettings.apiKey) {
+  if (!geminiSettings.enabled || !geminiHasApiKey) {
     return { ok: true, detections: {} };
   }
 
@@ -291,9 +301,10 @@ async function getGeminiCacheBatch(videoIds = []) {
 
 async function testGeminiKey(msg = {}) {
   const settings = await StorageManager.getSettings();
+  const apiKey = String(msg.apiKey || '').trim() || await getGeminiApiKey();
   const geminiSettings = GeminiClassifier.normalizeSettings({
     ...(settings.gemini || {}),
-    apiKey: msg.apiKey || settings.gemini?.apiKey || '',
+    apiKey,
     model: msg.model || settings.gemini?.model || GeminiClassifier.DEFAULT_MODEL
   }, settings.detectorVersion || StorageManager.DEFAULT_SETTINGS.detectorVersion);
 
