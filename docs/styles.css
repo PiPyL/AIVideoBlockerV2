@@ -214,6 +214,51 @@ a {
     gap: 0.5rem;
 }
 
+/* Notice Card */
+.notice-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 2.5rem;
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-left: 4px solid var(--primary-blue);
+    box-shadow: var(--shadow-glass);
+    transition: var(--transition);
+}
+
+.notice-card:hover {
+    transform: translateY(-2px) translateX(4px);
+    box-shadow: 0 12px 24px -10px rgba(59, 130, 246, 0.15);
+}
+
+.hero-visual .notice-card {
+    margin-top: 3rem;
+    margin-bottom: 0;
+    transform: rotate(-1deg); /* Slight counter-rotation for visual interest */
+}
+
+.hero-visual .notice-card:hover {
+    transform: translateY(-2px) rotate(0deg);
+}
+
+.notice-icon {
+    flex-shrink: 0;
+    color: var(--primary-blue);
+    margin-top: 0.25rem;
+}
+
+.notice-text p {
+    font-size: 0.95rem !important;
+    color: var(--text-main) !important;
+    margin-bottom: 0 !important;
+    line-height: 1.5 !important;
+}
+
 .icon-small {
     width: 16px;
     height: 16px;
