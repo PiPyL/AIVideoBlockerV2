@@ -4,8 +4,8 @@ SafeKid is an open-source Chrome Extension (Manifest V3) that helps parents prot
 
 [Tiếng Việt](./README.md) | [English](./README_EN.md)
 
-[![GitHub license](https://img.shields.io/github/license/PiPyL/AIVideoBlockerV2)](https://github.com/PiPyL/AIVideoBlockerV2/blob/main/LICENSE)
-[![GitHub release](https://img.shields.io/github/v/release/PiPyL/AIVideoBlockerV2)](https://github.com/PiPyL/AIVideoBlockerV2/releases)
+[![GitHub license](https://img.shields.io/github/license/PiPyL/safekid-extension)](https://github.com/PiPyL/safekid-extension/blob/main/LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/PiPyL/safekid-extension)](https://github.com/PiPyL/safekid-extension/releases)
 
 ## ✨ Key Features
 
@@ -18,7 +18,7 @@ SafeKid is an open-source Chrome Extension (Manifest V3) that helps parents prot
 
 The extension is currently pending approval on the Chrome Web Store. You can install it manually:
 
-1. Download [aivideoblocker-v2.zip](https://github.com/PiPyL/AIVideoBlockerV2/raw/main/aivideoblocker-v2.zip) and extract it.
+1. Download [safekid-extension.zip](https://github.com/PiPyL/safekid-extension/raw/main/safekid-extension.zip) and extract it.
 2. Navigate to `chrome://extensions/` in your Chrome browser.
 3. Enable **Developer mode** (top right corner).
 4. Click **Load unpacked** and select the folder you just extracted.

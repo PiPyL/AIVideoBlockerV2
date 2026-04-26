@@ -106,5 +106,49 @@ function closeInstallModal() {
 document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
         closeInstallModal();
+        closeVideoModal();
     }
 });
+
+/**
+ * Tự động cập nhật link download từ GitHub Releases API (frontend-specialist)
+ * Đảm bảo người dùng luôn tải về bản ZIP mới nhất đã được release.
+ */
+async function updateDownloadLink() {
+    const repo = 'PiPyL/safekid-extension';
+    const downloadBtn = document.getElementById('latest-download-link');
+    
+    if (!downloadBtn) return;
+
+    try {
+        // Gọi GitHub API để lấy thông tin release mới nhất
+        const response = await fetch(`https://api.github.com/repos/${repo}/releases/latest`);
+        
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const data = await response.json();
+        
+        // Tìm file .zip trong danh sách assets của release
+        const zipAsset = data.assets && data.assets.find(asset => asset.name.endsWith('.zip'));
+        
+        if (zipAsset) {
+            downloadBtn.href = zipAsset.browser_download_url;
+            console.log('✅ Đã cập nhật link download: ' + zipAsset.name);
+        } else {
+            // Nếu không tìm thấy file zip trong release, trỏ tới link source code zip của release đó
+            downloadBtn.href = data.zipball_url;
+            console.log('⚠️ Không tìm thấy asset ZIP, sử dụng link source zipball.');
+        }
+    } catch (error) {
+        console.error('❌ Lỗi khi lấy link download mới nhất:', error);
+        // Giữ nguyên link mặc định trong HTML (main branch) làm fallback
+    }
+}
+
+// Chạy khi trang đã sẵn sàng
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateDownloadLink);
+} else {
+    updateDownloadLink();
+}
+
