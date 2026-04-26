@@ -245,11 +245,9 @@ const AIBlocker = {
     content.appendChild(reasons);
 
     const actions = this._createElement('div', `${this.PREFIX}-watch-actions`);
-    const revealButton = this._createElement('button', `${this.PREFIX}-btn-watch-reveal`, options.revealText || 'Hiện video (30 giây)');
-    revealButton.id = options.revealButtonId;
     const backButton = this._createElement('button', `${this.PREFIX}-btn-go-back`, '← Quay lại');
     backButton.id = options.backButtonId;
-    actions.append(revealButton, backButton);
+    actions.appendChild(backButton);
     content.appendChild(actions);
 
     return content;
@@ -292,22 +290,11 @@ const AIBlocker = {
       confidence: detection.confidence,
       method: detection.method,
       reasons: detection.reasons,
-      revealButtonId: 'aivb-reveal-watch',
-      revealText: 'Hiện video (30 giây)',
       backButtonId: 'aivb-go-back'
     }));
 
     player.style.position = 'relative';
     player.appendChild(overlay);
-
-    overlay.querySelector('#aivb-reveal-watch')?.addEventListener('click', () => {
-      this._stopPlaybackGuard('watch', true);
-      overlay.style.display = 'none';
-      setTimeout(() => {
-        overlay.style.display = '';
-        this._startPlaybackGuard('watch');
-      }, 30000);
-    });
 
     overlay.querySelector('#aivb-go-back')?.addEventListener('click', () => {
       window.history.back();
@@ -345,21 +332,11 @@ const AIBlocker = {
       confidence: detection.confidence,
       method: detection.method,
       reasons: detection.reasons,
-      revealButtonId: 'aivb-reveal-shorts',
-      revealText: 'Hiện short (30 giây)',
       backButtonId: 'aivb-go-back-shorts'
     }));
 
     document.body.appendChild(overlay);
 
-    overlay.querySelector('#aivb-reveal-shorts')?.addEventListener('click', () => {
-      this._stopPlaybackGuard('shorts', true);
-      overlay.style.display = 'none';
-      setTimeout(() => {
-        overlay.style.display = '';
-        this._startPlaybackGuard('shorts');
-      }, 30000);
-    });
     overlay.querySelector('#aivb-go-back-shorts')?.addEventListener('click', () => {
       window.history.back();
     });
