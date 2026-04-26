@@ -7,7 +7,7 @@ const StorageManager = {
   /** Default settings cho extension */
   DEFAULT_SETTINGS: {
     enabled: true,
-    sensitivity: 'medium', // 'low' | 'medium' | 'high'
+    sensitivity: 'high', // 'low' | 'medium' | 'high'
     detectionProfile: 'recall-first', // 'balanced' | 'recall-first'
     detectorVersion: 7,
     parentalPassword: '',
