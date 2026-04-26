@@ -5,7 +5,7 @@
  */
 
 const AIDetector = {
-  DETECTOR_VERSION: 3,
+  DETECTOR_VERSION: 4,
 
   /**
    * Kết quả phát hiện
@@ -84,14 +84,21 @@ const AIDetector = {
     if (!settings?.enabled) return this._emptyResult();
 
     const activeShort = document.querySelector('ytd-reel-video-renderer[is-active], ytd-reel-video-renderer');
+    const shortsRoot = activeShort?.closest('ytd-shorts, #shorts-container') ||
+      document.querySelector('ytd-shorts, #shorts-container') ||
+      activeShort ||
+      document.body;
     const titleEl = activeShort?.querySelector('#shorts-title, h2, #video-title, yt-formatted-string') ||
-      document.querySelector('h2#shorts-video-title, #shorts-title, ytd-reel-player-header-renderer h2');
-    const channelEl = activeShort?.querySelector('ytd-channel-name a, #channel-name a') ||
-      document.querySelector('ytd-reel-player-header-renderer ytd-channel-name a');
+      shortsRoot.querySelector('h2#shorts-video-title, #shorts-title, ytd-reel-player-header-renderer h2, ytd-reel-player-overlay-renderer h2, #description h2') ||
+      document.querySelector('h2#shorts-video-title, #shorts-title, ytd-reel-player-header-renderer h2, ytd-reel-player-overlay-renderer h2');
+    const channelEl = activeShort?.querySelector('ytd-channel-name a, #channel-name a, a[href^="/@"]') ||
+      shortsRoot.querySelector('ytd-reel-player-header-renderer ytd-channel-name a, ytd-reel-player-header-renderer a[href^="/@"], ytd-reel-player-overlay-renderer a[href^="/@"]') ||
+      document.querySelector('ytd-reel-player-header-renderer ytd-channel-name a, ytd-reel-player-header-renderer a[href^="/@"]');
     const descEl = activeShort?.querySelector('#description, #description-text') ||
+      shortsRoot.querySelector('ytd-reel-player-overlay-renderer #description, #description') ||
       document.querySelector('ytd-reel-player-overlay-renderer #description, #description');
 
-    const shortsSignalsText = this._extractShortsSignalsText(activeShort);
+    const shortsSignalsText = this._extractShortsSignalsText(shortsRoot);
     const titleFallback = this._getShortsTitleFallback();
     const channelFallback = this._getShortsChannelFallback();
     const shortsInfo = {
@@ -103,7 +110,7 @@ const AIDetector = {
       badges: []
     };
     const normalizedInfo = this._normalizeVideoInfo(shortsInfo);
-    const signals = this._detectSignals(activeShort || document.body, normalizedInfo, settings, 'watch');
+    const signals = this._detectSignals(shortsRoot, normalizedInfo, settings, 'watch');
     const shortTagSignal = this._checkShortsHashtags(normalizedInfo);
     if (shortTagSignal) signals.push(shortTagSignal);
     return this._scoreSignals(signals, settings, normalizedInfo);
@@ -115,9 +122,32 @@ const AIDetector = {
    * Trích xuất thông tin từ video element
    */
   _extractVideoInfo(el) {
-    const titleEl = el.querySelector('#video-title, a#video-title-link, h3 a, #shorts-title, h2, yt-formatted-string');
-    const channelEl = el.querySelector('#channel-name a, ytd-channel-name a, .ytd-channel-name a');
-    const descEl = el.querySelector('#description-text, .metadata-snippet-text');
+    const titleEl = this._queryFirst(el, [
+      '#video-title',
+      'a#video-title',
+      'a#video-title-link',
+      'h3 a',
+      'h3',
+      '.ytLockupMetadataViewModelTitle',
+      'a.ytLockupMetadataViewModelTitle',
+      '.shortsLockupViewModelHostMetadataTitle',
+      'a.shortsLockupViewModelHostOutsideMetadataEndpoint',
+      '#shorts-title',
+      'h2'
+    ]);
+    const channelEl = this._queryFirst(el, [
+      '#channel-name a',
+      'ytd-channel-name a',
+      '.ytd-channel-name a',
+      'a[href^="/@"]',
+      'a[href*="/@"]'
+    ]);
+    const descEl = this._queryFirst(el, [
+      '#description-text',
+      '.metadata-snippet-text',
+      'yt-content-metadata-view-model',
+      'yt-lockup-metadata-view-model'
+    ]);
     const badgesEl = el.querySelectorAll('.badge-style-type-simple, ytd-badge-supported-renderer');
 
     const title = (titleEl?.textContent || '').trim().toLowerCase();
@@ -126,7 +156,14 @@ const AIDetector = {
     const description = (descEl?.textContent || '').trim().toLowerCase();
 
     // Extract video ID from link
-    const linkEl = el.querySelector('a#thumbnail, a.ytd-thumbnail, a[href*="/shorts/"]');
+    const linkEl = this._queryFirst(el, [
+      'a#thumbnail',
+      'a.ytd-thumbnail',
+      'a.ytLockupViewModelContentImage',
+      'a.shortsLockupViewModelHostEndpoint.reel-item-endpoint',
+      'a[href*="/watch"]',
+      'a[href*="/shorts/"]'
+    ]);
     const href = linkEl?.href || '';
     const videoIdMatch = href.match(/[?&]v=([^&]+)/);
     const shortsMatch = href.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
@@ -251,10 +288,19 @@ const AIDetector = {
       '.ytd-info-panel-container-renderer',
       'ytd-metadata-row-renderer',
       'ytd-badge-supported-renderer',
+      'ytd-reel-player-overlay-renderer',
+      'ytd-reel-player-header-renderer',
+      'button[aria-label]',
+      '[title]',
+      '[aria-label]',
       'yt-formatted-string'
     ].join(','));
     for (const label of labels) {
-      const text = (label.textContent || '').replace(/\s+/g, ' ').trim();
+      const text = [
+        label.textContent,
+        label.getAttribute?.('aria-label'),
+        label.getAttribute?.('title')
+      ].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
       if (disclosurePattern.test(text)) {
         result.found = true;
         result.labelText = text;
@@ -602,9 +648,22 @@ const AIDetector = {
   },
 
   _getShortsChannelFallback() {
+    const shortsRoot = document.querySelector('ytd-shorts, #shorts-container');
+    const channelLink = shortsRoot?.querySelector('a[href^="/@"], a[href*="/@"]');
+    const channelText = channelLink?.textContent?.trim();
+    if (channelText) return channelText;
+
     const canonical = document.querySelector('link[rel="canonical"]')?.href || '';
     const match = canonical.match(/youtube\.com\/@([^/?]+)/i);
     return match ? `@${match[1]}` : '';
+  },
+
+  _queryFirst(root, selectors = []) {
+    for (const selector of selectors) {
+      const node = root?.querySelector?.(selector);
+      if (node) return node;
+    }
+    return null;
   },
 
   _emptyResult() {

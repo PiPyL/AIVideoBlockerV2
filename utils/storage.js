@@ -8,9 +8,8 @@ const StorageManager = {
   DEFAULT_SETTINGS: {
     enabled: true,
     sensitivity: 'medium', // 'low' | 'medium' | 'high'
-    blockMode: 'blur',     // 'blur' | 'hide' | 'badge'
     detectionProfile: 'recall-first', // 'balanced' | 'recall-first'
-    detectorVersion: 3,
+    detectorVersion: 4,
     parentalPassword: '',
     isLocked: false,
     whitelistedChannels: [],
@@ -49,6 +48,7 @@ const StorageManager = {
         'tạo bởi ai', 'video ai', 'ai tạo',
         'sora', 'kling ai', 'runway gen', 'pika labs', 'haiper',
         'luma dream machine', 'minimax video', 'vidu ai',
+        'veo 3', 'google veo', 'hailuo ai', 'seedance',
         'synthesia', 'heygen', 'd-id', 'colossyan'
       ],
       medium: [
@@ -56,6 +56,7 @@ const StorageManager = {
         'deepfake', 'synthetic media', 'neural rendering',
         'text to video', 'image to video', 'ai music video',
         'ai cartoon', 'ai hoạt hình', 'ai phim',
+        'higgsfield ai', 'runway gen-3', 'kling 2', 'wan 2.1', 'wan 2.2',
         '#aiart', '#aivideo', '#aigeneratedcontent', '#aislop'
       ],
       low: [
@@ -72,6 +73,7 @@ const StorageManager = {
       /tạo\s*(bằng|bởi|từ)\s*(ai|trí tuệ nhân tạo)/i,
       /#(aigenerated|aiart|aivideo|aislop|aicontent)/i,
       /\b(kling|sora|veo|runway)\s*(1(\.5)?|2|3)?\b/i,
+      /\b(google\s*veo|veo\s*3|hailuo\s*ai|seedance|higgsfield\s*ai|wan\s*2(\.\d)?)\b/i,
       /\b(prompt\s*to\s*video|text\s*to\s*video|image\s*to\s*video)\b/i,
       /\b(100%\s*ai|fully\s*ai|ai\s*only)\b/i
     ]
@@ -86,6 +88,7 @@ const StorageManager = {
       const storedSettings = data.settings || {};
       const storedVersion = Number(storedSettings.detectorVersion || 0);
       const settings = { ...this.DEFAULT_SETTINGS, ...storedSettings };
+      delete settings.blockMode;
       settings.aiToolPatterns = this.DEFAULT_SETTINGS.aiToolPatterns;
       if (storedVersion < this.DEFAULT_SETTINGS.detectorVersion) {
         settings.detectorVersion = this.DEFAULT_SETTINGS.detectorVersion;
@@ -106,6 +109,7 @@ const StorageManager = {
     const updated = { ...current, ...partial };
     const persistableSettings = { ...updated };
     delete persistableSettings.aiToolPatterns;
+    delete persistableSettings.blockMode;
     await chrome.storage.local.set({ settings: persistableSettings });
     return updated;
   },

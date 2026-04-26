@@ -1,6 +1,6 @@
 /* ============================================
    AI Video Blocker — Injected Styles
-   Styles cho blur, hide, badge, overlay
+   Styles cho blur overlay
    ============================================ */
 
 /* --- BLUR MODE --- */
@@ -16,9 +16,76 @@
   transition: filter 0.3s ease;
 }
 
-/* --- HIDE MODE --- */
-.aivb-hidden {
-  display: none !important;
+/* --- PREVIEW/TUMBNAIL OVERLAY --- */
+.aivb-preview-host {
+  position: relative !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+  border-radius: 8px !important;
+}
+
+.aivb-preview-host > *:not(.aivb-preview-overlay) {
+  filter: blur(14px) grayscale(0.75) brightness(0.55) !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.aivb-preview-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 2147483646 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 8px !important;
+  box-sizing: border-box !important;
+  background: rgba(8, 15, 28, 0.92) !important;
+  color: #fff !important;
+  cursor: default !important;
+  pointer-events: auto !important;
+  text-align: center !important;
+}
+
+.aivb-preview-content {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  width: 100% !important;
+  max-width: 220px !important;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+}
+
+.aivb-preview-title {
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+  color: #fecaca !important;
+}
+
+.aivb-preview-meta,
+.aivb-preview-reason {
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
+}
+
+.aivb-preview-meta {
+  color: #cbd5e1 !important;
+}
+
+.aivb-preview-reason {
+  color: #fca5a5 !important;
+}
+
+.aivb-preview-pulse {
+  animation: aivb-previewPulse 0.32s ease !important;
 }
 
 /* --- OVERLAY (Blur mode) --- */
@@ -31,7 +98,7 @@
   justify-content: center !important;
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.88)) !important;
   backdrop-filter: blur(8px) !important;
-  border-radius: 12px !important;
+  border-radius: 8px !important;
   border: 1px solid rgba(239, 68, 68, 0.3) !important;
   cursor: default !important;
   animation: aivb-fadeIn 0.3s ease !important;
@@ -58,7 +125,7 @@
   font-size: 13px !important;
   font-weight: 700 !important;
   color: #f87171 !important;
-  letter-spacing: 0.3px !important;
+  letter-spacing: 0 !important;
 }
 
 .aivb-overlay-subtitle {
@@ -129,34 +196,6 @@
   white-space: nowrap !important;
 }
 
-/* --- BADGE MODE --- */
-.aivb-badge {
-  position: absolute !important;
-  top: 8px !important;
-  right: 8px !important;
-  z-index: 100 !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 3px !important;
-  padding: 3px 8px !important;
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9)) !important;
-  border-radius: 6px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-  animation: aivb-fadeIn 0.3s ease !important;
-}
-
-.aivb-badge-icon {
-  font-size: 12px !important;
-  line-height: 1 !important;
-}
-
-.aivb-badge-text {
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  color: white !important;
-}
-
 /* --- WATCH PAGE OVERLAY --- */
 .aivb-watch-overlay {
   position: absolute !important;
@@ -174,21 +213,6 @@
   position: fixed !important;
   inset: 0 !important;
   z-index: 2147483647 !important;
-}
-
-.aivb-shorts-badge {
-  position: fixed !important;
-  top: 16px !important;
-  right: 16px !important;
-  z-index: 2147483647 !important;
-  padding: 8px 12px !important;
-  border-radius: 8px !important;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  color: #ffffff !important;
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(220, 38, 38, 0.95)) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
 }
 
 .aivb-watch-overlay-content {
@@ -292,4 +316,9 @@
 @keyframes aivb-pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.1); }
+}
+
+@keyframes aivb-previewPulse {
+  0%, 100% { box-shadow: inset 0 0 0 0 rgba(248, 113, 113, 0); }
+  50% { box-shadow: inset 0 0 0 4px rgba(248, 113, 113, 0.82); }
 }

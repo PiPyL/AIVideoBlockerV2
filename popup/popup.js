@@ -85,10 +85,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const sensRadio = document.querySelector(`input[name="sensitivity"][value="${s.sensitivity}"]`);
     if (sensRadio) sensRadio.checked = true;
 
-    // Block mode
-    const modeRadio = document.querySelector(`input[name="blockMode"][value="${s.blockMode}"]`);
-    if (modeRadio) modeRadio.checked = true;
-
     // Detection profile
     const profileRadio = document.querySelector(`input[name="detectionProfile"][value="${s.detectionProfile || 'recall-first'}"]`);
     if (profileRadio) profileRadio.checked = true;
@@ -137,13 +133,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   $$('input[name="sensitivity"]').forEach(radio => {
     radio.addEventListener('change', async () => {
       await updateSetting({ sensitivity: radio.value });
-    });
-  });
-
-  // Block mode
-  $$('input[name="blockMode"]').forEach(radio => {
-    radio.addEventListener('change', async () => {
-      await updateSetting({ blockMode: radio.value });
     });
   });
 

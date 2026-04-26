@@ -1,6 +1,6 @@
 /**
  * AI Video Blocker — Blocker Module
- * Xử lý ẩn/blur/badge video AI trên YouTube DOM
+ * Xử lý phủ mờ video AI trên YouTube DOM
  */
 
 const AIBlocker = {
@@ -8,15 +8,16 @@ const AIBlocker = {
   PREFIX: 'aivb',
   playbackGuards: {},
   mediaState: new WeakMap(),
+  clickGuards: new WeakMap(),
+  previewTargets: new WeakMap(),
   playerState: null,
 
   /**
    * Áp dụng blocking cho video element
    * @param {HTMLElement} el - Video element
    * @param {DetectionResult} detection
-   * @param {string} blockMode - 'blur' | 'hide' | 'badge'
    */
-  blockVideo(el, detection, blockMode = 'blur') {
+  blockVideo(el, detection) {
     if (!el || el.dataset.aivbProcessed === 'true') return;
 
     el.dataset.aivbProcessed = 'true';
@@ -27,102 +28,45 @@ const AIBlocker = {
     if (!detection.isAI) return;
 
     el.classList.add(`${this.PREFIX}-detected`);
-
-    switch (blockMode) {
-      case 'hide':
-        this._applyHide(el);
-        break;
-      case 'badge':
-        this._applyBadge(el, detection);
-        break;
-      case 'blur':
-      default:
-        this._applyBlur(el, detection);
-        break;
-    }
+    this._applyPreviewOverlay(el, detection);
   },
 
   /**
-   * Mode: Blur — Làm mờ video + overlay cảnh báo
+   * Phủ đúng vùng preview/thumbnail của card YouTube.
    */
-  _applyBlur(el, detection) {
-    el.classList.add(`${this.PREFIX}-blur`);
+  _applyPreviewOverlay(el, detection) {
+    const previewHost = this._findPreviewHost(el) || el;
+    if (previewHost.querySelector(`.${this.PREFIX}-preview-overlay`)) {
+      this._bindNavigationGuard(el);
+      return;
+    }
 
-    // Tạo overlay cảnh báo
+    previewHost.classList.add(`${this.PREFIX}-preview-host`);
+    previewHost.dataset.aivbPreviewBlocked = 'true';
+
     const overlay = document.createElement('div');
-    overlay.className = `${this.PREFIX}-overlay`;
-    overlay.innerHTML = `
-      <div class="${this.PREFIX}-overlay-content">
-        <div class="${this.PREFIX}-shield-icon">🛡️</div>
-        <div class="${this.PREFIX}-overlay-title">Video AI Đã Bị Chặn</div>
-        <div class="${this.PREFIX}-overlay-subtitle">
-          Độ tin cậy: ${Math.round(detection.confidence * 100)}% • ${this._getMethodLabel(detection.method)}
-        </div>
-        <div class="${this.PREFIX}-overlay-actions">
-          <button class="${this.PREFIX}-btn-reveal" data-action="reveal">
-            👁️ Hiện tạm thời
-          </button>
-          <button class="${this.PREFIX}-btn-whitelist" data-action="whitelist">
-            ✅ Cho phép channel
-          </button>
-        </div>
-        <div class="${this.PREFIX}-overlay-reasons">
-          ${detection.reasons.map(r => `<span class="${this.PREFIX}-reason-tag">${this._escapeHtml(r)}</span>`).join('')}
-        </div>
-      </div>
-    `;
+    overlay.id = this._createOverlayId('aivb-preview-overlay', el, detection);
+    overlay.className = `${this.PREFIX}-preview-overlay`;
+    overlay.setAttribute('role', 'note');
+    overlay.setAttribute('aria-label', 'Video AI đã bị chặn');
+    const primaryReason = detection.reasons?.[0] || this._getMethodLabel(detection.method);
+    const content = this._createElement('div', `${this.PREFIX}-preview-content`);
+    content.append(
+      this._createElement('div', `${this.PREFIX}-preview-title`, 'Video AI đã bị chặn'),
+      this._createElement('div', `${this.PREFIX}-preview-meta`, `${Math.round(detection.confidence * 100)}% • ${this._getMethodLabel(detection.method)}`),
+      this._createElement('div', `${this.PREFIX}-preview-reason`, primaryReason)
+    );
+    overlay.appendChild(content);
 
-	    // Event handlers
-	    overlay.addEventListener('click', (e) => {
-	      if (e.target.closest('button')) return;
-	      e.preventDefault();
-	      e.stopPropagation();
-	    }, true);
-
-	    overlay.querySelector('[data-action="reveal"]')?.addEventListener('click', (e) => {
-	      e.preventDefault();
-	      e.stopPropagation();
-      this._revealTemporarily(el, overlay);
-    });
-
-    overlay.querySelector('[data-action="whitelist"]')?.addEventListener('click', (e) => {
+    overlay.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this._requestWhitelist(el);
-    });
+      e.stopImmediatePropagation();
+    }, true);
 
-    el.style.position = 'relative';
-    el.appendChild(overlay);
-  },
-
-  /**
-   * Mode: Hide — Ẩn hoàn toàn
-   */
-  _applyHide(el) {
-    el.classList.add(`${this.PREFIX}-hidden`);
-  },
-
-  /**
-   * Mode: Badge — Chỉ gắn nhãn cảnh báo
-   */
-  _applyBadge(el, detection) {
-    const badge = document.createElement('div');
-    badge.className = `${this.PREFIX}-badge`;
-    badge.innerHTML = `
-      <span class="${this.PREFIX}-badge-icon">🤖</span>
-      <span class="${this.PREFIX}-badge-text">AI ${Math.round(detection.confidence * 100)}%</span>
-    `;
-    badge.title = detection.reasons.join('\n');
-
-    // Tìm thumbnail container để gắn badge
-    const thumbnail = el.querySelector('#thumbnail, ytd-thumbnail, .ytd-thumbnail');
-    if (thumbnail) {
-      thumbnail.style.position = 'relative';
-      thumbnail.appendChild(badge);
-    } else {
-      el.style.position = 'relative';
-      el.appendChild(badge);
-    }
+    previewHost.appendChild(overlay);
+    this.previewTargets.set(el, previewHost);
+    this._bindNavigationGuard(el);
   },
 
   /**
@@ -142,7 +86,7 @@ const AIBlocker = {
    * Yêu cầu whitelist channel (gửi message tới service worker)
    */
   _requestWhitelist(el) {
-    const channelEl = el.querySelector('#channel-name a, ytd-channel-name a');
+    const channelEl = el.querySelector('#channel-name a, ytd-channel-name a, a[href^="/@"], a[href*="/@"]');
     const channelName = channelEl?.textContent?.trim();
     const channelUrl = channelEl?.href;
 
@@ -162,15 +106,160 @@ const AIBlocker = {
    */
   unblockVideo(el) {
     if (!el) return;
-    el.classList.remove(`${this.PREFIX}-detected`, `${this.PREFIX}-blur`, `${this.PREFIX}-hidden`);
+    el.classList.remove(`${this.PREFIX}-detected`, `${this.PREFIX}-blur`);
     el.dataset.aivbProcessed = 'false';
     el.dataset.aivbIsAi = 'false';
+
+    const previewHost = this.previewTargets.get(el) || el.querySelector(`.${this.PREFIX}-preview-host`);
+    if (previewHost) {
+      previewHost.classList.remove(`${this.PREFIX}-preview-host`);
+      delete previewHost.dataset.aivbPreviewBlocked;
+      previewHost.querySelectorAll(`.${this.PREFIX}-preview-overlay`).forEach((node) => node.remove());
+    }
+    el.querySelectorAll(`.${this.PREFIX}-preview-overlay`).forEach((node) => node.remove());
+    this.previewTargets.delete(el);
+    this._unbindNavigationGuard(el);
 
     const overlay = el.querySelector(`.${this.PREFIX}-overlay`);
     if (overlay) overlay.remove();
 
-    const badge = el.querySelector(`.${this.PREFIX}-badge`);
-    if (badge) badge.remove();
+    // Cleanup legacy badge nodes from older versions.
+    const legacyBadge = el.querySelector(`.${this.PREFIX}-badge`);
+    if (legacyBadge) legacyBadge.remove();
+
+  },
+
+  _findPreviewHost(el) {
+    const selectors = [
+      'ytd-thumbnail',
+      'yt-thumbnail-view-model',
+      '.ytLockupViewModelContentImage yt-thumbnail-view-model',
+      '.shortsLockupViewModelHostEndpoint yt-thumbnail-view-model',
+      '.shortsLockupViewModelHostThumbnailContainer',
+      'a#thumbnail',
+      '#thumbnail'
+    ];
+
+    for (const selector of selectors) {
+      const candidate = el.querySelector?.(selector);
+      const host = this._normalizePreviewHost(candidate);
+      if (host) return host;
+    }
+
+    return null;
+  },
+
+  _normalizePreviewHost(candidate) {
+    if (!candidate) return null;
+    if (candidate.matches?.('a') && candidate.querySelector?.('yt-thumbnail-view-model')) {
+      return candidate.querySelector('yt-thumbnail-view-model');
+    }
+    if (candidate.matches?.('a#thumbnail')) {
+      return candidate.closest('ytd-thumbnail') || candidate;
+    }
+    return candidate;
+  },
+
+  _bindNavigationGuard(el) {
+    if (!el || this.clickGuards.has(el)) return;
+
+    const guard = (event) => {
+      if (event.target?.closest?.(`.${this.PREFIX}-preview-overlay`)) {
+        this._blockCardEvent(event, el);
+        return;
+      }
+
+      const link = event.target?.closest?.('a[href]');
+      if (link && this._isVideoNavigationHref(link.getAttribute('href') || link.href || '')) {
+        this._blockCardEvent(event, el);
+      }
+    };
+
+    el.addEventListener('click', guard, true);
+    el.addEventListener('auxclick', guard, true);
+    this.clickGuards.set(el, guard);
+  },
+
+  _unbindNavigationGuard(el) {
+    const guard = this.clickGuards.get(el);
+    if (!guard) return;
+
+    el.removeEventListener('click', guard, true);
+    el.removeEventListener('auxclick', guard, true);
+    this.clickGuards.delete(el);
+  },
+
+  _blockCardEvent(event, el) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    this._flashPreviewOverlay(el);
+  },
+
+  _isVideoNavigationHref(href = '') {
+    return /(^|\/)watch\?/.test(href) ||
+      /[?&]v=[a-zA-Z0-9_-]{11}/.test(href) ||
+      /\/shorts\/[a-zA-Z0-9_-]{11}/.test(href);
+  },
+
+  _flashPreviewOverlay(el) {
+    const previewHost = this.previewTargets.get(el) || el.querySelector(`.${this.PREFIX}-preview-host`);
+    const overlay = previewHost?.querySelector(`.${this.PREFIX}-preview-overlay`);
+    if (!overlay) return;
+
+    overlay.classList.remove(`${this.PREFIX}-preview-pulse`);
+    // Force reflow so repeated blocked clicks replay the pulse.
+    void overlay.offsetWidth;
+    overlay.classList.add(`${this.PREFIX}-preview-pulse`);
+  },
+
+  _createOverlayId(prefix, el, detection = {}) {
+    const videoId = detection.videoId || this._getVideoIdFromElement(el) || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const safeId = videoId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48) || 'video';
+    return `${prefix}-${safeId}-${Math.random().toString(36).slice(2, 8)}`;
+  },
+
+  _getVideoIdFromElement(el) {
+    const link = el?.querySelector?.('a[href*="/watch"], a[href*="/shorts/"]');
+    const href = link?.href || '';
+    const watchMatch = href.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+    if (watchMatch) return watchMatch[1];
+
+    const shortsMatch = href.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
+    return shortsMatch ? shortsMatch[1] : '';
+  },
+
+  _createPlaybackOverlayContent(options = {}) {
+    const content = this._createElement('div', `${this.PREFIX}-watch-overlay-content`);
+    content.append(
+      this._createElement('div', `${this.PREFIX}-shield-icon-large`, '🛡️'),
+      this._createElement('h2', '', options.title || 'Video AI Đã Bị Chặn'),
+      this._createElement('p', '', options.description || 'Nội dung này được phát hiện là video AI'),
+      this._createElement('p', `${this.PREFIX}-confidence-text`, `Độ tin cậy: ${Math.round((options.confidence || 0) * 100)}% • ${this._getMethodLabel(options.method)}`)
+    );
+
+    const reasons = this._createElement('div', `${this.PREFIX}-watch-reasons`);
+    (options.reasons || []).forEach((reason) => {
+      reasons.appendChild(this._createElement('div', `${this.PREFIX}-reason-item`, `• ${reason}`));
+    });
+    content.appendChild(reasons);
+
+    const actions = this._createElement('div', `${this.PREFIX}-watch-actions`);
+    const revealButton = this._createElement('button', `${this.PREFIX}-btn-watch-reveal`, options.revealText || 'Hiện video (30 giây)');
+    revealButton.id = options.revealButtonId;
+    const backButton = this._createElement('button', `${this.PREFIX}-btn-go-back`, '← Quay lại');
+    backButton.id = options.backButtonId;
+    actions.append(revealButton, backButton);
+    content.appendChild(actions);
+
+    return content;
+  },
+
+  _createElement(tagName, className = '', text = '') {
+    const node = document.createElement(tagName);
+    if (className) node.className = className;
+    if (text) node.textContent = text;
+    return node;
   },
 
   /**
@@ -197,27 +286,16 @@ const AIBlocker = {
 
     const overlay = document.createElement('div');
     overlay.className = `${this.PREFIX}-watch-overlay`;
-    overlay.innerHTML = `
-      <div class="${this.PREFIX}-watch-overlay-content">
-        <div class="${this.PREFIX}-shield-icon-large">🛡️</div>
-        <h2>Video AI Đã Bị Chặn</h2>
-        <p>Video này được phát hiện là nội dung tạo bởi AI</p>
-        <p class="${this.PREFIX}-confidence-text">
-          Độ tin cậy: ${Math.round(detection.confidence * 100)}% • ${this._getMethodLabel(detection.method)}
-        </p>
-        <div class="${this.PREFIX}-watch-reasons">
-          ${detection.reasons.map(r => `<div class="${this.PREFIX}-reason-item">• ${this._escapeHtml(r)}</div>`).join('')}
-        </div>
-        <div class="${this.PREFIX}-watch-actions">
-          <button class="${this.PREFIX}-btn-watch-reveal" id="aivb-reveal-watch">
-            👁️ Hiện video (30 giây)
-          </button>
-          <button class="${this.PREFIX}-btn-go-back" id="aivb-go-back">
-            ← Quay lại
-          </button>
-        </div>
-      </div>
-    `;
+    overlay.appendChild(this._createPlaybackOverlayContent({
+      title: 'Video AI Đã Bị Chặn',
+      description: 'Video này được phát hiện là nội dung tạo bởi AI',
+      confidence: detection.confidence,
+      method: detection.method,
+      reasons: detection.reasons,
+      revealButtonId: 'aivb-reveal-watch',
+      revealText: 'Hiện video (30 giây)',
+      backButtonId: 'aivb-go-back'
+    }));
 
     player.style.position = 'relative';
     player.appendChild(overlay);
@@ -239,11 +317,10 @@ const AIBlocker = {
   /**
    * Chặn video trên Shorts page
    */
-  blockShortsPage(detection, blockMode = 'blur') {
+  blockShortsPage(detection) {
     const videoId = detection?.videoId || this._getCurrentVideoId();
-    const existingMode = document.body.dataset.aivbShortsBlockMode;
     const existingVideoId = document.body.dataset.aivbShortsVideoId;
-    if (existingVideoId === videoId && existingMode === blockMode) {
+    if (existingVideoId === videoId) {
       this._startPlaybackGuard('shorts');
       return;
     }
@@ -252,52 +329,26 @@ const AIBlocker = {
 
     document.body.dataset.aivbShortsBlocked = 'true';
     document.body.dataset.aivbShortsVideoId = videoId;
-    document.body.dataset.aivbShortsBlockMode = blockMode;
     this._startPlaybackGuard('shorts');
 
     const activeShort = document.querySelector('ytd-reel-video-renderer[is-active], ytd-reel-video-renderer, ytd-shorts');
     if (activeShort) {
-      activeShort.classList.remove(`${this.PREFIX}-hidden`, `${this.PREFIX}-blur`);
+      activeShort.classList.remove(`${this.PREFIX}-blur`);
     }
     document.querySelectorAll(`.${this.PREFIX}-shorts-overlay, .${this.PREFIX}-shorts-badge`).forEach((node) => node.remove());
 
-    if (blockMode === 'badge') {
-      const badge = document.createElement('div');
-      badge.className = `${this.PREFIX}-shorts-badge`;
-      badge.textContent = `🤖 AI ${Math.round(detection.confidence * 100)}%`;
-      badge.title = detection.reasons.join('\n');
-      document.body.appendChild(badge);
-      return;
-    }
-
-    if (blockMode === 'hide') {
-      if (activeShort) activeShort.classList.add(`${this.PREFIX}-hidden`);
-      return;
-    }
-
     const overlay = document.createElement('div');
     overlay.className = `${this.PREFIX}-watch-overlay ${this.PREFIX}-shorts-overlay`;
-    overlay.innerHTML = `
-      <div class="${this.PREFIX}-watch-overlay-content">
-        <div class="${this.PREFIX}-shield-icon-large">🛡️</div>
-        <h2>Short AI Đã Bị Chặn</h2>
-        <p>Short này có dấu hiệu nội dung tạo bởi AI</p>
-        <p class="${this.PREFIX}-confidence-text">
-          Độ tin cậy: ${Math.round(detection.confidence * 100)}% • ${this._getMethodLabel(detection.method)}
-        </p>
-        <div class="${this.PREFIX}-watch-reasons">
-          ${detection.reasons.map(r => `<div class="${this.PREFIX}-reason-item">• ${this._escapeHtml(r)}</div>`).join('')}
-        </div>
-        <div class="${this.PREFIX}-watch-actions">
-          <button class="${this.PREFIX}-btn-watch-reveal" id="aivb-reveal-shorts">
-            👁️ Hiện short (30 giây)
-          </button>
-          <button class="${this.PREFIX}-btn-go-back" id="aivb-go-back-shorts">
-            ← Quay lại
-          </button>
-        </div>
-      </div>
-    `;
+    overlay.appendChild(this._createPlaybackOverlayContent({
+      title: 'Short AI Đã Bị Chặn',
+      description: 'Short này có dấu hiệu nội dung tạo bởi AI',
+      confidence: detection.confidence,
+      method: detection.method,
+      reasons: detection.reasons,
+      revealButtonId: 'aivb-reveal-shorts',
+      revealText: 'Hiện short (30 giây)',
+      backButtonId: 'aivb-go-back-shorts'
+    }));
 
     document.body.appendChild(overlay);
 
@@ -332,14 +383,13 @@ const AIBlocker = {
   unblockShortsPage(options = {}) {
     const { restoreMedia = true } = options;
     this._stopPlaybackGuard('shorts', restoreMedia);
-    document.querySelectorAll(`.${this.PREFIX}-shorts-overlay, .${this.PREFIX}-shorts-badge`).forEach((node) => node.remove());
+    document.querySelectorAll(`.${this.PREFIX}-shorts-overlay`).forEach((node) => node.remove());
     document.querySelectorAll('ytd-reel-video-renderer, ytd-shorts').forEach((node) => {
-      node.classList.remove(`${this.PREFIX}-hidden`, `${this.PREFIX}-blur`);
+      node.classList.remove(`${this.PREFIX}-blur`);
     });
 
     delete document.body.dataset.aivbShortsBlocked;
     delete document.body.dataset.aivbShortsVideoId;
-    delete document.body.dataset.aivbShortsBlockMode;
   },
 
   resetPageBlocks(options = {}) {

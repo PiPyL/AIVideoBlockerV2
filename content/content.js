@@ -111,7 +111,9 @@
       'ytd-video-renderer',               // Search results
       'ytd-grid-video-renderer',           // Channel videos
       'ytd-compact-video-renderer',        // Sidebar recommendations
-      'ytd-reel-item-renderer'             // Shorts
+      'ytd-reel-item-renderer',            // Legacy Shorts shelf
+      'ytm-shorts-lockup-view-model',      // Current Shorts shelf/search cards
+      'yt-lockup-view-model'               // Current watch recommendations
     ];
 
     const videoElements = document.querySelectorAll(selectors.join(','));
@@ -124,6 +126,8 @@
     const detectionSignature = getDetectionSignature(settings, detectorVersion);
 
     for (const el of videoElements) {
+      if (isAggregateVideoContainer(el)) continue;
+
       if (el.dataset.aivbProcessed === 'true') {
         if (!force) continue;
         AIBlocker.unblockVideo(el);
@@ -131,7 +135,7 @@
       scannedCount++;
 
       // Kiểm tra whitelist
-      const channelEl = el.querySelector('#channel-name a, ytd-channel-name a');
+      const channelEl = el.querySelector('#channel-name a, ytd-channel-name a, a[href^="/@"], a[href*="/@"]');
       const channelName = channelEl?.textContent?.trim() || '';
       const channelPolicy = getChannelPolicy(channelName);
       if (channelPolicy === 'whitelist') {
@@ -143,7 +147,7 @@
       // Kiểm tra blacklist (auto-block)
       if (channelPolicy === 'blacklist') {
         const forceResult = createChannelOverrideResult(channelName, 'Channel trong blacklist');
-        AIBlocker.blockVideo(el, forceResult, settings.blockMode);
+        AIBlocker.blockVideo(el, forceResult);
         blockedCount++;
         continue;
       }
@@ -157,7 +161,7 @@
             cached.detectionSignature === detectionSignature;
           if (cacheValid && Date.now() - cached.timestamp < 24 * 60 * 60 * 1000) { // 24h cache
             if (cached.isAI) {
-              AIBlocker.blockVideo(el, cached, settings.blockMode);
+              AIBlocker.blockVideo(el, cached);
               blockedCount++;
               detectedMethodCounts[cached.method] = (detectedMethodCounts[cached.method] || 0) + 1;
               mergeSignalCounts(detectedSignalCounts, cached.signalCounts);
@@ -183,7 +187,7 @@
       }
 
       if (detection.isAI) {
-        AIBlocker.blockVideo(el, detection, settings.blockMode);
+        AIBlocker.blockVideo(el, detection);
         blockedCount++;
         detectedMethodCounts[detection.method] = (detectedMethodCounts[detection.method] || 0) + 1;
         mergeSignalCounts(detectedSignalCounts, detection.signalCounts);
@@ -281,8 +285,7 @@
 
     if (effectiveDetection.isAI) {
       AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: false });
-      const playbackBlockMode = settings.blockMode === 'badge' ? 'blur' : settings.blockMode;
-      AIBlocker.blockShortsPage(effectiveDetection, playbackBlockMode);
+      AIBlocker.blockShortsPage(effectiveDetection);
       if (markPageDecisionRecorded(context, effectiveDetection)) {
         await StorageManager.updateDetectionStats({
           scanned: 1,
@@ -325,13 +328,15 @@
               tagName.includes('ytd-video-renderer') ||
               tagName.includes('ytd-compact-video') ||
               tagName.includes('ytd-grid-video') ||
-              tagName.includes('ytd-reel-item')) {
+              tagName.includes('ytd-reel-item') ||
+              tagName.includes('ytm-shorts-lockup') ||
+              tagName.includes('yt-lockup-view-model')) {
             hasNewVideos = true;
             break;
           }
 
           // Kiểm tra children
-          if (node.querySelector?.('ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer')) {
+          if (node.querySelector?.('ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytm-shorts-lockup-view-model, yt-lockup-view-model')) {
             hasNewVideos = true;
             break;
           }
@@ -416,12 +421,17 @@
   // ==================== UTILITIES ====================
 
   function extractVideoId(el) {
-    const linkEl = el.querySelector('a#thumbnail, a.ytd-thumbnail, a[href*="watch"]');
+    const linkEl = el.querySelector('a#thumbnail, a.ytd-thumbnail, a[href*="/watch"], a[href*="/shorts/"]');
     const href = linkEl?.href || '';
     const watchMatch = href.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
     if (watchMatch) return watchMatch[1];
     const shortsMatch = href.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
     return shortsMatch ? shortsMatch[1] : '';
+  }
+
+  function isAggregateVideoContainer(el) {
+    if (!el?.matches?.('ytd-video-renderer')) return false;
+    return el.querySelectorAll('ytm-shorts-lockup-view-model').length > 1;
   }
 
   function waitForElement(selector, timeout = 5000) {
@@ -540,7 +550,6 @@
     const relevantKeys = [
       'enabled',
       'sensitivity',
-      'blockMode',
       'detectionProfile',
       'detectorVersion',
       'whitelistedChannels',
@@ -605,7 +614,7 @@
   function getShortsChannelName() {
     const activeShort = document.querySelector('ytd-reel-video-renderer[is-active], ytd-reel-video-renderer');
     const channelEl = activeShort?.querySelector('ytd-channel-name a, #channel-name a, a[href^="/@"]') ||
-      document.querySelector('ytd-reel-player-header-renderer ytd-channel-name a, ytd-reel-player-header-renderer a[href^="/@"]');
+      document.querySelector('ytd-reel-player-header-renderer ytd-channel-name a, ytd-reel-player-header-renderer a[href^="/@"], ytd-reel-player-overlay-renderer a[href^="/@"], ytd-shorts a[href^="/@"]');
     return channelEl?.textContent?.trim() || '';
   }
 

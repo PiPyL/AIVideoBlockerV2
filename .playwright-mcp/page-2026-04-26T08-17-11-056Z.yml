@@ -1,0 +1,799 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - button "Guide" [active] [ref=e9] [cursor=pointer]:
+            - generic [ref=e12]:
+              - img
+          - generic [ref=e13]:
+            - link "YouTube Home" [ref=e14] [cursor=pointer]:
+              - /url: /
+              - generic [ref=e19]:
+                - img
+            - generic [ref=e20]: VN
+          - button "Skip navigation" [ref=e24] [cursor=pointer]:
+            - generic [ref=e25]: Skip navigation
+        - generic [ref=e29]:
+          - search [ref=e30]:
+            - generic [ref=e31]:
+              - generic [ref=e32]:
+                - combobox "Search" [expanded] [ref=e34]: ai generated video
+                - button "Clear search query" [ref=e36] [cursor=pointer]:
+                  - generic [ref=e39]:
+                    - img
+              - button "Search" [ref=e43] [cursor=pointer]:
+                - generic [ref=e46]:
+                  - img
+          - generic [ref=e48]:
+            - button "Search with your voice" [ref=e50] [cursor=pointer]:
+              - generic [ref=e54]:
+                - img
+            - tooltip "tooltip"
+        - generic [ref=e59]:
+          - button "Settings" [ref=e64] [cursor=pointer]:
+            - generic [ref=e67]:
+              - img
+          - link "Sign in" [ref=e70] [cursor=pointer]:
+            - /url: https://accounts.google.com/ServiceLogin?service=youtube&uilel=3&passive=true&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den%26next%3Dhttps%253A%252F%252Fwww.youtube.com%252Fresults%253Fsearch_query%253Dai%252Bgenerated%252Bvideo&hl=en&ec=65620
+            - generic [ref=e74]:
+              - img
+            - generic [ref=e75]: Sign in
+    - navigation [ref=e79]:
+      - generic [ref=e80]:
+        - link "Home" [ref=e82] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e85]:
+            - img
+          - generic [ref=e86]: Home
+        - link "Shorts" [ref=e88] [cursor=pointer]:
+          - /url: /shorts/
+          - generic [ref=e91]:
+            - img
+          - generic [ref=e92]: Shorts
+        - link "Subscriptions" [ref=e94] [cursor=pointer]:
+          - /url: /feed/subscriptions
+          - generic [ref=e97]:
+            - img
+          - generic [ref=e98]: Subscriptions
+        - link "You" [ref=e100] [cursor=pointer]:
+          - /url: /feed/you
+          - generic [ref=e103]:
+            - img
+          - generic [ref=e104]: You
+    - generic [ref=e105]:
+      - main [ref=e106]:
+        - generic [ref=e107]:
+          - generic [ref=e109]:
+            - tablist [ref=e114]:
+              - tab "All" [selected] [ref=e118] [cursor=pointer]:
+                - generic [ref=e120]: All
+              - tab "Shorts" [ref=e127] [cursor=pointer]:
+                - generic [ref=e129]: Shorts
+              - tab "Unwatched" [ref=e136] [cursor=pointer]:
+                - generic [ref=e138]: Unwatched
+              - tab "Watched" [ref=e145] [cursor=pointer]:
+                - generic [ref=e147]: Watched
+              - tab "Videos" [ref=e154] [cursor=pointer]:
+                - generic [ref=e156]: Videos
+              - tab "Recently uploaded" [ref=e163] [cursor=pointer]:
+                - generic [ref=e165]: Recently uploaded
+              - tab "Live" [ref=e172] [cursor=pointer]:
+                - generic [ref=e174]: Live
+            - generic [ref=e179]:
+              - button "Search filters" [ref=e181] [cursor=pointer]:
+                - generic [ref=e182]: Filters
+                - generic [ref=e186]:
+                  - img
+              - tooltip "tooltip"
+          - generic [ref=e192]:
+            - generic [ref=e195]: Some results have been removed because Restricted Mode is enabled by your network administrator.
+            - generic [ref=e198]:
+              - generic [ref=e200]:
+                - link [ref=e202] [cursor=pointer]:
+                  - /url: /watch?v=8RGrKD_HwrQ&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                  - img [ref=e204]
+                  - img [ref=e207]:
+                    - generic [ref=e208]: 9:06
+                  - generic:
+                    - generic: Now playing
+                    - generic:
+                      - img
+                - generic [ref=e209] [cursor=pointer]:
+                  - generic [ref=e210]:
+                    - generic [ref=e211]:
+                      - heading "I Tried Every FREE AI Video Generator in 2026 (use this) 9 minutes, 6 seconds" [level=3] [ref=e212]:
+                        - link "I Tried Every FREE AI Video Generator in 2026 (use this) 9 minutes, 6 seconds" [ref=e213]:
+                          - /url: /watch?v=8RGrKD_HwrQ&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                          - text: I Tried Every FREE AI Video Generator in 2026 (use this)
+                      - button "Action menu" [ref=e217]:
+                        - generic [ref=e220]:
+                          - img
+                    - generic [ref=e223]:
+                      - generic [ref=e224]: 23K views
+                      - generic [ref=e225]: •2 days ago
+                  - generic [ref=e226]:
+                    - link "Go to channel Skai Generated" [ref=e227]:
+                      - /url: /@imskaigenerated
+                    - link "Skai Generated" [ref=e233]:
+                      - /url: /@imskaigenerated
+                  - generic [ref=e234]:
+                    - generic [ref=e235]: I compared every Free AI Video Generator, use this Hey Friends :)) I've spent two weeks testing every single free video generator ...
+                    - tooltip "tooltip"
+                  - img "New" [ref=e240]:
+                    - generic [ref=e241]: New
+                  - generic [ref=e244]:
+                    - generic [ref=e245]:
+                      - generic [ref=e246]:
+                        - generic [ref=e249]:
+                          - img
+                        - generic [ref=e250]: Summary
+                      - button "Skai Generated explores various AI video generation tools that remain truly free, evaluating their performance, limitations, and unique features. This guide breaks down effective workflows for achieving high-quality, realistic cinematic clips, offering practical solutions for those looking to create video content from scratch without relying on limited free trials or hidden costs." [ref=e251]
+                      - text: ·
+                    - button "More" [ref=e256]:
+                      - generic [ref=e260]:
+                        - img
+              - generic [ref=e264]:
+                - generic [ref=e267]:
+                  - img [ref=e269]:
+                    - generic [ref=e271]:
+                      - img
+                  - heading "Shorts" [level=2] [ref=e274]
+                - generic [ref=e276]:
+                  - generic [ref=e279]:
+                    - link [ref=e280] [cursor=pointer]:
+                      - /url: /shorts/eK6hunmJkmg
+                    - generic [ref=e284] [cursor=pointer]:
+                      - link "How to make Viral & MONETIZABLE FACELESS YouTube Cat Video with Ai" [ref=e285]:
+                        - /url: /shorts/eK6hunmJkmg
+                      - generic [ref=e286]: 1.9M views
+                    - button "More actions" [ref=e288] [cursor=pointer]:
+                      - generic [ref=e292]:
+                        - img
+                  - generic [ref=e298]:
+                    - link [ref=e299] [cursor=pointer]:
+                      - /url: /shorts/9cTy4zxagac
+                    - generic [ref=e303] [cursor=pointer]:
+                      - link "5 Best AI Video Generators (2025)" [ref=e304]:
+                        - /url: /shorts/9cTy4zxagac
+                      - generic [ref=e305]: 2.1M views
+                    - button "More actions" [ref=e307] [cursor=pointer]:
+                      - generic [ref=e311]:
+                        - img
+                  - generic [ref=e317]:
+                    - link [ref=e318] [cursor=pointer]:
+                      - /url: /shorts/xhdrA8-zyT8
+                    - generic [ref=e322] [cursor=pointer]:
+                      - 'link "Luma AI dropped a Sora competitor – Dream Machine - text-to-video generator that''s open to ALL! #ai" [ref=e323]':
+                        - /url: /shorts/xhdrA8-zyT8
+                      - generic [ref=e324]: 4.3M views
+                    - button "More actions" [ref=e326] [cursor=pointer]:
+                      - generic [ref=e330]:
+                        - img
+                  - generic [ref=e336]:
+                    - link [ref=e337] [cursor=pointer]:
+                      - /url: /shorts/UINaY3hYkNE
+                    - generic [ref=e341] [cursor=pointer]:
+                      - 'link "This AI Talking Baby Video Was Made on a Phone! Yes—anyone can do this! #talkingbabypodcast" [ref=e342]':
+                        - /url: /shorts/UINaY3hYkNE
+                      - generic [ref=e343]: 1M views
+                    - button "More actions" [ref=e345] [cursor=pointer]:
+                      - generic [ref=e349]:
+                        - img
+                  - generic [ref=e355]:
+                    - link [ref=e356] [cursor=pointer]:
+                      - /url: /shorts/xDX4YlHlc1c
+                    - generic [ref=e360] [cursor=pointer]:
+                      - 'link "🔥 AI VFX Magic: Turning Ordinary Footage into an Explosion Scene! 🎬" [ref=e361]':
+                        - /url: /shorts/xDX4YlHlc1c
+                      - generic [ref=e362]: 186K views
+                    - button "More actions" [ref=e364] [cursor=pointer]:
+                      - generic [ref=e368]:
+                        - img
+                - button "Show more" [ref=e375] [cursor=pointer]:
+                  - generic [ref=e376]: Show more
+                  - generic [ref=e380]:
+                    - img
+              - generic [ref=e385]:
+                - link [ref=e387] [cursor=pointer]:
+                  - /url: /shorts/g6dhJx_GXaA
+                - generic [ref=e389] [cursor=pointer]:
+                  - generic [ref=e390]:
+                    - generic [ref=e391]:
+                      - 'heading "These AI Cat Videos Are TOO Real to Be Fake #sora #funny #ai #cat by Axion AI Studio 2,140,964 views 6 months ago 45 seconds - play Short" [level=3] [ref=e392]':
+                        - 'link "These AI Cat Videos Are TOO Real to Be Fake #sora #funny #ai #cat by Axion AI Studio 2,140,964 views 6 months ago 45 seconds - play Short" [ref=e393]':
+                          - /url: /shorts/g6dhJx_GXaA
+                          - text: "These AI Cat Videos Are TOO Real to Be Fake #sora #funny #ai #cat"
+                      - button "Action menu" [ref=e397]:
+                        - generic [ref=e400]:
+                          - img
+                    - generic [ref=e403]:
+                      - generic [ref=e404]: 2.1M views
+                      - generic [ref=e405]: •6 months ago
+                  - generic [ref=e406]:
+                    - link "Go to channel Axion AI Studio" [ref=e407]:
+                      - /url: /@AxionAIStudio
+                    - link "Axion AI Studio" [ref=e413]:
+                      - /url: /@AxionAIStudio
+                  - generic [ref=e414]:
+                    - generic [ref=e415]: These AI-generated cat videos look way too real to be fake Every clip in this short was created using next-gen AI to test how ...
+                    - tooltip "tooltip"
+              - generic [ref=e417]:
+                - link [ref=e419] [cursor=pointer]:
+                  - /url: /watch?v=gY9KTfMGauU&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                - generic [ref=e421] [cursor=pointer]:
+                  - generic [ref=e422]:
+                    - generic [ref=e423]:
+                      - heading "How to Start Making AI Videos in 2026 - Full Course 15 minutes" [level=3] [ref=e424]:
+                        - link "How to Start Making AI Videos in 2026 - Full Course 15 minutes" [ref=e425]:
+                          - /url: /watch?v=gY9KTfMGauU&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                          - text: How to Start Making AI Videos in 2026 - Full Course
+                      - button "Action menu" [ref=e429]:
+                        - generic [ref=e432]:
+                          - img
+                    - generic [ref=e435]:
+                      - generic [ref=e436]: 35K views
+                      - generic [ref=e437]: •5 days ago
+                  - generic [ref=e438]:
+                    - link "Go to channel Youri van Hofwegen" [ref=e439]:
+                      - /url: /@Yourivanhofwegen
+                    - generic [ref=e440]:
+                      - link "Youri van Hofwegen" [ref=e444]:
+                        - /url: /@Yourivanhofwegen
+                      - img "Verified" [ref=e449]:
+                        - generic [ref=e452]:
+                          - img
+                  - generic [ref=e453]:
+                    - generic [ref=e454]: Start Making AI Videos using Higgsfield https://youricreates.com/AIvideos In this video, I break down the full system behind ...
+                    - tooltip "tooltip"
+                  - generic [ref=e456]:
+                    - img "New" [ref=e459]:
+                      - generic [ref=e460]: New
+                    - img "4K" [ref=e463]:
+                      - generic [ref=e464]: 4K
+              - generic [ref=e466]:
+                - link [ref=e468] [cursor=pointer]:
+                  - /url: /watch?v=yT6ZnvENm5I&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                - generic [ref=e470] [cursor=pointer]:
+                  - generic [ref=e471]:
+                    - generic [ref=e472]:
+                      - 'heading "✨ Surreal Visions: AI Generated Trip Beyond Reality, Psychedelic AI Animations Unfolding Dimensions 11 hours" [level=3] [ref=e473]':
+                        - 'link "✨ Surreal Visions: AI Generated Trip Beyond Reality, Psychedelic AI Animations Unfolding Dimensions 11 hours" [ref=e474]':
+                          - /url: /watch?v=yT6ZnvENm5I&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                          - text: "✨ Surreal Visions: AI Generated Trip Beyond Reality, Psychedelic AI Animations Unfolding Dimensions"
+                      - button "Action menu" [ref=e478]:
+                        - generic [ref=e481]:
+                          - img
+                    - generic [ref=e484]:
+                      - generic [ref=e485]: 658K views
+                      - generic [ref=e486]: •1 year ago
+                  - generic [ref=e487]:
+                    - link "Go to channel Aibient" [ref=e488]:
+                      - /url: /@Aibient
+                    - link "Aibient" [ref=e493]:
+                      - /url: /@Aibient
+                  - generic [ref=e494]:
+                    - generic [ref=e495]: "Surreal Visions: AI's Psychedelic Trip Beyond Reality ✨ Prepare to have your mind blown. ✨ \"Surreal Visions\" is an AI-generated ..."
+                    - tooltip "tooltip"
+                  - img "4K" [ref=e500]:
+                    - generic [ref=e501]: 4K
+              - generic [ref=e502]:
+                - generic [ref=e505]:
+                  - img [ref=e507]:
+                    - generic [ref=e509]:
+                      - img
+                  - heading "Shorts" [level=2] [ref=e512]
+                - generic [ref=e514]:
+                  - generic [ref=e517]:
+                    - link [ref=e518] [cursor=pointer]:
+                      - /url: /shorts/hL7qNnIU5xI
+                    - generic [ref=e522] [cursor=pointer]:
+                      - link "How to Make a 3D Animated Video with One Prompt One AI Tool — Full Tutorial" [ref=e523]:
+                        - /url: /shorts/hL7qNnIU5xI
+                      - generic [ref=e524]: 294K views
+                    - button "More actions" [ref=e526] [cursor=pointer]:
+                      - generic [ref=e530]:
+                        - img
+                  - generic [ref=e536]:
+                    - link [ref=e537] [cursor=pointer]:
+                      - /url: /shorts/hbeLlO2tPNg
+                    - generic [ref=e541] [cursor=pointer]:
+                      - 'link "AI-Generated Blockbuster Scene: \"The Forest of Giants Awakens\" (Sora 2)" [ref=e542]':
+                        - /url: /shorts/hbeLlO2tPNg
+                      - generic [ref=e543]: 473K views
+                    - button "More actions" [ref=e545] [cursor=pointer]:
+                      - generic [ref=e549]:
+                        - img
+                  - generic [ref=e555]:
+                    - link [ref=e556] [cursor=pointer]:
+                      - /url: /shorts/KnUeUZV_iZo
+                    - generic [ref=e560] [cursor=pointer]:
+                      - link "How to create product video using AI?" [ref=e561]:
+                        - /url: /shorts/KnUeUZV_iZo
+                      - generic [ref=e562]: 216K views
+                    - button "More actions" [ref=e564] [cursor=pointer]:
+                      - generic [ref=e568]:
+                        - img
+                  - generic [ref=e574]:
+                    - link [ref=e575] [cursor=pointer]:
+                      - /url: /shorts/TWjb6TvI_Y0
+                    - generic [ref=e579] [cursor=pointer]:
+                      - link "How to Create Viral ASMR Videos from AI For Free" [ref=e580]:
+                        - /url: /shorts/TWjb6TvI_Y0
+                      - generic [ref=e581]: 542K views
+                    - button "More actions" [ref=e583] [cursor=pointer]:
+                      - generic [ref=e587]:
+                        - img
+                  - generic [ref=e593]:
+                    - link [ref=e594] [cursor=pointer]:
+                      - /url: /shorts/fCcwmbs4t4E
+                    - generic [ref=e598] [cursor=pointer]:
+                      - link "Make Viral Cat Videos with AI in Just 3 Steps!" [ref=e599]:
+                        - /url: /shorts/fCcwmbs4t4E
+                      - generic [ref=e600]: 226K views
+                    - button "More actions" [ref=e602] [cursor=pointer]:
+                      - generic [ref=e606]:
+                        - img
+                - button "Show more" [ref=e613] [cursor=pointer]:
+                  - generic [ref=e614]: Show more
+                  - generic [ref=e618]:
+                    - img
+              - generic [ref=e623]:
+                - link [ref=e625] [cursor=pointer]:
+                  - /url: /watch?v=6bOklwBi8Ek&list=RD6bOklwBi8Ek&start_radio=1&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVvoAcB
+                - generic [ref=e627] [cursor=pointer]:
+                  - generic [ref=e628]:
+                    - generic [ref=e629]:
+                      - heading "Fantasy | Dreamlike | Daughters of the Pearlspire Palace [AI Music Video] 3 minutes, 24 seconds" [level=3] [ref=e630]:
+                        - link "Fantasy | Dreamlike | Daughters of the Pearlspire Palace [AI Music Video] 3 minutes, 24 seconds" [ref=e631]:
+                          - /url: /watch?v=6bOklwBi8Ek&list=RD6bOklwBi8Ek&start_radio=1&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVvoAcB
+                          - text: Fantasy | Dreamlike | Daughters of the Pearlspire Palace [AI Music Video]
+                      - button "Action menu" [ref=e635]:
+                        - generic [ref=e638]:
+                          - img
+                    - generic [ref=e641]:
+                      - generic [ref=e642]: 2.1M views
+                      - generic [ref=e643]: •8 months ago
+                  - generic [ref=e644]:
+                    - link "Go to channel Serene Video AI" [ref=e645]:
+                      - /url: /@SereneVideoAI
+                    - link "Serene Video AI" [ref=e650]:
+                      - /url: /@SereneVideoAI
+                  - generic [ref=e651]:
+                    - text: Step into a realm where the ocean's breath mingles with royal splendor, and sunlight glitters across marble towers like scattered ...
+                    - tooltip "tooltip"
+                  - img "4K" [ref=e656]:
+                    - generic [ref=e657]: 4K
+              - generic [ref=e659]:
+                - link [ref=e661] [cursor=pointer]:
+                  - /url: /shorts/GYZJsM7sOKU
+                - generic [ref=e663] [cursor=pointer]:
+                  - generic [ref=e664]:
+                    - generic [ref=e665]:
+                      - 'heading "Ai animation cat video #cat #pets #3danimation #wildlife #funny #animallife by Manoranjan Tales 50,500,983 views 11 months ago 9 seconds - play Short" [level=3] [ref=e666]':
+                        - 'link "Ai animation cat video #cat #pets #3danimation #wildlife #funny #animallife by Manoranjan Tales 50,500,983 views 11 months ago 9 seconds - play Short" [ref=e667]':
+                          - /url: /shorts/GYZJsM7sOKU
+                          - text: "Ai animation cat video #cat #pets #3danimation #wildlife #funny #animallife"
+                      - button "Action menu" [ref=e671]:
+                        - generic [ref=e674]:
+                          - img
+                    - generic [ref=e677]:
+                      - generic [ref=e678]: 50M views
+                      - generic [ref=e679]: •11 months ago
+                  - generic [ref=e680]:
+                    - link "Go to channel Manoranjan Tales" [ref=e681]:
+                      - /url: /@Manoranjan_Tales
+                    - link "Manoranjan Tales" [ref=e686]:
+                      - /url: /@Manoranjan_Tales
+                  - generic [ref=e687]:
+                    - generic [ref=e688]: "cat animation shorts funny #ai #cat #ytshorts #funny Welcome to the Manoranjan Tales channel Suitable for all ages audiences."
+                    - tooltip "tooltip"
+                  - img "4K" [ref=e693]:
+                    - generic [ref=e694]: 4K
+              - generic [ref=e696]:
+                - link [ref=e698] [cursor=pointer]:
+                  - /url: /shorts/9CaIQ-lNjlw
+                - generic [ref=e700] [cursor=pointer]:
+                  - generic [ref=e701]:
+                    - generic [ref=e702]:
+                      - heading "Best ai video generator by Cam-Ai 297,663 views 10 months ago 21 seconds - play Short" [level=3] [ref=e703]:
+                        - link "Best ai video generator by Cam-Ai 297,663 views 10 months ago 21 seconds - play Short" [ref=e704]:
+                          - /url: /shorts/9CaIQ-lNjlw
+                          - text: Best ai video generator
+                      - button "Action menu" [ref=e708]:
+                        - generic [ref=e711]:
+                          - img
+                    - generic [ref=e714]:
+                      - generic [ref=e715]: 297K views
+                      - generic [ref=e716]: •10 months ago
+                  - generic [ref=e717]:
+                    - link "Go to channel Cam-Ai" [ref=e718]:
+                      - /url: /@Cam-Ai-11
+                    - link "Cam-Ai" [ref=e723]:
+                      - /url: /@Cam-Ai-11
+              - generic [ref=e725]:
+                - link [ref=e727] [cursor=pointer]:
+                  - /url: /watch?v=5PD0LmXWNmA&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                - generic [ref=e729] [cursor=pointer]:
+                  - generic [ref=e730]:
+                    - generic [ref=e731]:
+                      - heading "The Discovery of America | AI Generated Video 1 minute, 6 seconds" [level=3] [ref=e732]:
+                        - link "The Discovery of America | AI Generated Video 1 minute, 6 seconds" [ref=e733]:
+                          - /url: /watch?v=5PD0LmXWNmA&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                          - text: The Discovery of America | AI Generated Video
+                      - button "Action menu" [ref=e737]:
+                        - generic [ref=e740]:
+                          - img
+                    - generic [ref=e743]:
+                      - generic [ref=e744]: 33K views
+                      - generic [ref=e745]: •1 year ago
+                  - generic [ref=e746]:
+                    - link "Go to channel CommonHub" [ref=e747]:
+                      - /url: /@CommonHub
+                    - link "CommonHub" [ref=e752]:
+                      - /url: /@CommonHub
+                  - generic [ref=e753]:
+                    - text: Embark on a thrilling visual journey through one of history's most pivotal moments—the discovery of America by Christopher ...
+                    - tooltip "tooltip"
+                  - img "4K" [ref=e758]:
+                    - generic [ref=e759]: 4K
+              - generic [ref=e761]:
+                - link [ref=e763] [cursor=pointer]:
+                  - /url: /watch?v=WZby5BGTjEQ&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                - generic [ref=e765] [cursor=pointer]:
+                  - generic [ref=e766]:
+                    - generic [ref=e767]:
+                      - heading "Babylon | AI Generated Video 1 minute, 20 seconds" [level=3] [ref=e768]:
+                        - link "Babylon | AI Generated Video 1 minute, 20 seconds" [ref=e769]:
+                          - /url: /watch?v=WZby5BGTjEQ&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                          - text: Babylon | AI Generated Video
+                      - button "Action menu" [ref=e773]:
+                        - generic [ref=e776]:
+                          - img
+                    - generic [ref=e779]:
+                      - generic [ref=e780]: 637K views
+                      - generic [ref=e781]: •1 year ago
+                  - generic [ref=e782]:
+                    - link "Go to channel CommonHub" [ref=e783]:
+                      - /url: /@CommonHub
+                    - link "CommonHub" [ref=e788]:
+                      - /url: /@CommonHub
+                  - generic [ref=e789]:
+                    - text: "Explore the majestic world of ancient Babylon in this cinematic journey through its most iconic landmarks: from the awe-inspiring ..."
+                    - tooltip "tooltip"
+              - generic [ref=e791]:
+                - link [ref=e793] [cursor=pointer]:
+                  - /url: /watch?v=LsfcOoCc88I&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                - generic [ref=e795] [cursor=pointer]:
+                  - generic [ref=e796]:
+                    - generic [ref=e797]:
+                      - heading "How to Make Ultra Realistic AI Videos - (4 STEPS) 7 minutes, 59 seconds" [level=3] [ref=e798]:
+                        - link "How to Make Ultra Realistic AI Videos - (4 STEPS) 7 minutes, 59 seconds" [ref=e799]:
+                          - /url: /watch?v=LsfcOoCc88I&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                          - text: How to Make Ultra Realistic AI Videos - (4 STEPS)
+                      - button "Action menu" [ref=e803]:
+                        - generic [ref=e806]:
+                          - img
+                    - generic [ref=e809]:
+                      - generic [ref=e810]: 69K views
+                      - generic [ref=e811]: •1 month ago
+                  - generic [ref=e812]:
+                    - link "Go to channel Steven Wommack" [ref=e813]:
+                      - /url: /@StevenWommack
+                    - link "Steven Wommack" [ref=e818]:
+                      - /url: /@StevenWommack
+                  - generic [ref=e819]:
+                    - generic [ref=e820]: The Website I used https://tinyurl.com/higgsfield-x Here is my exact simple 4 step workflow on how to make ultra realistic Ai ...
+                    - tooltip "tooltip"
+                  - generic [ref=e823]:
+                    - generic [ref=e824]:
+                      - generic [ref=e828]: 6 chapters
+                      - 'button "Intro | Step 1: Preparation & Storyboard | Step 2: Cinematic Image | Step 3: Animation | Step 4: The Touch Up | Final Result" [ref=e829]'
+                    - button "More" [ref=e834]:
+                      - generic [ref=e838]:
+                        - img
+              - generic [ref=e843]:
+                - link [ref=e845] [cursor=pointer]:
+                  - /url: /shorts/tuWKsJqbcWs
+                - generic [ref=e847] [cursor=pointer]:
+                  - generic [ref=e848]:
+                    - generic [ref=e849]:
+                      - heading "Insane AI Video (Google Veo 3 ) by EarnSecret Pro 1,780,329 views 10 months ago 9 seconds - play Short" [level=3] [ref=e850]:
+                        - link "Insane AI Video (Google Veo 3 ) by EarnSecret Pro 1,780,329 views 10 months ago 9 seconds - play Short" [ref=e851]:
+                          - /url: /shorts/tuWKsJqbcWs
+                          - text: Insane AI Video (Google Veo 3 )
+                      - button "Action menu" [ref=e855]:
+                        - generic [ref=e858]:
+                          - img
+                    - generic [ref=e861]:
+                      - generic [ref=e862]: 1.7M views
+                      - generic [ref=e863]: •10 months ago
+                  - generic [ref=e864]:
+                    - link "Go to channel EarnSecret Pro" [ref=e865]:
+                      - /url: /@EarnSecretPro
+                    - link "EarnSecret Pro" [ref=e870]:
+                      - /url: /@EarnSecretPro
+              - generic [ref=e872]:
+                - link [ref=e874] [cursor=pointer]:
+                  - /url: /watch?v=-vwHldNaGPI&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                - generic [ref=e876] [cursor=pointer]:
+                  - generic [ref=e877]:
+                    - generic [ref=e878]:
+                      - heading "Best AI Video Generators in 2026 (Most Realistic) 15 minutes" [level=3] [ref=e879]:
+                        - link "Best AI Video Generators in 2026 (Most Realistic) 15 minutes" [ref=e880]:
+                          - /url: /watch?v=-vwHldNaGPI&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+                          - text: Best AI Video Generators in 2026 (Most Realistic)
+                      - button "Action menu" [ref=e884]:
+                        - generic [ref=e887]:
+                          - img
+                    - generic [ref=e890]:
+                      - generic [ref=e891]: 312K views
+                      - generic [ref=e892]: •3 months ago
+                  - generic [ref=e893]:
+                    - link "Go to channel Youri van Hofwegen" [ref=e894]:
+                      - /url: /@Yourivanhofwegen
+                    - generic [ref=e895]:
+                      - link "Youri van Hofwegen" [ref=e899]:
+                        - /url: /@Yourivanhofwegen
+                      - img "Verified" [ref=e904]:
+                        - generic [ref=e907]:
+                          - img
+                  - generic [ref=e908]:
+                    - generic [ref=e909]: Access Every Major AI Video Model in OpenArt https://youricreates.com/ai-video-generator In this video, I rank the best AI video ...
+                    - tooltip "tooltip"
+                  - img "4K" [ref=e914]:
+                    - generic [ref=e915]: 4K
+                  - generic [ref=e918]:
+                    - generic [ref=e919]:
+                      - generic [ref=e923]: 7 chapters
+                      - button "Best AI Video Generators in 2026 (Ultimate Ranking) | Sora 2 | Kling 2.6 | Wan 2.6 | Seedance 1.5 Pro | Google Veo 3 | Best All-in-One AI Video Platform" [ref=e924]
+                    - button "More" [ref=e929]:
+                      - generic [ref=e933]:
+                        - img
+              - generic [ref=e938]:
+                - link [ref=e940] [cursor=pointer]:
+                  - /url: /shorts/Tg7q8NNOVZo
+                - generic [ref=e942] [cursor=pointer]:
+                  - generic [ref=e943]:
+                    - generic [ref=e944]:
+                      - 'heading "Ai video generate Ai Video for kids kids videos Ai video generator Ai genius #videocoding #aishorts by Ai genius 1,367,098 views 1 year ago 6 seconds - play Short" [level=3] [ref=e945]':
+                        - 'link "Ai video generate Ai Video for kids kids videos Ai video generator Ai genius #videocoding #aishorts by Ai genius 1,367,098 views 1 year ago 6 seconds - play Short" [ref=e946]':
+                          - /url: /shorts/Tg7q8NNOVZo
+                          - text: "Ai video generate Ai Video for kids kids videos Ai video generator Ai genius #videocoding #aishorts"
+                      - button "Action menu" [ref=e950]:
+                        - generic [ref=e953]:
+                          - img
+                    - generic [ref=e956]:
+                      - generic [ref=e957]: 1.3M views
+                      - generic [ref=e958]: •1 year ago
+                  - generic [ref=e959]:
+                    - link "Go to channel Ai genius" [ref=e960]:
+                      - /url: /@Aigeniu
+                    - link "Ai genius" [ref=e965]:
+                      - /url: /@Aigeniu
+                  - generic [ref=e966]:
+                    - generic [ref=e967]: Ai video generate Ai video generator for mobile Ai video generator free website Ai video kasa banya YouTube automation ...
+                    - tooltip "tooltip"
+              - generic [ref=e969]:
+                - link [ref=e971] [cursor=pointer]:
+                  - /url: /shorts/aHF-hfFb2_8
+                - generic [ref=e973] [cursor=pointer]:
+                  - generic [ref=e974]:
+                    - generic [ref=e975]:
+                      - heading "Ai is getting scary by Nick Wilkins 7,866,405 views 10 months ago 22 seconds - play Short" [level=3] [ref=e976]:
+                        - link "Ai is getting scary by Nick Wilkins 7,866,405 views 10 months ago 22 seconds - play Short" [ref=e977]:
+                          - /url: /shorts/aHF-hfFb2_8
+                          - text: Ai is getting scary
+                      - button "Action menu" [ref=e981]:
+                        - generic [ref=e984]:
+                          - img
+                    - generic [ref=e987]:
+                      - generic [ref=e988]: 7.8M views
+                      - generic [ref=e989]: •10 months ago
+                  - generic [ref=e990]:
+                    - link "Go to channel Nick Wilkins" [ref=e991]:
+                      - /url: /@NickWilkins
+                    - generic [ref=e992]:
+                      - link "Nick Wilkins" [ref=e996]:
+                        - /url: /@NickWilkins
+                      - img "Verified" [ref=e1001]:
+                        - generic [ref=e1004]:
+                          - img
+              - generic [ref=e1006]:
+                - link [ref=e1008] [cursor=pointer]:
+                  - /url: /shorts/eaYbJW4IllM
+                - generic [ref=e1010] [cursor=pointer]:
+                  - generic [ref=e1011]:
+                    - generic [ref=e1012]:
+                      - 'heading "Trump working at site | ai generated video | ai funny video | ai world leaders #ai #trump by Artificial intelligence (ai) 1,511,554 views 1 year ago 7 seconds - play Short" [level=3] [ref=e1013]':
+                        - 'link "Trump working at site | ai generated video | ai funny video | ai world leaders #ai #trump by Artificial intelligence (ai) 1,511,554 views 1 year ago 7 seconds - play Short" [ref=e1014]':
+                          - /url: /shorts/eaYbJW4IllM
+                          - text: "Trump working at site | ai generated video | ai funny video | ai world leaders #ai #trump"
+                      - button "Action menu" [ref=e1018]:
+                        - generic [ref=e1021]:
+                          - img
+                    - generic [ref=e1024]:
+                      - generic [ref=e1025]: 1.5M views
+                      - generic [ref=e1026]: •1 year ago
+                  - generic [ref=e1027]:
+                    - link "Go to channel Artificial intelligence (ai)" [ref=e1028]:
+                      - /url: /@oneMileExtra
+                    - link "Artificial intelligence (ai)" [ref=e1033]:
+                      - /url: /@oneMileExtra
+                  - generic [ref=e1034]:
+                    - generic [ref=e1035]: Disclaimer - "This video is created using artificial intelligence tools and is intended for entertainment and creative purposes only.
+                    - tooltip "tooltip"
+              - generic [ref=e1037]:
+                - link [ref=e1039] [cursor=pointer]:
+                  - /url: /shorts/H7GC_qee6E4
+                - generic [ref=e1041] [cursor=pointer]:
+                  - generic [ref=e1042]:
+                    - generic [ref=e1043]:
+                      - heading "A.I. Has Officially Gone Too Far 😟 | Google Veo 3 is INSANE 🚨 by Edited By Geo 5,412,616 views 10 months ago 1 minute - play Short" [level=3] [ref=e1044]:
+                        - link "A.I. Has Officially Gone Too Far 😟 | Google Veo 3 is INSANE 🚨 by Edited By Geo 5,412,616 views 10 months ago 1 minute - play Short" [ref=e1045]:
+                          - /url: /shorts/H7GC_qee6E4
+                          - text: A.I. Has Officially Gone Too Far 😟 | Google Veo 3 is INSANE 🚨
+                      - button "Action menu" [ref=e1049]:
+                        - generic [ref=e1052]:
+                          - img
+                    - generic [ref=e1055]:
+                      - generic [ref=e1056]: 5.4M views
+                      - generic [ref=e1057]: •10 months ago
+                  - generic [ref=e1058]:
+                    - link "Go to channel Edited By Geo" [ref=e1059]:
+                      - /url: /@EditedByGeo
+                    - link "Edited By Geo" [ref=e1064]:
+                      - /url: /@EditedByGeo
+                  - generic [ref=e1065]:
+                    - generic [ref=e1066]: "ai #artificialintelligence #veo3."
+                    - tooltip "tooltip"
+                  - generic [ref=e1067]:
+                    - link "12 seconds ... <b>AI video</b> of Will Smith eating spaghetti the sounds the visuals everything you&#39;re seeing right now is completely fake <b>AI generated</b>&nbsp;..." [ref=e1068]:
+                      - /url: /watch?v=H7GC_qee6E4&t=12s
+                      - text: 0:12
+                      - generic [ref=e1069]: ... AI video of Will Smith eating spaghetti the sounds the visuals everything you're seeing right now is completely fake AI generated ...
+                    - tooltip "tooltip"
+              - generic [ref=e1071]:
+                - link [ref=e1073] [cursor=pointer]:
+                  - /url: /shorts/G_YN-Z5uaNk
+                - generic [ref=e1075] [cursor=pointer]:
+                  - generic [ref=e1076]:
+                    - generic [ref=e1077]:
+                      - 'heading "Top 5 FREE UNLIMITED AI Video Generator #syedyasirabbas #aivideo #syedyasirabbasaicontent by Syed Yasir Abbas 1,088,223 views 7 months ago 50 seconds - play Short" [level=3] [ref=e1078]':
+                        - 'link "Top 5 FREE UNLIMITED AI Video Generator #syedyasirabbas #aivideo #syedyasirabbasaicontent by Syed Yasir Abbas 1,088,223 views 7 months ago 50 seconds - play Short" [ref=e1079]':
+                          - /url: /shorts/G_YN-Z5uaNk
+                          - text: "Top 5 FREE UNLIMITED AI Video Generator #syedyasirabbas #aivideo #syedyasirabbasaicontent"
+                      - button "Action menu" [ref=e1083]:
+                        - generic [ref=e1086]:
+                          - img
+                    - generic [ref=e1089]:
+                      - generic [ref=e1090]: 1M views
+                      - generic [ref=e1091]: •7 months ago
+                  - generic [ref=e1092]:
+                    - link "Go to channel Syed Yasir Abbas" [ref=e1093]:
+                      - /url: /@SyedYasirAbbasofficial
+                    - generic [ref=e1094]:
+                      - link "Syed Yasir Abbas" [ref=e1098]:
+                        - /url: /@SyedYasirAbbasofficial
+                      - img "Verified" [ref=e1103]:
+                        - generic [ref=e1106]:
+                          - img
+                  - generic [ref=e1107]:
+                    - generic [ref=e1108]: "Top 5 FREE UNLIMITED AI Video Generator #syedyasirabbas #aivideo #aicontent #AIVideoGenerator #TextToVideo ..."
+                    - tooltip "tooltip"
+              - generic [ref=e1110]:
+                - link [ref=e1112] [cursor=pointer]:
+                  - /url: /watch?v=9os35azf4Jw&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv0gcJCdQKAYcqIYzv
+                - generic [ref=e1114] [cursor=pointer]:
+                  - generic [ref=e1115]:
+                    - generic [ref=e1116]:
+                      - heading "How to Start Making AI Videos in 2026 (FULL Guide) 26 minutes" [level=3] [ref=e1117]:
+                        - link "How to Start Making AI Videos in 2026 (FULL Guide) 26 minutes" [ref=e1118]:
+                          - /url: /watch?v=9os35azf4Jw&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv0gcJCdQKAYcqIYzv
+                          - text: How to Start Making AI Videos in 2026 (FULL Guide)
+                      - button "Action menu" [ref=e1122]:
+                        - generic [ref=e1125]:
+                          - img
+                    - generic [ref=e1128]:
+                      - generic [ref=e1129]: 72K views
+                      - generic [ref=e1130]: •1 month ago
+                  - generic [ref=e1131]:
+                    - link "Go to channel Tao Prompts" [ref=e1132]:
+                      - /url: /@taoprompts
+                    - generic [ref=e1133]:
+                      - link "Tao Prompts" [ref=e1137]:
+                        - /url: /@taoprompts
+                      - img "Verified" [ref=e1142]:
+                        - generic [ref=e1145]:
+                          - img
+                  - generic [ref=e1146]:
+                    - generic [ref=e1147]: "This video was sponsored by ElevenLabs, the team behind ElevenCreative. Start Making Your AI Videos here: ..."
+                    - tooltip "tooltip"
+                  - generic [ref=e1150]:
+                    - generic [ref=e1151]:
+                      - generic [ref=e1155]: Matching chapter
+                      - button "0:00 How to Make AI Videos in 2026" [ref=e1156]
+                    - button "More" [ref=e1161]:
+                      - generic [ref=e1165]:
+                        - img
+              - generic [ref=e1170]:
+                - link [ref=e1172] [cursor=pointer]:
+                  - /url: /shorts/8tTSVZvXAfE
+                - generic [ref=e1174] [cursor=pointer]:
+                  - generic [ref=e1175]:
+                    - generic [ref=e1176]:
+                      - heading "AI-generated video showcasing how the Ancient Egyptians built the pyramids. by Varun Mayya 37,617,529 views 1 year ago 59 seconds - play Short" [level=3] [ref=e1177]:
+                        - link "AI-generated video showcasing how the Ancient Egyptians built the pyramids. by Varun Mayya 37,617,529 views 1 year ago 59 seconds - play Short" [ref=e1178]:
+                          - /url: /shorts/8tTSVZvXAfE
+                          - text: AI-generated video showcasing how the Ancient Egyptians built the pyramids.
+                      - button "Action menu" [ref=e1182]:
+                        - generic [ref=e1185]:
+                          - img
+                    - generic [ref=e1188]:
+                      - generic [ref=e1189]: 37M views
+                      - generic [ref=e1190]: •1 year ago
+                  - generic [ref=e1191]:
+                    - link "Go to channel Varun Mayya" [ref=e1192]:
+                      - /url: /@VarunMayya
+                    - generic [ref=e1193]:
+                      - link "Varun Mayya" [ref=e1197]:
+                        - /url: /@VarunMayya
+                      - img "Verified" [ref=e1202]:
+                        - generic [ref=e1205]:
+                          - img
+              - generic [ref=e1207]:
+                - link [ref=e1209] [cursor=pointer]:
+                  - /url: /shorts/GbVefagOGOY
+                - generic [ref=e1211] [cursor=pointer]:
+                  - generic [ref=e1212]:
+                    - generic [ref=e1213]:
+                      - heading "Real or AI viral ASMR AI video generator by Fotorama - AI Photo Generator 3,266,065 views 8 months ago 22 seconds - play Short" [level=3] [ref=e1214]:
+                        - link "Real or AI viral ASMR AI video generator by Fotorama - AI Photo Generator 3,266,065 views 8 months ago 22 seconds - play Short" [ref=e1215]:
+                          - /url: /shorts/GbVefagOGOY
+                          - text: Real or AI viral ASMR AI video generator
+                      - button "Action menu" [ref=e1219]:
+                        - generic [ref=e1222]:
+                          - img
+                    - generic [ref=e1225]:
+                      - generic [ref=e1226]: 3.2M views
+                      - generic [ref=e1227]: •8 months ago
+                  - generic [ref=e1228]:
+                    - link "Go to channel Fotorama - AI Photo Generator" [ref=e1229]:
+                      - /url: /@FotoramaAIPhotoGenerator
+                    - link "Fotorama - AI Photo Generator" [ref=e1234]:
+                      - /url: /@FotoramaAIPhotoGenerator
+                  - generic [ref=e1235]:
+                    - generic [ref=e1236]: "Real or AI viral ASMR AI video generator #mukbang #aimukbang #veo3 #aifilter #aivideo #aivideomaker #oddlysatisfying ..."
+                    - tooltip "tooltip"
+      - text: •
+  - generic [ref=e1262]:
+    - link "I Tried Every FREE AI Video Generator in 2026 (use this) 9 minutes, 6 seconds":
+      - /url: /watch?v=8RGrKD_HwrQ&pp=ygUSYWkgZ2VuZXJhdGVkIHZpZGVv
+      - generic [ref=e1263] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - img
+      - generic "YouTube Video Player" [ref=e1268] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic: I've spent the past 2 weeks testing
+              - generic:
+                - generic: every single free AI video generator,
+    - generic:
+      - generic:
+        - generic:
+          - generic [ref=e1270]:
+            - button "Unmute" [ref=e1275] [cursor=pointer]:
+              - generic [ref=e1279]:
+                - img
+            - button "Subtitles/CC turned on" [pressed] [ref=e1284] [cursor=pointer]:
+              - generic [ref=e1287]:
+                - img
+          - generic:
+            - generic "Time elapsed 0:01":
+              - generic:
+                - generic: 9:03
+        - slider "Seek slider" [ref=e1289] [cursor=pointer]
