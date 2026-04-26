@@ -121,27 +121,30 @@ async function updateDownloadLink() {
     if (!downloadBtn) return;
 
     try {
-        // Gọi GitHub API để lấy thông tin release mới nhất
         const response = await fetch(`https://api.github.com/repos/${repo}/releases/latest`);
-        
-        if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) throw new Error('Không thể kết nối GitHub API');
         
         const data = await response.json();
         
-        // Tìm file .zip trong danh sách assets của release
+        // 1. Tìm trong Assets (Cách chuẩn nhất)
         const zipAsset = data.assets && data.assets.find(asset => asset.name.endsWith('.zip'));
         
         if (zipAsset) {
             downloadBtn.href = zipAsset.browser_download_url;
-            console.log('✅ Đã cập nhật link download: ' + zipAsset.name);
-        } else {
-            // Nếu không tìm thấy file zip trong release, trỏ tới link source code zip của release đó
-            downloadBtn.href = data.zipball_url;
-            console.log('⚠️ Không tìm thấy asset ZIP, sử dụng link source zipball.');
+            console.log('✅ Đã cập nhật link từ Assets:', zipAsset.name);
+            return;
         }
+
+        // 2. Dự phòng: Nếu không có Assets, lấy link Source Code ZIP của Release đó
+        if (data.zipball_url) {
+            downloadBtn.href = data.zipball_url;
+            console.log('⚠️ Không thấy Assets, đã dùng link Source ZIP của Release ' + data.tag_name);
+            return;
+        }
+
     } catch (error) {
-        console.error('❌ Lỗi khi lấy link download mới nhất:', error);
-        // Giữ nguyên link mặc định trong HTML (main branch) làm fallback
+        console.error('❌ Lỗi cập nhật link download:', error);
+        // Giữ nguyên link mặc định trong HTML làm phương án cuối cùng
     }
 }
 

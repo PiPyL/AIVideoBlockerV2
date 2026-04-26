@@ -1,0 +1,30 @@
+# MacOS
+.DS_Store
+
+# IDEs & Editors
+.vscode/
+.idea/
+.cursor/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build artifacts
+*.zip
+dist/
+out/
+
+# AI & Agents
+.playwright-mcp/
+.gemini/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
