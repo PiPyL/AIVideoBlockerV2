@@ -1058,7 +1058,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     await StorageManager.updateSettings(StorageManager.DEFAULT_SETTINGS);
     
     // Mở web page
-    chrome.tabs.create({ url: 'http://safekid.autowork.com.vn' });
+    chrome.tabs.create({ url: 'https://safekid.autowork.com.vn' });
   }
 
   // Clear badge
