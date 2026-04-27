@@ -259,6 +259,24 @@
           <div class="channel-list" id="blacklist-container"></div>
         </div>
 
+        <!-- Blocked Videos -->
+        <div class="setting-group">
+          <div class="setting-header" id="blocked-videos-header" style="cursor: pointer;">
+            <span>🎬 Video bị chặn thủ công</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="count-badge count-red" id="blocked-videos-count">0</span>
+              <span id="blocked-videos-chevron" style="transition: transform 0.3s; font-size: 10px; color: var(--text-muted);">▼</span>
+            </div>
+          </div>
+          <div id="blocked-videos-details" style="display: none;">
+            <p class="blocked-videos-info" style="font-size: 11px; color: var(--text-secondary); margin: 8px 0;">
+              Click chuột phải trên YouTube → "🛡️ SafeKid: Chặn video này" để thêm video vào danh sách.
+            </p>
+            <div class="channel-list" id="blocked-videos-container"></div>
+            <button id="btn-clear-blocked-videos" class="btn-small btn-red" style="margin-top: 8px; width: 100%; display: none;">🗑 Xóa tất cả video đã chặn</button>
+          </div>
+        </div>
+
         <!-- Detection Breakdown -->
         <div class="setting-group">
           <div class="setting-header">

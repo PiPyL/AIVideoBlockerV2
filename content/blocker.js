@@ -388,6 +388,30 @@ const AIBlocker = {
   },
 
   /**
+   * Force play video — dùng khi scan xác nhận video safe
+   * sau navigation từ video bị block.
+   * restoreMediaState có thể không resume vì shouldResume = false
+   * (video đã bị pause bởi guard trước đó).
+   */
+  forcePlayback() {
+    // Dùng YouTube Player API
+    const player = document.querySelector('#movie_player');
+    if (player) {
+      this._callPlayerMethod(player, 'unMute');
+      this._callPlayerMethod(player, 'playVideo');
+    }
+
+    // Fallback: dùng native video element
+    document.querySelectorAll('video').forEach((video) => {
+      if (video.isConnected && video.paused && !video.ended) {
+        video.muted = false;
+        video.removeAttribute('muted');
+        this._resumeVideo(video);
+      }
+    });
+  },
+
+  /**
    * Helper: Label cho method
    */
   _getMethodLabel(method) {

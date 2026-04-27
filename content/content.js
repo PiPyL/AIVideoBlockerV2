@@ -22,6 +22,11 @@
   let lastBlockedWatchDetection = null;
   let initCompletedAt = 0;
 
+  // Navigation transition guard: video ID user is navigating TO
+  // Dùng để chặn block overlay flash khi DOM chưa sync với URL mới
+  let navigationStartedAt = 0;
+  const NAVIGATION_TRANSITION_MS = 800;
+
   // ==================== INITIALIZATION ====================
 
   async function init() {
@@ -45,6 +50,17 @@
         stopObserver();
         removeAllBlocking();
       } else {
+        // Xóa watch block cache khi blacklist/blockedVideos thay đổi
+        // để tránh giữ detection cũ của channel/video vừa bị thêm/xóa
+        const oldBlacklist = JSON.stringify(oldSettings.blacklistedChannels || []);
+        const newBlacklist = JSON.stringify(settings.blacklistedChannels || []);
+        const oldBlockedVids = JSON.stringify(oldSettings.blockedVideos || []);
+        const newBlockedVids = JSON.stringify(settings.blockedVideos || []);
+        if (oldBlacklist !== newBlacklist || oldBlockedVids !== newBlockedVids) {
+          clearWatchBlockCache(null);
+          AIBlocker.resetPageBlocks({ restoreMedia: true });
+        }
+
         recordedPageDecisionKeys.clear();
         resetProcessedVideoItems();
         scheduleFullScan(0, { force: true });
@@ -53,9 +69,18 @@
       }
     });
 
+    // Track right-clicked element for context menu info extraction
+    let lastRightClickedElement = null;
+    document.addEventListener('contextmenu', (e) => {
+      lastRightClickedElement = e.target;
+    }, true);
+
     // Lắng nghe messages từ service worker
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (msg.type === 'RESCAN') {
+        // Xóa watch block cache để tránh giữ detection cũ
+        clearWatchBlockCache(null);
+        AIBlocker.resetPageBlocks({ restoreMedia: true });
         resetProcessedVideoItems();
         scheduleFullScan(0, { force: true });
         sendResponse({ ok: true });
@@ -64,6 +89,10 @@
         const blocked = document.querySelectorAll('[data-aivb-is-ai="true"]').length;
         const total = document.querySelectorAll('[data-aivb-processed="true"]').length;
         sendResponse({ blocked, total, url: location.href });
+      }
+      if (msg.type === 'GET_CONTEXT_INFO') {
+        const info = extractContextInfo(lastRightClickedElement, msg.action, msg.linkUrl, msg.pageUrl);
+        sendResponse(info);
       }
       return true; // async response
     });
@@ -164,8 +193,17 @@
         continue;
       }
 
+      // Kiểm tra video bị block thủ công
+      const itemVideoId = extractVideoId(el);
+      if (itemVideoId && isVideoManuallyBlocked(itemVideoId)) {
+        const manualResult = createManualBlockResult(itemVideoId, channelName);
+        AIBlocker.blockVideo(el, manualResult);
+        blockedCount++;
+        continue;
+      }
+
       // Kiểm tra cache
-      const videoId = extractVideoId(el);
+      const videoId = itemVideoId || extractVideoId(el);
       if (videoId) {
         if (cache[videoId]) {
           const cached = cache[videoId];
@@ -246,14 +284,23 @@
 
     const videoId = extractVideoIdFromUrl(location.href);
 
-    // Guard: nếu video này đã bị block trước đó (ví dụ: sau reload),
-    // re-apply blocking ngay lập tức trước khi phân tích lại
-    if (videoId && videoId === lastBlockedWatchVideoId && lastBlockedWatchDetection) {
-      AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: false });
-      AIBlocker.blockWatchPage(lastBlockedWatchDetection);
-      console.log(`${LOG_PREFIX} Watch page re-blocked from cache:`, videoId);
-      // Vẫn scan tiếp để cập nhật detection mới nhất
+    // Navigation transition guard: nếu đang trong giai đoạn transition
+    // (< 800ms sau navigate), chỉ hold playback, KHÔNG hiển block overlay.
+    // Đợi scan sau khi DOM đã stable mới quyết định block/unblock.
+    const isInTransition = navigationStartedAt > 0 
+      && (Date.now() - navigationStartedAt) < NAVIGATION_TRANSITION_MS;
+    
+    if (isInTransition) {
+      console.log(`${LOG_PREFIX} Watch scan during navigation transition, deferring block decision`);
+      // Giữ playback hold nhưng không hiển overlay
+      // Schedule re-scan sau khi transition xong
+      const remaining = NAVIGATION_TRANSITION_MS - (Date.now() - navigationStartedAt);
+      scheduleFullScan(remaining + 100, { force: true });
+      return;
     }
+
+    // Xóa navigation flag nếu đã qua transition
+    navigationStartedAt = 0;
 
     const detection = AIDetector.analyzeVideoPage(settings);
     const channelName = detection.channelName || getWatchChannelName();
@@ -274,6 +321,11 @@
 
     if (channelPolicy === 'blacklist') {
       effectiveDetection = createChannelOverrideResult(channelName, 'Channel trong blacklist', detection);
+    }
+
+    // Kiểm tra video bị block thủ công
+    if (videoId && isVideoManuallyBlocked(videoId)) {
+      effectiveDetection = createManualBlockResult(videoId, channelName, detection);
     }
     
     if (shouldBlockDetection(effectiveDetection)) {
@@ -296,24 +348,21 @@
         console.log(`${LOG_PREFIX} Watch page blocked:`, effectiveDetection.reasons);
       }
     } else {
-      // Chỉ unblock nếu video này KHÔNG nằm trong cache block
-      // (tránh trường hợp metadata chưa ready → false negative)
-      if (videoId && videoId === lastBlockedWatchVideoId && lastBlockedWatchDetection) {
-        // Metadata có thể chưa đầy đủ, giữ block từ cache
-        console.log(`${LOG_PREFIX} Keeping block from cache despite current scan safe (metadata may be incomplete):`, videoId);
-      } else {
-        clearWatchBlockCache(videoId);
-        AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: true });
-        AIBlocker.unblockWatchPage();
-        if (markPageDecisionRecorded(context, effectiveDetection)) {
-          await StorageManager.updateDetectionStats({
-            scanned: 1,
-            blocked: 0,
-            context,
-            riskLevel: effectiveDetection.riskLevel,
-            riskCategories: effectiveDetection.riskCategories
-          });
-        }
+      // Scan nói safe → luôn unblock và force play video
+      clearWatchBlockCache(videoId);
+      AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: true });
+      AIBlocker.unblockWatchPage();
+      // Force play vì restoreMediaState có thể không resume
+      // (do video đã bị pause bởi guard trước đó → shouldResume = false)
+      AIBlocker.forcePlayback();
+      if (markPageDecisionRecorded(context, effectiveDetection)) {
+        await StorageManager.updateDetectionStats({
+          scanned: 1,
+          blocked: 0,
+          context,
+          riskLevel: effectiveDetection.riskLevel,
+          riskCategories: effectiveDetection.riskCategories
+        });
       }
     }
 
@@ -340,6 +389,12 @@
 
     if (channelPolicy === 'blacklist') {
       effectiveDetection = createChannelOverrideResult(channelName, 'Channel trong blacklist', detection);
+    }
+
+    // Kiểm tra video bị block thủ công
+    const shortsVideoId = detection?.videoId || extractVideoIdFromUrl(location.href);
+    if (shortsVideoId && isVideoManuallyBlocked(shortsVideoId)) {
+      effectiveDetection = createManualBlockResult(shortsVideoId, channelName, detection);
     }
 
     if (shouldBlockDetection(effectiveDetection)) {
@@ -772,6 +827,16 @@
       urlObserver.observe(titleEl, { childList: true });
     }
 
+    // Xóa overlay ngay khi navigation BẮT ĐẦU (trước yt-navigate-finish)
+    // Để người dùng không thấy overlay flash từ video cũ
+    document.addEventListener('yt-navigate-start', () => {
+      if (lastBlockedWatchVideoId || document.body.dataset.aivbWatchBlocked) {
+        clearWatchBlockCache(null);
+        AIBlocker.resetPageBlocks({ restoreMedia: false });
+        navigationStartedAt = Date.now();
+      }
+    });
+
     // Fallback: listen to yt-navigate-finish event
     document.addEventListener('yt-navigate-finish', () => {
       // Guard: nếu init() vừa hoàn thành (< 2s), skip navigation reset
@@ -875,24 +940,18 @@
   }
 
   function prepareForNavigationScan() {
-    const nextVideoId = extractVideoIdFromUrl(location.href);
-    const isStillBlockedVideo = nextVideoId && nextVideoId === lastBlockedWatchVideoId;
-
     resetProcessedVideoItems();
 
-    // Chỉ reset page blocks nếu đã chuyển sang video KHÁC
-    // Nếu vẫn cùng video (reload), giữ nguyên blocking
-    if (!isStillBlockedVideo) {
-      clearWatchBlockCache(null);
-      AIBlocker.resetPageBlocks({ restoreMedia: false });
-    } else {
-      console.log(`${LOG_PREFIX} Keeping block during navigation (same video): ${nextVideoId}`);
-    }
+    // LUÔN xóa watch block cache khi navigate
+    clearWatchBlockCache(null);
+    AIBlocker.resetPageBlocks({ restoreMedia: false });
+
+    // Set navigation transition guard
+    navigationStartedAt = Date.now();
 
     if (location.pathname === '/watch' || location.pathname.startsWith('/shorts/')) {
       AIBlocker.holdPlayback('pending-scan');
     } else {
-      clearWatchBlockCache(null);
       AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: true });
     }
   }
@@ -1009,6 +1068,7 @@
       'detectorVersion',
       'whitelistedChannels',
       'blacklistedChannels',
+      'blockedVideos',
       'aiKeywords',
       'syntheticKeywords',
       'childRiskKeywords',
@@ -1073,6 +1133,102 @@
       channelName: channelName || base.channelName || '',
       channelUrl: base.channelUrl || ''
     };
+  }
+
+  function isVideoManuallyBlocked(videoId) {
+    if (!videoId || !settings?.blockedVideos?.length) return false;
+    return settings.blockedVideos.some(v => v.videoId === videoId);
+  }
+
+  function createManualBlockResult(videoId, channelName = '', base = {}) {
+    return {
+      ...base,
+      isAI: false,
+      shouldBlock: true,
+      confidence: 1,
+      syntheticScore: 0,
+      childRiskScore: 0,
+      riskLevel: 'block',
+      riskCategories: [],
+      method: 'manual',
+      reasons: ['Video bị chặn thủ công bởi phụ huynh'],
+      signalCounts: { strong: 1, medium: 0, weak: 0 },
+      axisSignalCounts: {
+        synthetic: { strong: 0, medium: 0, weak: 0 },
+        childRisk: { strong: 0, medium: 0, weak: 0 }
+      },
+      signals: [{
+        type: 'manualBlock',
+        axis: 'manual',
+        strength: 'strong',
+        method: 'manual',
+        weight: 1
+      }],
+      detectorVersion: AIDetector.DETECTOR_VERSION,
+      videoId: videoId,
+      channelName: channelName || base.channelName || ''
+    };
+  }
+
+  function extractContextInfo(clickedElement, action, linkUrl = '', pageUrl = '') {
+    const result = { channel: '', videoId: '', title: '' };
+
+    // Try to get info from the clicked element and its ancestors
+    const videoCard = clickedElement?.closest?.(
+      'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ' +
+      'ytd-grid-video-renderer, ytd-reel-item-renderer, ytm-shorts-lockup-view-model, ' +
+      'yt-lockup-view-model, ytd-reel-video-renderer'
+    );
+
+    if (action === 'block_channel') {
+      // Extract channel name from video card
+      if (videoCard) {
+        const channelEl = videoCard.querySelector('#channel-name a, ytd-channel-name a, a[href^="/@"], a[href*="/@"]');
+        result.channel = channelEl?.textContent?.trim() || '';
+      }
+      // Fallback: try from watch page
+      if (!result.channel) {
+        result.channel = getWatchChannelName() || getShortsChannelName() || '';
+      }
+      // Fallback: try from link URL (channel page)
+      if (!result.channel && linkUrl) {
+        const channelMatch = linkUrl.match(/@([^/?]+)/);
+        if (channelMatch) result.channel = '@' + decodeURIComponent(channelMatch[1]);
+      }
+    }
+
+    if (action === 'block_video') {
+      // Extract video ID from link URL
+      if (linkUrl) {
+        result.videoId = extractVideoIdFromUrl(linkUrl);
+      }
+      // Fallback: try from video card
+      if (!result.videoId && videoCard) {
+        result.videoId = extractVideoId(videoCard);
+      }
+      // Fallback: try from current page (if on watch/shorts)
+      if (!result.videoId) {
+        result.videoId = extractVideoIdFromUrl(pageUrl || location.href);
+      }
+      // Extract title
+      if (videoCard) {
+        const titleEl = videoCard.querySelector('#video-title, h3 a, .title');
+        result.title = titleEl?.textContent?.trim() || '';
+      }
+      if (!result.title) {
+        result.title = getCurrentVideoTitle() || '';
+      }
+      // Extract channel for metadata
+      if (videoCard) {
+        const channelEl = videoCard.querySelector('#channel-name a, ytd-channel-name a, a[href^="/@"]');
+        result.channel = channelEl?.textContent?.trim() || '';
+      }
+      if (!result.channel) {
+        result.channel = getWatchChannelName() || getShortsChannelName() || '';
+      }
+    }
+
+    return result;
   }
 
   function normalizeLang(lang = '') {

@@ -32,6 +32,21 @@ async function handleMessage(msg, sender) {
     case 'WHITELIST_CHANNEL':
       return await whitelistChannel(msg.channel, msg.url);
 
+    case 'BLOCK_CHANNEL':
+      return await blockChannel(msg.channel);
+
+    case 'BLOCK_VIDEO':
+      return await blockVideo(msg.videoId, msg.title, msg.channel);
+
+    case 'UNBLOCK_VIDEO':
+      return await unblockVideo(msg.videoId);
+
+    case 'GET_PAGE_INFO':
+      return { ok: true };
+
+    case 'CONTEXT_MENU_ACTION':
+      return await handleContextMenuFromContent(msg, sender);
+
     case 'GET_SETTINGS':
       await migrateLegacyGeminiSecret();
       return await StorageManager.getSettings();
@@ -117,6 +132,65 @@ async function whitelistChannel(channel, url) {
     await rescanAllTabs();
   }
   return { ok: true, channel };
+}
+
+// ==================== MANUAL BLOCK (Channel & Video) ====================
+
+async function blockChannel(channel) {
+  if (!channel) return { ok: false, reason: 'missing_channel' };
+  const settings = await StorageManager.getSettings();
+  if (!settings.blacklistedChannels.includes(channel)) {
+    settings.blacklistedChannels.push(channel);
+    // Also remove from whitelist if present
+    settings.whitelistedChannels = settings.whitelistedChannels.filter(c => c !== channel);
+    await StorageManager.updateSettings({
+      blacklistedChannels: settings.blacklistedChannels,
+      whitelistedChannels: settings.whitelistedChannels
+    });
+    console.log(`${LOG_PREFIX} Blocked channel: ${channel}`);
+    await rescanAllTabs();
+  }
+  return { ok: true, channel };
+}
+
+async function blockVideo(videoId, title = '', channel = '') {
+  if (!videoId) return { ok: false, reason: 'missing_video_id' };
+  const settings = await StorageManager.getSettings();
+  const blockedVideos = settings.blockedVideos || [];
+  const existing = blockedVideos.find(v => v.videoId === videoId);
+  if (!existing) {
+    blockedVideos.push({
+      videoId,
+      title: title || '',
+      channel: channel || '',
+      blockedAt: Date.now()
+    });
+    await StorageManager.updateSettings({ blockedVideos });
+    console.log(`${LOG_PREFIX} Blocked video: ${videoId} (${title})`);
+    await rescanAllTabs();
+  }
+  return { ok: true, videoId };
+}
+
+async function unblockVideo(videoId) {
+  if (!videoId) return { ok: false, reason: 'missing_video_id' };
+  const settings = await StorageManager.getSettings();
+  const blockedVideos = (settings.blockedVideos || []).filter(v => v.videoId !== videoId);
+  await StorageManager.updateSettings({ blockedVideos });
+  console.log(`${LOG_PREFIX} Unblocked video: ${videoId}`);
+  await rescanAllTabs();
+  return { ok: true, videoId };
+}
+
+async function handleContextMenuFromContent(msg, sender) {
+  const { action, channel, videoId, title } = msg;
+  if (action === 'block_channel' && channel) {
+    return await blockChannel(channel);
+  }
+  if (action === 'block_video' && videoId) {
+    return await blockVideo(videoId, title, channel);
+  }
+  return { ok: false, reason: 'invalid_action' };
 }
 
 // ==================== STATS ====================
@@ -1052,6 +1126,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   console.log(`${LOG_PREFIX} Installed:`, details.reason);
   await migrateLegacyGeminiSecret();
   await migrateLegacyOpenRouterSecret();
+  createContextMenus();
 
   if (details.reason === 'install') {
     // Khởi tạo settings mặc định
@@ -1070,7 +1145,50 @@ chrome.runtime.onStartup.addListener(async () => {
   console.log(`${LOG_PREFIX} Started`);
   await migrateLegacyGeminiSecret();
   await migrateLegacyOpenRouterSecret();
+  createContextMenus();
   await updateBadge(0);
+});
+
+// ==================== CONTEXT MENUS ====================
+
+function createContextMenus() {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: 'safekid-block-channel',
+      title: '🛡️ SafeKid: Chặn channel này',
+      contexts: ['link', 'page'],
+      documentUrlPatterns: ['*://www.youtube.com/*', '*://youtube.com/*']
+    });
+    chrome.contextMenus.create({
+      id: 'safekid-block-video',
+      title: '🛡️ SafeKid: Chặn video này',
+      contexts: ['link', 'page'],
+      documentUrlPatterns: ['*://www.youtube.com/*', '*://youtube.com/*']
+    });
+  });
+}
+
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (!tab?.id) return;
+  const menuId = info.menuItemId;
+  if (menuId !== 'safekid-block-channel' && menuId !== 'safekid-block-video') return;
+
+  try {
+    const results = await chrome.tabs.sendMessage(tab.id, {
+      type: 'GET_CONTEXT_INFO',
+      action: menuId === 'safekid-block-channel' ? 'block_channel' : 'block_video',
+      linkUrl: info.linkUrl || '',
+      pageUrl: info.pageUrl || ''
+    });
+
+    if (results?.channel && menuId === 'safekid-block-channel') {
+      await blockChannel(results.channel);
+    } else if (results?.videoId && menuId === 'safekid-block-video') {
+      await blockVideo(results.videoId, results.title || '', results.channel || '');
+    }
+  } catch (e) {
+    console.warn(`${LOG_PREFIX} Context menu action failed:`, e);
+  }
 });
 
 console.log(`${LOG_PREFIX} Service worker loaded`);

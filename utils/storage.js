@@ -14,6 +14,7 @@ const StorageManager = {
     isLocked: false,
     whitelistedChannels: [],
     blacklistedChannels: [],
+    blockedVideos: [], // { videoId, title, channel, blockedAt }
     stats: {
       totalBlocked: 0,
       totalScanned: 0,

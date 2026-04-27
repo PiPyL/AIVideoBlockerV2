@@ -37,6 +37,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const blacklistContainer = $('#blacklist-container');
   const blacklistCount = $('#blacklist-count');
 
+  const blockedVideosHeader = $('#blocked-videos-header');
+  const blockedVideosDetails = $('#blocked-videos-details');
+  const blockedVideosChevron = $('#blocked-videos-chevron');
+  const blockedVideosContainer = $('#blocked-videos-container');
+  const blockedVideosCount = $('#blocked-videos-count');
+  const btnClearBlockedVideos = $('#btn-clear-blocked-videos');
+
   const btnRescan = $('#btn-rescan');
 
   const checkboxAiEnabled = $('#checkbox-ai-enabled');
@@ -158,6 +165,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     renderChannelList(blacklistContainer, s.blacklistedChannels, 'blacklist');
     blacklistCount.textContent = s.blacklistedChannels.length;
+
+    // Blocked videos
+    const blockedVideos = s.blockedVideos || [];
+    renderBlockedVideosList(blockedVideos);
+    blockedVideosCount.textContent = blockedVideos.length;
+    btnClearBlockedVideos.style.display = blockedVideos.length > 0 ? 'block' : 'none';
 
     // Stats
     await loadStats();
@@ -363,6 +376,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 1500);
   });
 
+  // Blocked videos collapsible
+  blockedVideosHeader.addEventListener('click', () => {
+    const isHidden = blockedVideosDetails.style.display === 'none';
+    blockedVideosDetails.style.display = isHidden ? 'block' : 'none';
+    blockedVideosChevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+  });
+
+  // Clear all blocked videos
+  btnClearBlockedVideos.addEventListener('click', async () => {
+    btnClearBlockedVideos.disabled = true;
+    await updateSetting({ blockedVideos: [] });
+    settings = await getSettings();
+    renderBlockedVideosList([]);
+    blockedVideosCount.textContent = '0';
+    btnClearBlockedVideos.style.display = 'none';
+    btnClearBlockedVideos.disabled = false;
+  });
+
   // ==================== CHANNEL MANAGEMENT ====================
 
   async function addChannel(listType) {
@@ -411,6 +442,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         removeChannel(name, listType);
       });
       container.appendChild(tag);
+    });
+  }
+
+  function renderBlockedVideosList(blockedVideos) {
+    blockedVideosContainer.innerHTML = '';
+    if (!blockedVideos.length) {
+      blockedVideosContainer.innerHTML = '<p style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 8px 0;">Chưa có video nào bị chặn thủ công</p>';
+      return;
+    }
+    blockedVideos.forEach(video => {
+      const tag = document.createElement('div');
+      tag.className = 'channel-tag blocked-video-tag';
+      const title = video.title || video.videoId;
+      const channel = video.channel ? ` · ${escapeHtml(video.channel)}` : '';
+      const date = video.blockedAt ? new Date(video.blockedAt).toLocaleDateString('vi-VN') : '';
+      tag.innerHTML = `
+        <div class="blocked-video-info">
+          <span class="blocked-video-title" title="${escapeHtml(title)}">${escapeHtml(title)}</span>
+          <span class="blocked-video-meta">${escapeHtml(video.videoId)}${channel}${date ? ' · ' + date : ''}</span>
+        </div>
+        <span class="channel-tag-remove" title="Bỏ chặn">×</span>
+      `;
+      tag.querySelector('.channel-tag-remove').addEventListener('click', async () => {
+        await sendMessage({ type: 'UNBLOCK_VIDEO', videoId: video.videoId });
+        settings = await getSettings();
+        const updated = settings.blockedVideos || [];
+        renderBlockedVideosList(updated);
+        blockedVideosCount.textContent = updated.length;
+        btnClearBlockedVideos.style.display = updated.length > 0 ? 'block' : 'none';
+      });
+      blockedVideosContainer.appendChild(tag);
     });
   }
 
@@ -601,6 +663,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       keyword: 'Từ khóa AI',
       pattern: 'Pattern',
       channel: 'Channel',
+      manual: 'Chặn thủ công',
       disclosure: 'Disclosure',
       childRisk: 'Rủi ro trẻ em',
       gemini: 'Gemini API',

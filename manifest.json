@@ -10,7 +10,8 @@
   },
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "contextMenus"
   ],
   "host_permissions": [
     "https://www.youtube.com/*",

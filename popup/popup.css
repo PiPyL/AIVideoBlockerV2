@@ -646,3 +646,45 @@ body::-webkit-scrollbar-thumb {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ==================== BLOCKED VIDEOS ==================== */
+
+.blocked-video-tag {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 8px;
+}
+
+.blocked-video-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.blocked-video-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.blocked-video-meta {
+  font-size: 9px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.blocked-video-tag .channel-tag-remove {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
