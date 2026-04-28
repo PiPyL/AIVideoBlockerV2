@@ -119,11 +119,28 @@ function closeInstallModal() {
     }
 }
 
+function openContactModal() {
+    const modal = document.getElementById('contactModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeContactModal() {
+    const modal = document.getElementById('contactModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
 // Close modal when pressing Escape key
 document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
         closeInstallModal();
         closeVideoModal();
+        closeContactModal();
     }
 });
 

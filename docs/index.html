@@ -42,6 +42,7 @@
             <nav class="nav-links">
                 <a href="#features">Tính năng</a>
                 <a href="#how-it-works">Cách hoạt động</a>
+                <a href="guide.html">Hướng dẫn</a>
                 <a href="#faq">Hỏi đáp</a>
             </nav>
             <button onclick="openInstallModal()" class="btn btn-primary">Tải bản ZIP (Thủ công)</button>
@@ -288,12 +289,48 @@
             </div>
             <p class="copyright">&copy; 2026 AutoWork Team. Đảm bảo quyền riêng tư và an toàn.</p>
             <div class="footer-links">
-                <a href="#">Chính sách bảo mật</a>
-                <a href="#">Điều khoản</a>
-                <a href="#">Liên hệ</a>
+                <a href="guide.html">Hướng dẫn sử dụng</a>
+                <a href="privacy.html">Chính sách bảo mật</a>
+                <a href="terms.html">Điều khoản</a>
+                <a href="#" onclick="openContactModal(); return false;">Liên hệ</a>
             </div>
         </div>
     </footer>
+
+    <!-- Contact Modal -->
+    <div id="contactModal" class="modal">
+        <div class="modal-overlay" onclick="closeContactModal()"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeContactModal()">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="modal-header">
+                <h2>Thông tin liên hệ</h2>
+                <p>Nếu bạn cần hỗ trợ hoặc có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi qua:</p>
+            </div>
+            
+            <div class="modal-steps" style="margin-top: 20px;">
+                <div class="install-step" style="align-items: center; padding: 15px;">
+                    <div class="feature-icon icon-blue" style="margin-right: 15px; margin-bottom: 0;">
+                        <i data-lucide="mail"></i>
+                    </div>
+                    <div class="step-info">
+                        <strong>Email:</strong>
+                        <p><a href="mailto:autowork365@gmail.com" style="color: var(--primary-color); font-weight: 500;">autowork365@gmail.com</a></p>
+                    </div>
+                </div>
+                <div class="install-step" style="align-items: center; padding: 15px; margin-top: 15px;">
+                    <div class="feature-icon icon-green" style="margin-right: 15px; margin-bottom: 0;">
+                        <i data-lucide="phone"></i>
+                    </div>
+                    <div class="step-info">
+                        <strong>SĐT / Zalo:</strong>
+                        <p><a href="tel:0394932696" style="color: var(--primary-color); font-weight: 500;">0394932696</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Install Guide Modal -->
     <div id="installModal" class="modal">

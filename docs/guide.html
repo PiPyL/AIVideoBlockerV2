@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hướng dẫn sử dụng SafeKid - Bảo vệ trẻ em khỏi video AI</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <!-- SEO & Meta Tags -->
+    <meta name="description" content="Hướng dẫn chi tiết cách cài đặt, cấu hình và sử dụng SafeKid Chrome Extension để bảo vệ trẻ em khỏi video AI độc hại trên YouTube.">
+    
+    <!-- Performance Optimization -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <style>
+        .guide-hero {
+            padding: 160px 0 80px;
+            background: linear-gradient(135deg, var(--bg-main) 0%, #E0F2FE 100%);
+            text-align: center;
+        }
+        .guide-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1rem;
+        }
+        .guide-hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .guide-content {
+            padding: 40px 0 100px;
+        }
+        
+        .guide-toc {
+            background: var(--bg-card);
+            padding: 2rem 2.5rem;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 3rem;
+            border: 1px solid #E2E8F0;
+        }
+        
+        .guide-toc h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .guide-toc ol {
+            padding-left: 1.5rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        
+        .guide-toc li {
+            margin-bottom: 0.75rem;
+        }
+        
+        .guide-toc a {
+            color: inherit;
+        }
+        
+        .guide-toc a:hover {
+            color: var(--primary-blue);
+        }
+        
+        .guide-section {
+            margin-bottom: 4rem;
+            scroll-margin-top: 100px;
+        }
+        
+        .guide-section h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #E2E8F0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .guide-section h3 {
+            font-size: 1.25rem;
+            margin: 2rem 0 1rem;
+            color: var(--primary-blue);
+        }
+        
+        .guide-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1rem;
+            border: 1px solid #F1F5F9;
+            transition: var(--transition);
+        }
+        
+        .guide-card:hover {
+            border-color: var(--primary-blue-light);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .guide-card h4 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .guide-card ul {
+            padding-left: 1.5rem;
+            margin-top: 0.5rem;
+            color: var(--text-muted);
+            font-family: var(--font-body);
+        }
+        
+        .guide-card p {
+            color: var(--text-muted);
+            font-family: var(--font-body);
+        }
+        
+        .guide-screenshot {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .guide-screenshot img {
+            max-width: 100%;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid #E2E8F0;
+        }
+        
+        .guide-screenshot p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-top: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .guide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+        }
+        
+        .guide-tip, .guide-warn {
+            padding: 1.25rem 1.5rem;
+            border-radius: var(--radius-lg);
+            margin: 1.5rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            font-family: var(--font-body);
+            line-height: 1.5;
+        }
+        
+        .guide-tip {
+            background: var(--safe-green-light);
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+        
+        .guide-tip i {
+            color: var(--safe-green);
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+        
+        .guide-warn {
+            background: #FEF3C7;
+            color: #92400E;
+            border: 1px solid #FDE68A;
+        }
+        
+        .guide-warn i {
+            color: #D97706;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+        
+        .step-badge-number {
+            display: inline-flex;
+            width: 24px;
+            height: 24px;
+            background: var(--primary-blue);
+            color: white;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-family: var(--font-body);
+            font-weight: bold;
+        }
+    </style>
+    
+    <!-- Icons (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest" defer></script>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <a href="index.html" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <img src="logo.png" alt="SafeKid Logo" class="brand-logo">
+                    <span style="color: var(--text-main);">SafeKid</span>
+                </a>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html#features">Tính năng</a>
+                <a href="index.html#how-it-works">Cách hoạt động</a>
+                <a href="guide.html" style="color: var(--primary-blue);">Hướng dẫn</a>
+                <a href="index.html#faq">Hỏi đáp</a>
+            </nav>
+            <a href="index.html" class="btn btn-primary" style="padding: 0.5rem 1.25rem; font-size: 1rem;">Trang chủ</a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="guide-hero">
+        <div class="container">
+            <img src="logo.png" alt="SafeKid Logo" style="width: 80px; height: 80px; margin-bottom: 1rem;">
+            <h1>Hướng dẫn sử dụng SafeKid</h1>
+            <p>Toàn bộ hướng dẫn cách cài đặt, cấu hình và sử dụng SafeKid để bảo vệ con em khỏi video AI & nội dung độc hại trên YouTube.</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="guide-content">
+        <div class="container" style="max-width: 900px;">
+            
+            <div class="guide-toc">
+                <h2><i data-lucide="list"></i> Mục lục</h2>
+                <ol>
+                    <li><a href="#install">Cài đặt tiện ích</a></li>
+                    <li><a href="#overview">Tab Tổng quan — Cài đặt cơ bản</a></li>
+                    <li><a href="#advanced">Tab Quản lý nâng cao</a></li>
+                    <li><a href="#contextmenu">Chuột phải — Chặn/Cho phép nhanh</a></li>
+                    <li><a href="#overlay">Màn hình chặn video</a></li>
+                    <li><a href="#faq">Câu hỏi thường gặp</a></li>
+                </ol>
+            </div>
+
+            <!-- 1. CÀI ĐẶT -->
+            <div class="guide-section" id="install">
+                <h2><i data-lucide="download-cloud" class="text-highlight"></i> 1. Cài đặt tiện ích</h2>
+                <div class="guide-grid" style="margin-top: 1.5rem;">
+                    <div class="guide-card">
+                        <h4><div class="step-badge-number">1</div> Tải và giải nén</h4>
+                        <p>Tải file <strong>safekid-extension.zip</strong> từ trang chủ và giải nén ra một thư mục.</p>
+                    </div>
+                    <div class="guide-card">
+                        <h4><div class="step-badge-number">2</div> Mở Quản lý tiện ích</h4>
+                        <p>Trên trình duyệt Chrome, gõ <code>chrome://extensions/</code> vào thanh địa chỉ rồi nhấn Enter.</p>
+                    </div>
+                    <div class="guide-card">
+                        <h4><div class="step-badge-number">3</div> Bật Chế độ nhà phát triển</h4>
+                        <p>Bật công tắc <strong>"Developer mode"</strong> (Chế độ nhà phát triển) ở góc trên bên phải.</p>
+                    </div>
+                    <div class="guide-card">
+                        <h4><div class="step-badge-number">4</div> Tải thư mục lên</h4>
+                        <p>Nhấn nút <strong>"Load unpacked"</strong> (Tải tiện ích đã giải nén) → chọn thư mục vừa giải nén.</p>
+                    </div>
+                </div>
+                <div class="guide-tip">
+                    <i data-lucide="lightbulb"></i>
+                    <div>
+                        <strong>Mẹo:</strong> Sau khi cài đặt, hãy nhấp vào biểu tượng mảnh ghép trên Chrome và "Ghim" biểu tượng SafeKid lên thanh công cụ để dễ dàng truy cập.
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. TAB TỔNG QUAN -->
+            <div class="guide-section" id="overview">
+                <h2><i data-lucide="layout-dashboard" class="text-highlight"></i> 2. Tab Tổng quan</h2>
+                <p class="text-muted" style="font-family: var(--font-body); font-size: 1.1rem; margin-bottom: 1.5rem;">Đây là màn hình chính khi bạn nhấn vào biểu tượng SafeKid. Tại đây bạn có thể điều chỉnh các cài đặt phát hiện và kiểm soát quá trình hoạt động.</p>
+
+                <div class="guide-screenshot">
+                    <img src="screenshot-overview.png" alt="Tab Tổng quan SafeKid" style="max-width: 360px;">
+                    <p>Màn hình Tab Tổng quan</p>
+                </div>
+
+                <h3>Bật/Tắt SafeKid</h3>
+                <div class="guide-card">
+                    <h4><i data-lucide="power" class="text-highlight"></i> Công tắc chính (góc trên phải)</h4>
+                    <p>Bật để SafeKid tự động quét và chặn nội dung độc hại trên YouTube & YouTube Kids. Tắt nếu muốn tạm dừng toàn bộ tính năng bảo vệ.</p>
+                </div>
+
+                <h3>Thanh thống kê</h3>
+                <div class="guide-card">
+                    <p>Hiển thị 3 con số quan trọng về hoạt động của extension:</p>
+                    <ul>
+                        <li><strong>Đã chặn:</strong> Tổng số video đã bị phát hiện và ngăn chặn.</li>
+                        <li><strong>Đã quét:</strong> Tổng số video SafeKid đã kiểm tra.</li>
+                        <li><strong>Phát hiện:</strong> Tỷ lệ phần trăm video bị phát hiện là độc hại/AI so với tổng số.</li>
+                    </ul>
+                </div>
+
+                <h3>Độ nhạy phát hiện</h3>
+                <div class="guide-grid">
+                    <div class="guide-card">
+                        <h4><span class="badge" style="background:#D1FAE5; color:#059669; font-size:0.85rem; margin:0; padding:0.25rem 0.75rem;">Thấp</span></h4>
+                        <p>Chỉ chặn khi rất chắc chắn video là độc hại hoặc AI. Ít gây phiền hà (chặn nhầm) nhưng có thể vô tình lọt nội dung xấu.</p>
+                    </div>
+                    <div class="guide-card">
+                        <h4><span class="badge" style="background:#FEF3C7; color:#D97706; font-size:0.85rem; margin:0; padding:0.25rem 0.75rem;">Trung bình</span></h4>
+                        <p>Cân bằng giữa chặn và cho phép. Phù hợp cho đa số người dùng trưởng thành.</p>
+                    </div>
+                    <div class="guide-card" style="border-color: var(--warning-red);">
+                        <h4><span class="badge" style="background:#FEE2E2; color:#DC2626; font-size:0.85rem; margin:0; padding:0.25rem 0.75rem;">Cao</span> <span style="font-size:0.85rem; color:var(--warning-red); margin-left:0.5rem; font-family: var(--font-body); font-weight: bold;">Khuyên dùng</span></h4>
+                        <p>Chặn ngay cả khi có những nghi ngờ nhỏ. An toàn nhất cho trẻ em, mặc dù có thể chặn nhầm một số video bình thường.</p>
+                    </div>
+                </div>
+
+                <h3>Hồ sơ nhận diện</h3>
+                <div class="guide-grid">
+                    <div class="guide-card">
+                        <h4>Cân bằng</h4>
+                        <p>Giảm tỷ lệ chặn nhầm, chỉ lọc các nội dung rõ ràng vi phạm. Phù hợp khi bạn muốn trải nghiệm YouTube ít bị gián đoạn.</p>
+                    </div>
+                    <div class="guide-card" style="border-color: var(--primary-blue);">
+                        <h4>Ưu tiên bắt AI <span class="badge" style="background:var(--primary-blue-light); color:var(--primary-blue); font-size:0.85rem; margin:0 0 0 0.5rem; padding:0.25rem 0.75rem;">Mặc định</span></h4>
+                        <p>Tăng cường độ nhạy với các dấu hiệu nội dung tạo tự động (AI slop). An toàn hơn cho trẻ nhỏ khỏi rác nội dung.</p>
+                    </div>
+                </div>
+
+                <h3>Phân tích AI nâng cao (Tùy chọn)</h3>
+                <div class="guide-card">
+                    <h4><i data-lucide="sparkles" class="text-highlight"></i> Kết nối AI của bên thứ 3</h4>
+                    <p>SafeKid có thể kết nối với các mô hình AI lớn (như Gemini) để phân tích ngữ cảnh video một cách vô cùng chính xác. Đây là tính năng <strong>tùy chọn</strong> — SafeKid vẫn tự động bảo vệ rất tốt bằng bộ lọc thông minh tích hợp sẵn.</p>
+                    <ul>
+                        <li><strong>OpenRouter:</strong> Hỗ trợ nhiều model miễn phí hoàn toàn, khuyên dùng để tăng hiệu quả lọc mà không tốn kém.</li>
+                        <li><strong>Gemini API:</strong> Cần tạo khóa API từ Google AI Studio. Có độ chính xác cao.</li>
+                        <li><strong>Phân tích thumbnail:</strong> Bật để AI xem trực tiếp cả hình ảnh. Chính xác hơn nhưng tốn nhiều thời gian xử lý hơn.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 3. TAB QUẢN LÝ NÂNG CAO -->
+            <div class="guide-section" id="advanced">
+                <h2><i data-lucide="settings" class="text-highlight"></i> 3. Tab Quản lý nâng cao</h2>
+                <p class="text-muted" style="font-family: var(--font-body); font-size: 1.1rem; margin-bottom: 1.5rem;">Tab dành riêng cho phụ huynh quản lý danh sách kênh an toàn, kênh bị cấm, đặt mật khẩu bảo vệ và các cấu hình chuyên sâu.</p>
+
+                <div class="guide-screenshot">
+                    <img src="screenshot-advanced.png" alt="Tab Quản lý nâng cao SafeKid" style="max-width: 360px;">
+                    <p>Màn hình Tab Quản lý nâng cao</p>
+                </div>
+
+                <h3>Mật khẩu phụ huynh</h3>
+                <div class="guide-card">
+                    <h4><i data-lucide="lock" class="text-green"></i> Bảo vệ bằng mật khẩu</h4>
+                    <p>Khóa các cài đặt quan trọng bằng mật khẩu (tối thiểu 4 ký tự) để ngăn trẻ em vô tình tắt lớp bảo vệ. Khi thiết lập:</p>
+                    <ul>
+                        <li>Mỗi lần mở bảng điều khiển (popup), SafeKid sẽ yêu cầu nhập mật khẩu.</li>
+                        <li>Trẻ em không thể gỡ bỏ kênh khỏi danh sách chặn hoặc thay đổi độ nhạy.</li>
+                        <li>Phụ huynh có thể xóa bỏ mật khẩu bất kỳ lúc nào để tắt tính năng khóa.</li>
+                    </ul>
+                </div>
+                <div class="guide-warn">
+                    <i data-lucide="alert-triangle"></i>
+                    <div>
+                        <strong>Lưu ý quan trọng:</strong> Hãy ghi nhớ mật khẩu! Nếu quên, cách duy nhất để khôi phục là bạn phải gỡ bỏ hoàn toàn tiện ích SafeKid khỏi Chrome và tiến hành cài đặt lại từ đầu.
+                    </div>
+                </div>
+
+                <h3>Kênh được phép xem (Whitelist)</h3>
+                <div class="guide-card">
+                    <h4><i data-lucide="check-circle-2" class="text-green"></i> Danh sách kênh an toàn tuyệt đối</h4>
+                    <p>Thêm tên các kênh YouTube mà bạn hoàn toàn tin tưởng (ví dụ: VTV, HTV3, kênh hoạt hình chính thức). Video từ các kênh này sẽ <strong>không bao giờ bị SafeKid chặn</strong>, bất kể chúng có đặc điểm giống AI hay không.</p>
+                    <ul>
+                        <li>Vui lòng nhập đúng Tên kênh hiển thị trên YouTube (phân biệt hoa thường không quan trọng).</li>
+                        <li>Nhanh nhất là dùng tính năng "Chuột phải" để thêm kênh ngay khi đang xem.</li>
+                        <li>Nhấn biểu tượng thùng rác để gỡ bỏ kênh.</li>
+                    </ul>
+                </div>
+
+                <h3>Chế độ "Chỉ cho phép xem kênh trong danh sách"</h3>
+                <div class="guide-card" style="border-left: 4px solid var(--warning-red);">
+                    <h4><i data-lucide="shield-alert" class="text-red"></i> Chế độ an toàn tối đa (Whitelist-only)</h4>
+                    <p>Khi công tắc này được bật, SafeKid chuyển sang mức độ kiểm soát cao nhất:</p>
+                    <ul>
+                        <li><strong>Mọi video</strong> từ bất kỳ kênh nào KHÔNG có trong danh sách Whitelist sẽ bị chặn hiển thị.</li>
+                        <li>Thậm chí cả video người thật 100% cũng bị chặn nếu kênh đó chưa được bạn phê duyệt.</li>
+                        <li>Con bạn chỉ có thể nhìn thấy nội dung từ những kênh nằm trong "Danh sách kênh được phép xem".</li>
+                    </ul>
+                </div>
+                <div class="guide-tip">
+                    <i data-lucide="lightbulb"></i>
+                    <div>
+                        <strong>Mẹo của chuyên gia:</strong> Chế độ này là giải pháp "vàng" cho trẻ nhỏ (dưới 6 tuổi) khi bạn chỉ muốn con xem các kênh giáo dục, ca nhạc thiếu nhi mà chính bạn đã tự tay chọn lọc kỹ càng.
+                    </div>
+                </div>
+
+                <h3>Channel luôn chặn (Blacklist)</h3>
+                <div class="guide-card">
+                    <h4><i data-lucide="ban" class="text-red"></i> Danh sách kênh bị cấm</h4>
+                    <p>Ghi danh các kênh mà bạn muốn <strong>loại bỏ vĩnh viễn</strong>. Toàn bộ video từ các kênh trong danh sách này sẽ bị SafeKid che khuất lập tức, dù nội dung thực sự của video đó là gì.</p>
+                </div>
+            </div>
+
+            <!-- 4. CHUỘT PHẢI -->
+            <div class="guide-section" id="contextmenu">
+                <h2><i data-lucide="mouse-pointer-click" class="text-highlight"></i> 4. Menu chuột phải (Context Menu)</h2>
+                <p class="text-muted" style="font-family: var(--font-body); font-size: 1.1rem; margin-bottom: 1.5rem;">Khi đang ở trang YouTube hoặc YouTube Kids, bạn chỉ cần nhấn chuột phải vào bất kỳ đâu trên trang để truy cập nhanh các tùy chọn quản lý của SafeKid.</p>
+
+                <div class="guide-screenshot">
+                    <img src="screenshot-contextmenu.png" alt="Menu chuột phải SafeKid trên YouTube" style="max-width: 700px;">
+                    <p>Menu chuột phải SafeKid hiển thị trực tiếp trên YouTube</p>
+                </div>
+
+                <div class="guide-grid">
+                    <div class="guide-card">
+                        <h4 class="text-green"><i data-lucide="check-square" style="width:20px;height:20px;"></i> Cho phép channel này</h4>
+                        <p>Ngay lập tức đưa kênh của video đang xem vào danh sách an toàn (Whitelist).</p>
+                    </div>
+                    <div class="guide-card">
+                        <h4 class="text-red"><i data-lucide="x-square" style="width:20px;height:20px;"></i> Chặn channel này</h4>
+                        <p>Đưa kênh của video đang xem vào danh sách luôn bị cấm (Blacklist).</p>
+                    </div>
+                    <div class="guide-card">
+                        <h4 class="text-highlight"><i data-lucide="video-off" style="width:20px;height:20px;"></i> Chặn video này</h4>
+                        <p>Chỉ chặn thủ công một video cụ thể này mà không gây ảnh hưởng tới các video khác của kênh.</p>
+                    </div>
+                </div>
+                <div class="guide-tip">
+                    <i data-lucide="zap"></i>
+                    <div>
+                        <strong>Thao tác nhanh:</strong> Đây là cách tiết kiệm thời gian nhất! Thay vì mở bảng điều khiển để gõ tên kênh, hãy cứ chuột phải trực tiếp khi thấy video để kiểm soát.
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. MÀN HÌNH CHẶN -->
+            <div class="guide-section" id="overlay">
+                <h2><i data-lucide="eye-off" class="text-highlight"></i> 5. Khi video bị chặn</h2>
+
+                <h3>1. Trên trang chủ và danh sách gợi ý</h3>
+                <div class="guide-card">
+                    <p>Những video độc hại/AI sẽ tự động bị phủ một lớp mờ dày đặc trên ảnh thu nhỏ (thumbnail) kèm theo các thông tin:</p>
+                    <ul>
+                        <li><strong>Trạng thái:</strong> "Đã Chặn Video AI" hoặc "Đã Chặn Kênh Không Phù Hợp".</li>
+                        <li><strong>Độ tin cậy:</strong> Mức độ chắc chắn (%) của hệ thống và thuật toán nào đã ra quyết định chặn.</li>
+                        <li><strong>Lý do cụ thể:</strong> Chẳng hạn "Phát hiện có chứa từ ngữ phản cảm" hoặc "Video do AI tạo ra hàng loạt".</li>
+                    </ul>
+                    <p style="margin-top:0.75rem">Nhấn vào khu vực video đã bị chặn sẽ <strong>không có tác dụng</strong> — điều này bảo vệ trẻ em không thể "cố ý" bấm vào xem.</p>
+                </div>
+
+                <h3>2. Khi trẻ bấm trực tiếp vào trang xem video</h3>
+                <div class="guide-card">
+                    <p>Nếu bằng một cách nào đó (như qua link chia sẻ) trẻ vẫn truy cập thẳng vào trang chiếu video bị chặn, hệ thống sẽ:</p>
+                    <ul>
+                        <li><strong>Chặn phát video</strong> ngay lập tức ở mức thấp nhất, không để âm thanh hay hình ảnh lọt qua.</li>
+                        <li>Hiển thị tấm màn đen bao phủ toàn bộ màn hình với nút <strong>"← Quay lại trang chủ"</strong>.</li>
+                        <li>Nếu phụ huynh muốn kiểm tra lại nội dung, có thể chọn nút "Tôi là phụ huynh", nhập mật khẩu để tạm thời xem video hoặc mở khóa kênh vĩnh viễn.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 6. FAQ -->
+            <div class="guide-section" id="faq">
+                <h2><i data-lucide="help-circle" class="text-highlight"></i> 6. Câu hỏi thường gặp</h2>
+                <p class="text-muted" style="font-family: var(--font-body); font-size: 1.1rem; margin-bottom: 1.5rem;">Giải đáp nhanh các thắc mắc trong quá trình sử dụng SafeKid.</p>
+                
+                <div class="guide-grid">
+                    <div class="guide-card">
+                        <h4>SafeKid có lấy dữ liệu cá nhân của tôi không?</h4>
+                        <p><strong>Hoàn toàn Không.</strong> SafeKid là tiện ích chạy độc lập trên trình duyệt của bạn (local). Không có dữ liệu xem video hay thông tin cá nhân nào được gửi về máy chủ của chúng tôi. Nếu bạn dùng API AI bổ sung, dữ liệu chỉ gửi trực tiếp qua API của Google/OpenRouter.</p>
+                    </div>
+
+                    <div class="guide-card">
+                        <h4>SafeKid có hỗ trợ YouTube Kids không?</h4>
+                        <p><strong>Có.</strong> Hệ thống được thiết kế tối ưu hóa để tương thích với cả <code>youtube.com</code> và trang web <code>youtubekids.com</code>.</p>
+                    </div>
+
+                    <div class="guide-card">
+                        <h4>Trẻ em có tự tắt được SafeKid không?</h4>
+                        <p>Khi <strong>mật khẩu phụ huynh</strong> đã bật, trẻ sẽ không thể mở cài đặt SafeKid. Tuy nhiên đối với các bé lớn và am hiểu máy tính, trẻ có thể vô hiệu hóa tiện ích thông qua trang Quản lý tiện ích (chrome://extensions) của Google Chrome.</p>
+                    </div>
+
+                    <div class="guide-card">
+                        <h4>Đôi khi tôi thấy video sạch vẫn bị chặn?</h4>
+                        <p>Đó là trường hợp "chặn nhầm" (false positive). Để khắc phục: Nhấn chuột phải -> "Cho phép channel này", video sẽ sáng lại lập tức. Hoặc bạn có thể cân nhắc chuyển Độ nhạy phát hiện về mức "Trung bình" trong Tab Tổng quan.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-container">
+            <div class="footer-logo">
+                <img src="logo.png" alt="SafeKid Logo" class="brand-logo">
+                <span>SafeKid</span>
+            </div>
+            <p class="copyright">&copy; 2026 AutoWork Team. Đảm bảo quyền riêng tư và an toàn.</p>
+            <div class="footer-links">
+                <a href="guide.html">Hướng dẫn sử dụng</a>
+                <a href="privacy.html">Chính sách bảo mật</a>
+                <a href="terms.html">Điều khoản</a>
+                <a href="#" onclick="openContactModal(); return false;">Liên hệ</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Contact Modal -->
+    <div id="contactModal" class="modal">
+        <div class="modal-overlay" onclick="closeContactModal()"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeContactModal()">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="modal-header">
+                <h2>Thông tin liên hệ</h2>
+                <p>Nếu bạn cần hỗ trợ hoặc có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi qua:</p>
+            </div>
+            
+            <div class="modal-steps" style="margin-top: 20px;">
+                <div class="install-step" style="align-items: center; padding: 15px;">
+                    <div class="feature-icon icon-blue" style="margin-right: 15px; margin-bottom: 0;">
+                        <i data-lucide="mail"></i>
+                    </div>
+                    <div class="step-info">
+                        <strong>Email:</strong>
+                        <p><a href="mailto:autowork365@gmail.com" style="color: var(--primary-color); font-weight: 500;">autowork365@gmail.com</a></p>
+                    </div>
+                </div>
+                <div class="install-step" style="align-items: center; padding: 15px; margin-top: 15px;">
+                    <div class="feature-icon icon-green" style="margin-right: 15px; margin-bottom: 0;">
+                        <i data-lucide="phone"></i>
+                    </div>
+                    <div class="step-info">
+                        <strong>SĐT / Zalo:</strong>
+                        <p><a href="tel:0394932696" style="color: var(--primary-color); font-weight: 500;">0394932696</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Initialize Icons -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        function openContactModal() {
+            const modal = document.getElementById('contactModal');
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeContactModal() {
+            const modal = document.getElementById('contactModal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeContactModal();
+            }
+        });
+    </script>
+</body>
+</html>
