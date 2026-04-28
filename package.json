@@ -1,6 +1,6 @@
 {
   "name": "safekid-extension",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "SafeKid YouTube Extension",
   "scripts": {
     "test": "node --test tests/*.test.js",

@@ -23,7 +23,7 @@ fi
 
 # Đóng gói tiện ích
 echo "📦 Đang đóng gói tiện ích vào $ZIP_NAME..."
-zip -r "$ZIP_NAME" background content icons popup styles utils manifest.json free_models.json -x "*.DS_Store"
+zip -r "$ZIP_NAME" _locales background content icons popup styles utils manifest.json free_models.json -x "*.DS_Store"
 
 echo "📝 Đang commit code..."
 git add .
