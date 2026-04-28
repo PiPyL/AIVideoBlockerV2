@@ -132,27 +132,50 @@ const AIBlocker = {
   },
 
   _findPreviewHost(el) {
-    const selectors = [
-      'ytd-thumbnail',
-      'yt-thumbnail-view-model',
-      '.ytLockupViewModelContentImage yt-thumbnail-view-model',
-      '.shortsLockupViewModelHostEndpoint yt-thumbnail-view-model',
-      '.shortsLockupViewModelHostThumbnailContainer',
-      'a#thumbnail',
-      '#thumbnail'
-    ];
+    const platformConfig = typeof PlatformAdapter !== 'undefined' ? PlatformAdapter.getConfig() : null;
+    const isKids = platformConfig?.platform === 'youtube-kids';
+
+    // Platform-specific selectors
+    const selectors = isKids
+      ? [
+          // YouTube Kids thumbnail containers
+          ...platformConfig.thumbnailSelectors,
+          'a[href]', // video link as fallback host
+        ]
+      : [
+          'ytd-thumbnail',
+          'yt-thumbnail-view-model',
+          '.ytLockupViewModelContentImage yt-thumbnail-view-model',
+          '.shortsLockupViewModelHostEndpoint yt-thumbnail-view-model',
+          '.shortsLockupViewModelHostThumbnailContainer',
+          'a#thumbnail',
+          '#thumbnail'
+        ];
 
     for (const selector of selectors) {
       const candidate = el.querySelector?.(selector);
-      const host = this._normalizePreviewHost(candidate);
+      const host = this._normalizePreviewHost(candidate, isKids);
       if (host) return host;
     }
+
+    // YouTube Kids fallback: try shadow DOM traversal
+    if (isKids && typeof ShadowDomHelper !== 'undefined') {
+      for (const selector of selectors) {
+        const candidate = ShadowDomHelper.deepQuery(selector, el);
+        if (candidate) return candidate;
+      }
+    }
+
+    // YouTube Kids ultimate fallback: use the element itself
+    if (isKids) return el;
 
     return null;
   },
 
-  _normalizePreviewHost(candidate) {
+  _normalizePreviewHost(candidate, isKids = false) {
     if (!candidate) return null;
+    // YouTube Kids: accept any valid host directly
+    if (isKids) return candidate;
     if (candidate.matches?.('a') && candidate.querySelector?.('yt-thumbnail-view-model')) {
       return candidate.querySelector('yt-thumbnail-view-model');
     }
@@ -266,7 +289,9 @@ const AIBlocker = {
    * Chặn video trên trang xem (watch page)
    */
   blockWatchPage(detection) {
-    const player = document.querySelector('#movie_player, #player-container-inner, #player');
+    const platformConfig = typeof PlatformAdapter !== 'undefined' ? PlatformAdapter.getConfig() : null;
+    const playerSelector = platformConfig?.playerSelector || '#movie_player, #player-container-inner, #player';
+    const player = document.querySelector(playerSelector);
     if (!player) return;
 
     const videoId = detection?.videoId || this._getCurrentVideoId();
@@ -351,7 +376,9 @@ const AIBlocker = {
     this._stopPlaybackGuard('watch', restoreMedia);
     document.querySelectorAll(`.${this.PREFIX}-watch-overlay:not(.${this.PREFIX}-shorts-overlay)`).forEach((node) => node.remove());
 
-    const player = document.querySelector('#movie_player, #player-container-inner, #player');
+    const platformConfig = typeof PlatformAdapter !== 'undefined' ? PlatformAdapter.getConfig() : null;
+    const playerSelector = platformConfig?.playerSelector || '#movie_player, #player-container-inner, #player';
+    const player = document.querySelector(playerSelector);
     if (player) {
       delete player.dataset.aivbProcessed;
       delete player.dataset.aivbIsAi;

@@ -28,9 +28,25 @@ const AIDetector = {
   analyzeVideoPage(settings) {
     if (!settings?.enabled) return this._emptyResult();
 
-    const titleEl = document.querySelector('h1.ytd-watch-metadata yt-formatted-string, h1.ytd-video-primary-info-renderer');
-    const channelEl = document.querySelector('#owner #channel-name a, ytd-channel-name a');
-    const descEl = document.querySelector('#description-inner, ytd-text-inline-expander, #structured-description');
+    const platformConfig = typeof PlatformAdapter !== 'undefined' ? PlatformAdapter.getConfig() : null;
+    const isKids = platformConfig?.platform === 'youtube-kids';
+
+    // Platform-aware selectors for watch page metadata
+    const titleEl = document.querySelector(
+      isKids
+        ? 'h1, .title, [class*="title"], #info h1'
+        : 'h1.ytd-watch-metadata yt-formatted-string, h1.ytd-video-primary-info-renderer'
+    );
+    const channelEl = document.querySelector(
+      isKids
+        ? '[class*="channel"] a, [class*="byline"] a, [class*="creator"] a, a[href*="/@"]'
+        : '#owner #channel-name a, ytd-channel-name a'
+    );
+    const descEl = document.querySelector(
+      isKids
+        ? '#description, [class*="description"], .info-text'
+        : '#description-inner, ytd-text-inline-expander, #structured-description'
+    );
     const watchInfo = {
       title: (titleEl?.textContent || '').trim(),
       channel: (channelEl?.textContent || '').trim(),
@@ -40,9 +56,11 @@ const AIDetector = {
       badges: []
     };
     const normalizedInfo = this._normalizeVideoInfo(watchInfo);
-    const watchMetadataRoot = document.querySelector('ytd-watch-metadata, #above-the-fold, ytd-video-primary-info-renderer') ||
-      descEl ||
-      document.createElement('div');
+    const watchMetadataRoot = document.querySelector(
+      isKids
+        ? '#player-container, #info, .watch-main, body'
+        : 'ytd-watch-metadata, #above-the-fold, ytd-video-primary-info-renderer'
+    ) || descEl || document.createElement('div');
     const signals = this._detectSignals(watchMetadataRoot, normalizedInfo, settings, 'watch');
 
     const pageDataSignals = this._checkPageData(watchInfo.videoId, settings);
@@ -129,6 +147,9 @@ const AIDetector = {
   // ==================== PRIVATE METHODS ====================
 
   _extractVideoInfo(el) {
+    // Platform-aware extraction: use PlatformAdapter when available
+    const platformConfig = typeof PlatformAdapter !== 'undefined' ? PlatformAdapter.getConfig() : null;
+
     const titleEl = this._queryFirst(el, [
       '#video-title',
       'a#video-title',
@@ -157,10 +178,16 @@ const AIDetector = {
     ]);
     const badgesEl = el.querySelectorAll('.badge-style-type-simple, ytd-badge-supported-renderer');
 
-    const title = (titleEl?.textContent || '').trim();
-    const channel = (channelEl?.textContent || '').trim();
-    const channelUrl = channelEl?.href || '';
+    let title = (titleEl?.textContent || '').trim();
+    let channel = (channelEl?.textContent || '').trim();
+    let channelUrl = channelEl?.href || '';
     const description = (descEl?.textContent || '').trim();
+
+    // YouTube Kids fallback: use platform adapter for metadata
+    if (platformConfig && platformConfig.platform === 'youtube-kids') {
+      if (!title) title = platformConfig.extractTitle?.(el) || '';
+      if (!channel) channel = platformConfig.extractChannel?.(el) || '';
+    }
 
     const linkEl = this._queryFirst(el, [
       'a#thumbnail',
@@ -173,7 +200,12 @@ const AIDetector = {
     const href = linkEl?.href || '';
     const videoIdMatch = href.match(/[?&]v=([^&]+)/);
     const shortsMatch = href.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
-    const videoId = videoIdMatch ? videoIdMatch[1] : (shortsMatch ? shortsMatch[1] : '');
+    let videoId = videoIdMatch ? videoIdMatch[1] : (shortsMatch ? shortsMatch[1] : '');
+
+    // YouTube Kids fallback: use platform adapter for videoId
+    if (!videoId && platformConfig?.extractVideoId) {
+      videoId = platformConfig.extractVideoId(el) || '';
+    }
 
     const badges = Array.from(badgesEl).map(b => b.textContent.trim().toLowerCase());
     return { title, channel, channelUrl, description, videoId, badges };

@@ -1153,24 +1153,31 @@ chrome.runtime.onStartup.addListener(async () => {
 // ==================== CONTEXT MENUS ====================
 
 function createContextMenus() {
+  const YT_PATTERNS = [
+    '*://www.youtube.com/*',
+    '*://youtube.com/*',
+    '*://www.youtubekids.com/*',
+    '*://youtubekids.com/*'
+  ];
+
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: 'safekid-allow-channel',
       title: '🛡️ SafeKid: Cho phép channel này',
       contexts: ['link', 'page'],
-      documentUrlPatterns: ['*://www.youtube.com/*', '*://youtube.com/*']
+      documentUrlPatterns: YT_PATTERNS
     });
     chrome.contextMenus.create({
       id: 'safekid-block-channel',
       title: '🛡️ SafeKid: Chặn channel này',
       contexts: ['link', 'page'],
-      documentUrlPatterns: ['*://www.youtube.com/*', '*://youtube.com/*']
+      documentUrlPatterns: YT_PATTERNS
     });
     chrome.contextMenus.create({
       id: 'safekid-block-video',
       title: '🛡️ SafeKid: Chặn video này',
       contexts: ['link', 'page'],
-      documentUrlPatterns: ['*://www.youtube.com/*', '*://youtube.com/*']
+      documentUrlPatterns: YT_PATTERNS
     });
   });
 }

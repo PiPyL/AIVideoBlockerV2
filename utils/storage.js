@@ -429,6 +429,19 @@ const StorageManager = {
    * Xác định context trang YouTube hiện tại.
    */
   getYouTubeContext(pathname = '') {
+    // YouTube Kids detection
+    const isKids = typeof PlatformAdapter !== 'undefined' && PlatformAdapter.isYouTubeKids();
+
+    if (isKids) {
+      // YouTube Kids URL patterns
+      if (location.search.includes('v=') || location.hash.includes('v=')) return 'watch';
+      if (pathname.startsWith('/results') || location.search.includes('q=')) return 'search';
+      if (pathname.startsWith('/channel/') || pathname.startsWith('/@')) return 'channel';
+      if (pathname === '/' || pathname === '') return 'home';
+      return 'other';
+    }
+
+    // Standard YouTube
     if (pathname === '/watch') return 'watch';
     if (pathname.startsWith('/results')) return 'search';
     if (pathname.startsWith('/shorts')) return 'shorts';

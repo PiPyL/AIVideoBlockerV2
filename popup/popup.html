@@ -272,6 +272,22 @@
         </div>
 
         <div id="tab-parental-panel" class="tab-panel" role="tabpanel" aria-labelledby="tab-parental-button">
+          <!-- Parental Password — ĐẦU TAB -->
+          <div class="setting-group">
+            <div class="setting-header">
+              <span>🔐 Mật khẩu phụ huynh</span>
+              <span id="password-set-badge" class="count-badge" style="display:none; background: rgba(34,197,94,0.15); color: #22c55e;">Đã đặt</span>
+            </div>
+            <div class="password-section">
+              <input type="password" id="new-password" placeholder="Đặt mật khẩu mới..." autocomplete="new-password">
+              <button id="btn-set-password" class="btn-small">Lưu</button>
+            </div>
+            <p id="password-status" class="status-text"></p>
+            <div id="clear-password-row" style="display:none; margin-top: 8px;">
+              <button id="btn-clear-password" class="btn-small btn-red" style="width:100%;">🗑 Xóa mật khẩu (tắt yêu cầu mật khẩu)</button>
+            </div>
+          </div>
+
           <!-- Chỉ xem kênh trong danh sách -->
           <div class="setting-group" id="allow-only-group">
             <label class="checkbox-row" style="margin-bottom: 6px;">
@@ -297,18 +313,6 @@
               <button type="button" id="btn-add-whitelist" class="btn-small btn-green">+</button>
             </div>
             <div class="channel-list" id="whitelist-container"></div>
-          </div>
-
-          <!-- Parental Password -->
-          <div class="setting-group">
-            <div class="setting-header">
-              <span>🔐 Mật khẩu phụ huynh</span>
-            </div>
-            <div class="password-section">
-              <input type="password" id="new-password" placeholder="Đặt mật khẩu mới..." autocomplete="new-password">
-              <button id="btn-set-password" class="btn-small">Lưu</button>
-            </div>
-            <p id="password-status" class="status-text"></p>
           </div>
 
           <!-- Block Search -->

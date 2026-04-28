@@ -26,6 +26,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const newPassword = $('#new-password');
   const btnSetPassword = $('#btn-set-password');
   const passwordStatus = $('#password-status');
+  const btnClearPassword = $('#btn-clear-password');
+  const clearPasswordRow = $('#clear-password-row');
+  const passwordSetBadge = $('#password-set-badge');
 
   const checkboxAllowOnlyWhitelisted = $('#checkbox-allow-only-whitelisted');
   const allowOnlyEmptyWarning = $('#allow-only-empty-warning');
@@ -180,6 +183,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     checkboxAiThumbnail.checked = activeProvider === 'gemini' ? Boolean(gemini.includeThumbnail) : Boolean(openrouter.includeThumbnail);
 
     renderBlockListsWithFilter(s);
+
+    // Password badge & clear row
+    const hasPassword = Boolean(s.parentalPassword);
+    if (passwordSetBadge) passwordSetBadge.style.display = hasPassword ? 'inline-block' : 'none';
+    if (clearPasswordRow) clearPasswordRow.style.display = hasPassword ? 'block' : 'none';
 
     // Stats
     await loadStats();
@@ -358,7 +366,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     newPassword.value = '';
     passwordStatus.textContent = '✅ Đã lưu mật khẩu!';
     passwordStatus.style.color = '#22c55e';
+    if (passwordSetBadge) passwordSetBadge.style.display = 'inline-block';
+    if (clearPasswordRow) clearPasswordRow.style.display = 'block';
     setTimeout(() => { passwordStatus.textContent = ''; }, 2000);
+  });
+
+  // Clear password
+  btnClearPassword.addEventListener('click', async () => {
+    const ok = window.confirm(
+      'Xóa mật khẩu sẽ tắt tính năng khóa phụ huynh.\nBất kỳ ai cũng có thể thay đổi cài đặt. Tiếp tục?'
+    );
+    if (!ok) return;
+    await updateSetting({ parentalPassword: '', isLocked: false });
+    newPassword.value = '';
+    passwordStatus.textContent = '🔓 Đã xóa mật khẩu. Không yêu cầu mật khẩu nữa.';
+    passwordStatus.style.color = '#94a3b8';
+    if (passwordSetBadge) passwordSetBadge.style.display = 'none';
+    if (clearPasswordRow) clearPasswordRow.style.display = 'none';
+    setTimeout(() => { passwordStatus.textContent = ''; }, 3000);
   });
 
   // Chế độ chỉ xem kênh trong danh sách + whitelist trong popup

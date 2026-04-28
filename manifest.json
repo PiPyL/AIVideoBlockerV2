@@ -16,6 +16,8 @@
   "host_permissions": [
     "https://www.youtube.com/*",
     "https://youtube.com/*",
+    "https://www.youtubekids.com/*",
+    "https://youtubekids.com/*",
     "https://generativelanguage.googleapis.com/*",
     "https://openrouter.ai/*",
     "https://i.ytimg.com/*"
@@ -27,10 +29,15 @@
     {
       "matches": [
         "https://www.youtube.com/*",
-        "https://youtube.com/*"
+        "https://youtube.com/*",
+        "https://www.youtubekids.com/*",
+        "https://youtubekids.com/*"
       ],
       "js": [
         "utils/storage.js",
+        "utils/shadow-dom.js",
+        "content/platform.js",
+        "content/ytk-discovery.js",
         "content/detector.js",
         "content/blocker.js",
         "content/content.js"

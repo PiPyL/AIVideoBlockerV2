@@ -1,6 +1,7 @@
 /**
  * SafeKid — Main Content Script
  * Điều phối detector + blocker, lắng nghe DOM changes
+ * Hỗ trợ cả YouTube (youtube.com) và YouTube Kids (youtubekids.com)
  */
 
 (async function() {
@@ -17,6 +18,10 @@
   const recordedPageDecisionKeys = new Set();
   const aiPendingKeys = new Set();
 
+  // Platform detection — YouTube vs YouTube Kids
+  let platformConfig = null;
+  let isYTKids = false;
+
   // Track blocked video to prevent race condition on reload
   let lastBlockedWatchVideoId = null;
   let lastBlockedWatchDetection = null;
@@ -30,7 +35,20 @@
   // ==================== INITIALIZATION ====================
 
   async function init() {
-    console.log(`${LOG_PREFIX} Initializing on ${location.href}`);
+    // Detect platform (YouTube vs YouTube Kids)
+    platformConfig = PlatformAdapter.getConfig();
+    isYTKids = PlatformAdapter.isYouTubeKids();
+    console.log(`${LOG_PREFIX} Initializing on ${location.href} [platform: ${platformConfig.platform}]`);
+
+    // YouTube Kids: run runtime discovery to find DOM selectors
+    if (isYTKids && typeof YTKDiscovery !== 'undefined') {
+      await YTKDiscovery.discover();
+      // Re-fetch config after discovery merges selectors
+      platformConfig = PlatformAdapter.getConfig();
+    }
+
+    // Set platform identifier on body for CSS targeting
+    document.body.dataset.aivbPlatform = platformConfig.platform;
 
     await requestGeminiSecretMigration();
     settings = await StorageManager.getSettings();
@@ -130,10 +148,22 @@
     const context = StorageManager.getYouTubeContext(location.pathname);
     const force = Boolean(options.force);
 
-    const isWatchPage = location.pathname === '/watch';
-    const isShortsPage = location.pathname.startsWith('/shorts/');
+    const watchPath = platformConfig.watchPagePath;
+    const shortsPath = platformConfig.shortsPagePath;
+
+    const isWatchPage = watchPath
+      ? location.pathname === watchPath || location.pathname.startsWith(watchPath + '/')
+      : false;
+    const isShortsPage = shortsPath
+      ? location.pathname.startsWith(shortsPath)
+      : false;
+
+    // YouTube Kids: nếu chưa xác định được watchPath, tự detect từ URL params
+    const isYTKidsWatchPage = isYTKids && !isWatchPage && (
+      location.search.includes('v=') || location.hash.includes('v=')
+    );
     
-    if (isWatchPage) {
+    if (isWatchPage || isYTKidsWatchPage) {
       await scanWatchPage(context, { force });
     } else {
       AIBlocker.unblockWatchPage();
@@ -141,7 +171,8 @@
 
     if (isShortsPage) {
       await scanShortsPage(context, { force });
-    } else {
+    } else if (!isYTKids) {
+      // YouTube Kids không có Shorts
       AIBlocker.unblockShortsPage();
     }
 
@@ -151,17 +182,23 @@
 
   async function scanVideoItems(context = 'other', options = {}) {
     const force = Boolean(options.force);
-    const selectors = [
-      'ytd-rich-item-renderer',          // Home feed
-      'ytd-video-renderer',               // Search results
-      'ytd-grid-video-renderer',           // Channel videos
-      'ytd-compact-video-renderer',        // Sidebar recommendations
-      'ytd-reel-item-renderer',            // Legacy Shorts shelf
-      'ytm-shorts-lockup-view-model',      // Current Shorts shelf/search cards
-      'yt-lockup-view-model'               // Current watch recommendations
-    ];
+    const selectors = platformConfig.videoItemSelectors;
+    const selectorString = selectors.join(',');
 
-    const videoElements = document.querySelectorAll(selectors.join(','));
+    let videoElements = [...document.querySelectorAll(selectorString)];
+
+    // YouTube Kids: also scan inside shadow DOM
+    if (platformConfig.requiresShadowTraversal && typeof ShadowDomHelper !== 'undefined') {
+      const shadowElements = ShadowDomHelper.deepQueryAll(selectorString);
+      // Merge and deduplicate
+      const seen = new Set(videoElements);
+      for (const el of shadowElements) {
+        if (!seen.has(el)) {
+          videoElements.push(el);
+          seen.add(el);
+        }
+      }
+    }
     let blockedCount = 0;
     let scannedCount = 0;
     let detectedMethodCounts = {};
@@ -293,8 +330,9 @@
   }
 
   async function scanWatchPage(context = 'watch') {
-    // Đợi video player load
-    await waitForElement('#movie_player, #player-container-inner', 5000);
+    // Đợi video player load — dùng platform-aware selector
+    const playerSelector = platformConfig.playerSelector || '#movie_player, #player-container-inner';
+    await waitForElement(playerSelector, 5000);
 
     const videoId = extractVideoIdFromUrl(location.href);
 
@@ -757,7 +795,16 @@
   function startObserver() {
     if (observer) return;
 
-    const target = document.querySelector('ytd-app') || document.body;
+    // Platform-aware app shell target
+    const appShellSelector = platformConfig.appShell || 'ytd-app';
+    const target = document.querySelector(appShellSelector) || document.body;
+
+    // Build tag name patterns for mutation detection
+    const videoTagPatterns = isYTKids
+      ? ['ytk-', 'video-card', 'browse-item', 'compact-video']
+      : ['ytd-rich-item', 'ytd-video-renderer', 'ytd-compact-video', 'ytd-grid-video', 'ytd-reel-item', 'ytm-shorts-lockup', 'yt-lockup-view-model'];
+    
+    const childQuerySelector = platformConfig.videoItemSelectors.slice(0, 5).join(', ');
     
     observer = new MutationObserver((mutations) => {
       let hasNewVideos = false;
@@ -767,19 +814,21 @@
           if (node.nodeType !== Node.ELEMENT_NODE) continue;
           
           const tagName = node.tagName?.toLowerCase() || '';
-          if (tagName.includes('ytd-rich-item') || 
-              tagName.includes('ytd-video-renderer') ||
-              tagName.includes('ytd-compact-video') ||
-              tagName.includes('ytd-grid-video') ||
-              tagName.includes('ytd-reel-item') ||
-              tagName.includes('ytm-shorts-lockup') ||
-              tagName.includes('yt-lockup-view-model')) {
+          
+          // Check if the added node itself is a video item
+          if (videoTagPatterns.some(pattern => tagName.includes(pattern))) {
+            hasNewVideos = true;
+            break;
+          }
+
+          // Check if added node matches platform selectors
+          if (platformConfig.isVideoItem?.(node)) {
             hasNewVideos = true;
             break;
           }
 
           // Kiểm tra children
-          if (node.querySelector?.('ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytm-shorts-lockup-view-model, yt-lockup-view-model')) {
+          if (node.querySelector?.(childQuerySelector)) {
             hasNewVideos = true;
             break;
           }
@@ -788,7 +837,11 @@
       }
 
       if (hasNewVideos) {
-        if (location.pathname === '/watch' || location.pathname.startsWith('/shorts/')) {
+        const watchPath = platformConfig.watchPagePath;
+        const shortsPath = platformConfig.shortsPagePath;
+        const isWatchOrShorts = (watchPath && location.pathname.startsWith(watchPath)) ||
+                               (shortsPath && location.pathname.startsWith(shortsPath));
+        if (isWatchOrShorts) {
           scheduleFullScan(350);
         } else {
           debouncedScan();
@@ -801,7 +854,14 @@
       subtree: true
     });
 
-    console.log(`${LOG_PREFIX} MutationObserver started`);
+    // YouTube Kids: also observe shadow DOM changes
+    if (platformConfig.requiresShadowTraversal && typeof ShadowDomHelper !== 'undefined') {
+      ShadowDomHelper.observeWithShadow(target, () => {
+        debouncedScan();
+      }, { childList: true, subtree: true });
+    }
+
+    console.log(`${LOG_PREFIX} MutationObserver started [target: ${target.tagName}]`);
   }
 
   function stopObserver() {
@@ -824,7 +884,7 @@
     if (navigationListenerStarted) return;
     navigationListenerStarted = true;
 
-    // YouTube dùng History API cho navigation
+    // URL change detection via title mutation (works on both platforms)
     let lastUrl = location.href;
 
     const urlObserver = new MutationObserver(() => {
@@ -849,40 +909,69 @@
       urlObserver.observe(titleEl, { childList: true });
     }
 
-    // Xóa overlay ngay khi navigation BẮT ĐẦU (trước yt-navigate-finish)
-    // Để người dùng không thấy overlay flash từ video cũ
-    document.addEventListener('yt-navigate-start', () => {
-      if (lastBlockedWatchVideoId || document.body.dataset.aivbWatchBlocked) {
-        clearWatchBlockCache(null);
-        AIBlocker.resetPageBlocks({ restoreMedia: false });
-        navigationStartedAt = Date.now();
-      }
-    });
+    // Platform-specific navigation events
+    const navEvents = platformConfig.navigationEvents || [];
 
-    // Fallback: listen to yt-navigate-finish event
-    document.addEventListener('yt-navigate-finish', () => {
-      // Guard: nếu init() vừa hoàn thành (< 2s), skip navigation reset
-      // để tránh race condition khi reload page
-      const timeSinceInit = Date.now() - initCompletedAt;
-      if (timeSinceInit < 2000) {
-        console.log(`${LOG_PREFIX} yt-navigate-finish skipped (init just completed ${timeSinceInit}ms ago)`);
-        scheduleFullScan(500, { force: false });
-        return;
-      }
+    if (navEvents.includes('yt-navigate-start')) {
+      // Xóa overlay ngay khi navigation BẮT ĐẦU (trước yt-navigate-finish)
+      document.addEventListener('yt-navigate-start', () => {
+        if (lastBlockedWatchVideoId || document.body.dataset.aivbWatchBlocked) {
+          clearWatchBlockCache(null);
+          AIBlocker.resetPageBlocks({ restoreMedia: false });
+          navigationStartedAt = Date.now();
+        }
+      });
+    }
 
-      console.log(`${LOG_PREFIX} yt-navigate-finish event`);
-      prepareForNavigationScan();
-      scheduleFullScan(500, { force: true });
-    });
+    if (navEvents.includes('yt-navigate-finish')) {
+      document.addEventListener('yt-navigate-finish', () => {
+        const timeSinceInit = Date.now() - initCompletedAt;
+        if (timeSinceInit < 2000) {
+          console.log(`${LOG_PREFIX} yt-navigate-finish skipped (init just completed ${timeSinceInit}ms ago)`);
+          scheduleFullScan(500, { force: false });
+          return;
+        }
 
-    document.addEventListener('yt-page-data-updated', () => {
-      scheduleFullScan(350, { force: true });
-    });
+        console.log(`${LOG_PREFIX} yt-navigate-finish event`);
+        prepareForNavigationScan();
+        scheduleFullScan(500, { force: true });
+      });
+    }
+
+    if (navEvents.includes('yt-page-data-updated')) {
+      document.addEventListener('yt-page-data-updated', () => {
+        scheduleFullScan(350, { force: true });
+      });
+    }
+
+    // YouTube Kids / fallback: listen to popstate and hashchange
+    if (navEvents.includes('popstate')) {
+      window.addEventListener('popstate', () => {
+        console.log(`${LOG_PREFIX} popstate navigation event`);
+        prepareForNavigationScan();
+        scheduleFullScan(500, { force: true });
+      });
+    }
+
+    if (navEvents.includes('hashchange')) {
+      window.addEventListener('hashchange', () => {
+        console.log(`${LOG_PREFIX} hashchange navigation event`);
+        prepareForNavigationScan();
+        scheduleFullScan(500, { force: true });
+      });
+    }
   }
 
   // ==================== UTILITIES ====================
 
   function extractVideoId(el) {
+    // Delegate to platform adapter for platform-specific extraction
+    if (platformConfig?.extractVideoId) {
+      const id = platformConfig.extractVideoId(el);
+      if (id) return id;
+    }
+
+    // Fallback: universal extraction
     const linkEl = el.querySelector('a#thumbnail, a.ytd-thumbnail, a[href*="/watch"], a[href*="/shorts/"]');
     const href = linkEl?.href || '';
     const watchMatch = href.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
@@ -910,6 +999,7 @@
   }
 
   function isAggregateVideoContainer(el) {
+    if (isYTKids) return false; // YouTube Kids doesn't have aggregate containers
     if (!el?.matches?.('ytd-video-renderer')) return false;
     return el.querySelectorAll('ytm-shorts-lockup-view-model').length > 1;
   }
@@ -971,7 +1061,13 @@
     // Set navigation transition guard
     navigationStartedAt = Date.now();
 
-    if (location.pathname === '/watch' || location.pathname.startsWith('/shorts/')) {
+    const watchPath = platformConfig.watchPagePath;
+    const shortsPath = platformConfig.shortsPagePath;
+    const isWatchOrShorts = (watchPath && location.pathname.startsWith(watchPath)) ||
+                            (shortsPath && location.pathname.startsWith(shortsPath)) ||
+                            (isYTKids && (location.search.includes('v=') || location.hash.includes('v=')));
+
+    if (isWatchOrShorts) {
       AIBlocker.holdPlayback('pending-scan');
     } else {
       AIBlocker.releasePlaybackHold('pending-scan', { restoreMedia: true });
@@ -1256,19 +1352,24 @@
   function extractContextInfo(clickedElement, action, linkUrl = '', pageUrl = '') {
     const result = { channel: '', videoId: '', title: '' };
 
+    // Build video card selector from platform config
+    const videoCardSelector = platformConfig.videoItemSelectors.join(', ');
+
     // Try to get info from the clicked element and its ancestors
-    const videoCard = clickedElement?.closest?.(
-      'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ' +
-      'ytd-grid-video-renderer, ytd-reel-item-renderer, ytm-shorts-lockup-view-model, ' +
-      'yt-lockup-view-model, ytd-reel-video-renderer'
-    );
+    let videoCard = clickedElement?.closest?.(videoCardSelector);
+
+    // YouTube Kids: also try shadow DOM closest
+    if (!videoCard && isYTKids && typeof ShadowDomHelper !== 'undefined') {
+      videoCard = ShadowDomHelper.deepClosest(clickedElement, videoCardSelector);
+    }
 
     if (action === 'block_channel' || action === 'allow_channel') {
       // Ưu tiên lấy trực tiếp từ link vừa click chuột phải
       if (clickedElement) {
-        const clickedLink = clickedElement.closest?.(
-          'a[href*="/@"], a[href*="/channel/"], a[href*="/c/"], a[href*="/user/"]'
-        );
+        const channelLinkSelector = isYTKids
+          ? 'a[href*="/channel/"], a[href*="/@"], a[href*="/c/"], a[href*="/user/"]'
+          : 'a[href*="/@"], a[href*="/channel/"], a[href*="/c/"], a[href*="/user/"]';
+        const clickedLink = clickedElement.closest?.(channelLinkSelector);
         if (clickedLink) {
           result.channel = (clickedLink.textContent || '').trim();
         }
@@ -1277,6 +1378,10 @@
       if (!result.channel && videoCard) {
         const channelEl = videoCard.querySelector('#channel-name a, ytd-channel-name a, a[href^="/@"], a[href*="/@"]');
         result.channel = channelEl?.textContent?.trim() || '';
+      }
+      // YouTube Kids: use platformConfig.extractChannel if still empty
+      if (!result.channel && isYTKids && videoCard && platformConfig.extractChannel) {
+        result.channel = platformConfig.extractChannel(videoCard) || '';
       }
       // Fallback: channel page header (works when card does not show channel text)
       if (!result.channel) {
@@ -1305,6 +1410,10 @@
       if (!result.videoId && videoCard) {
         result.videoId = extractVideoId(videoCard);
       }
+      // YouTube Kids: use platformConfig.extractVideoId if still empty
+      if (!result.videoId && isYTKids && videoCard && platformConfig.extractVideoId) {
+        result.videoId = platformConfig.extractVideoId(videoCard) || '';
+      }
       // Fallback: try from current page (if on watch/shorts)
       if (!result.videoId) {
         result.videoId = extractVideoIdFromUrl(pageUrl || location.href);
@@ -1314,6 +1423,10 @@
         const titleEl = videoCard.querySelector('#video-title, h3 a, .title');
         result.title = titleEl?.textContent?.trim() || '';
       }
+      // YouTube Kids: use platformConfig.extractTitle if still empty
+      if (!result.title && isYTKids && videoCard && platformConfig.extractTitle) {
+        result.title = platformConfig.extractTitle(videoCard) || '';
+      }
       if (!result.title) {
         result.title = getCurrentVideoTitle() || '';
       }
@@ -1322,6 +1435,10 @@
         const channelEl = videoCard.querySelector('#channel-name a, ytd-channel-name a, a[href^="/@"]');
         result.channel = channelEl?.textContent?.trim() || '';
       }
+      // YouTube Kids: use platformConfig.extractChannel if still empty
+      if (!result.channel && isYTKids && videoCard && platformConfig.extractChannel) {
+        result.channel = platformConfig.extractChannel(videoCard) || '';
+      }
       if (!result.channel) {
         result.channel = getWatchChannelName() || getShortsChannelName() || '';
       }
@@ -1329,6 +1446,7 @@
 
     return result;
   }
+
 
   function normalizeLang(lang = '') {
     return String(lang).toLowerCase().replace('_', '-');
@@ -1364,15 +1482,45 @@
   }
 
   function getChannelPageName() {
+    // Standard YouTube
     const channelEl = document.querySelector(
       'ytd-c4-tabbed-header-renderer #channel-name #text, ' +
       'ytd-channel-name #text, ' +
       'yt-content-metadata-view-model h1'
     );
-    return channelEl?.textContent?.trim() || '';
+    if (channelEl?.textContent?.trim()) return channelEl.textContent.trim();
+
+    // YouTube Kids: channel header uses different structure
+    if (isYTKids) {
+      const kidsChannelEl = document.querySelector(
+        'h1[class*="channel"], [class*="channel-name"] h1, ' +
+        '[class*="channel-header"] h1, [class*="byline"], ' +
+        '[class*="channel-title"]'
+      );
+      if (kidsChannelEl?.textContent?.trim()) return kidsChannelEl.textContent.trim();
+
+      // Try shadow DOM
+      if (typeof ShadowDomHelper !== 'undefined') {
+        const shadowEl = ShadowDomHelper.deepQuery('h1, [class*="channel-name"]');
+        if (shadowEl?.textContent?.trim()) return shadowEl.textContent.trim();
+      }
+
+      // Fallback: parse from document.title (YouTube Kids includes channel name)
+      const titleText = document.title.replace(/\s*-\s*YouTube Kids\s*$/i, '').trim();
+      if (titleText && titleText.length > 0 && titleText.length < 100) return titleText;
+    }
+
+    return '';
   }
 
   function getCardChannelName(videoElement, context = 'other') {
+    // Platform-aware channel extraction
+    if (platformConfig?.extractChannel) {
+      const channel = platformConfig.extractChannel(videoElement);
+      if (channel) return channel;
+    }
+
+    // Fallback: YouTube-style selectors
     const channelEl = videoElement?.querySelector?.(
       '#channel-name a, ytd-channel-name a, a[href^="/@"], a[href*="/@"]'
     );
