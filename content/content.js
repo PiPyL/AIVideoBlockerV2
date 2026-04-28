@@ -56,7 +56,14 @@
         const newBlacklist = JSON.stringify(settings.blacklistedChannels || []);
         const oldBlockedVids = JSON.stringify(oldSettings.blockedVideos || []);
         const newBlockedVids = JSON.stringify(settings.blockedVideos || []);
-        if (oldBlacklist !== newBlacklist || oldBlockedVids !== newBlockedVids) {
+        const oldWhitelist = JSON.stringify(oldSettings.whitelistedChannels || []);
+        const newWhitelist = JSON.stringify(settings.whitelistedChannels || []);
+        const oldStrict = Boolean(oldSettings.allowOnlyWhitelistedChannels);
+        const newStrict = Boolean(settings.allowOnlyWhitelistedChannels);
+        if (oldBlacklist !== newBlacklist ||
+            oldBlockedVids !== newBlockedVids ||
+            oldWhitelist !== newWhitelist ||
+            oldStrict !== newStrict) {
           clearWatchBlockCache(null);
           AIBlocker.resetPageBlocks({ restoreMedia: true });
         }
@@ -176,12 +183,19 @@
       scannedCount++;
 
       // Kiểm tra whitelist
-      const channelEl = el.querySelector('#channel-name a, ytd-channel-name a, a[href^="/@"], a[href*="/@"]');
-      const channelName = channelEl?.textContent?.trim() || '';
-      const channelPolicy = getChannelPolicy(channelName);
+      const channelName = getCardChannelName(el, context);
+      const channelPageUrl = context === 'channel' ? location.href : '';
+      const channelPolicy = getChannelPolicy(channelName, channelPageUrl);
       if (channelPolicy === 'whitelist') {
         el.dataset.aivbProcessed = 'true';
         el.dataset.aivbIsAi = 'false';
+        continue;
+      }
+
+      if (isAllowOnlyWhitelistedMode()) {
+        const forceResult = createChannelOverrideResult(channelName, 'Kênh ngoài danh sách được phép');
+        AIBlocker.blockVideo(el, forceResult);
+        blockedCount++;
         continue;
       }
 
@@ -304,7 +318,7 @@
 
     const detection = AIDetector.analyzeVideoPage(settings);
     const channelName = detection.channelName || getWatchChannelName();
-    const channelPolicy = getChannelPolicy(channelName);
+    const channelPolicy = getChannelPolicy(channelName, detection.channelUrl || '');
     let effectiveDetection = detection;
 
     if (channelPolicy === 'whitelist') {
@@ -317,6 +331,10 @@
         context
       });
       return;
+    }
+
+    if (isAllowOnlyWhitelistedMode()) {
+      effectiveDetection = createChannelOverrideResult(channelName, 'Kênh ngoài danh sách được phép', detection);
     }
 
     if (channelPolicy === 'blacklist') {
@@ -373,7 +391,7 @@
     await waitForElement('ytd-reel-video-renderer, #shorts-player, ytd-shorts', 6000);
     const detection = AIDetector.analyzeShortsPage(settings);
     const channelName = detection.channelName || getShortsChannelName();
-    const channelPolicy = getChannelPolicy(channelName);
+    const channelPolicy = getChannelPolicy(channelName, detection.channelUrl || '');
     let effectiveDetection = detection;
 
     if (channelPolicy === 'whitelist') {
@@ -385,6 +403,10 @@
         context
       });
       return;
+    }
+
+    if (isAllowOnlyWhitelistedMode()) {
+      effectiveDetection = createChannelOverrideResult(channelName, 'Kênh ngoài danh sách được phép', detection);
     }
 
     if (channelPolicy === 'blacklist') {
@@ -1067,6 +1089,7 @@
       'detectionProfile',
       'detectorVersion',
       'whitelistedChannels',
+      'allowOnlyWhitelistedChannels',
       'blacklistedChannels',
       'blockedVideos',
       'aiKeywords',
@@ -1087,19 +1110,79 @@
       .trim();
   }
 
-  function getChannelPolicy(channelName = '') {
-    const normalizedChannel = normalizeChannelName(channelName);
-    if (!normalizedChannel) return 'none';
+  function normalizeChannelToken(token = '') {
+    return normalizeChannelName(token).replace(/^@/, '');
+  }
+
+  function extractChannelAliasesFromUrl(url = '') {
+    const aliases = [];
+    try {
+      const parsed = new URL(url, location.origin);
+      const pathname = parsed.pathname || '';
+
+      const handleMatch = pathname.match(/^\/@([^/?]+)/);
+      if (handleMatch) aliases.push('@' + decodeURIComponent(handleMatch[1]));
+
+      const channelMatch = pathname.match(/^\/channel\/([^/?]+)/);
+      if (channelMatch) aliases.push(decodeURIComponent(channelMatch[1]));
+
+      const customMatch = pathname.match(/^\/(c|user)\/([^/?]+)/);
+      if (customMatch) aliases.push(decodeURIComponent(customMatch[2]));
+    } catch (e) {
+      // Ignore malformed URL
+    }
+    return aliases;
+  }
+
+  function getCurrentChannelPageAliases() {
+    const path = location.pathname || '';
+    if (!path.startsWith('/@') && !path.startsWith('/channel/') && !path.startsWith('/c/') && !path.startsWith('/user/')) {
+      return [];
+    }
+    return extractChannelAliasesFromUrl(location.href);
+  }
+
+  function buildChannelAliasSet(channelName = '', channelUrl = '') {
+    const aliasSet = new Set();
+    if (channelName) aliasSet.add(normalizeChannelName(channelName));
+    if (channelUrl) {
+      const aliasesFromUrl = extractChannelAliasesFromUrl(channelUrl);
+      aliasesFromUrl.forEach((alias) => aliasSet.add(normalizeChannelName(alias)));
+    }
+
+    // So khớp mềm: @handle và handle coi là tương đương
+    const tokens = Array.from(aliasSet);
+    tokens.forEach((token) => {
+      const normalizedToken = normalizeChannelToken(token);
+      if (normalizedToken) aliasSet.add(normalizedToken);
+    });
+    return aliasSet;
+  }
+
+  function isAllowOnlyWhitelistedMode() {
+    return Boolean(settings?.enabled && settings.allowOnlyWhitelistedChannels);
+  }
+
+  function getChannelPolicy(channelName = '', channelUrl = '') {
+    const observedAliases = buildChannelAliasSet(channelName, channelUrl);
+    getCurrentChannelPageAliases().forEach((alias) => {
+      buildChannelAliasSet(alias).forEach((item) => observedAliases.add(item));
+    });
+    if (!observedAliases.size) return 'none';
 
     const whitelist = settings.whitelistedChannels || [];
-    if (whitelist.some((name) => normalizeChannelName(name) === normalizedChannel)) {
-      return 'whitelist';
-    }
+    const isWhitelisted = whitelist.some((entry) => {
+      const entryAliases = buildChannelAliasSet(entry);
+      return Array.from(entryAliases).some((alias) => observedAliases.has(alias));
+    });
+    if (isWhitelisted) return 'whitelist';
 
     const blacklist = settings.blacklistedChannels || [];
-    if (blacklist.some((name) => normalizeChannelName(name) === normalizedChannel)) {
-      return 'blacklist';
-    }
+    const isBlacklisted = blacklist.some((entry) => {
+      const entryAliases = buildChannelAliasSet(entry);
+      return Array.from(entryAliases).some((alias) => observedAliases.has(alias));
+    });
+    if (isBlacklisted) return 'blacklist';
 
     return 'none';
   }
@@ -1180,11 +1263,24 @@
       'yt-lockup-view-model, ytd-reel-video-renderer'
     );
 
-    if (action === 'block_channel') {
+    if (action === 'block_channel' || action === 'allow_channel') {
+      // Ưu tiên lấy trực tiếp từ link vừa click chuột phải
+      if (clickedElement) {
+        const clickedLink = clickedElement.closest?.(
+          'a[href*="/@"], a[href*="/channel/"], a[href*="/c/"], a[href*="/user/"]'
+        );
+        if (clickedLink) {
+          result.channel = (clickedLink.textContent || '').trim();
+        }
+      }
       // Extract channel name from video card
-      if (videoCard) {
+      if (!result.channel && videoCard) {
         const channelEl = videoCard.querySelector('#channel-name a, ytd-channel-name a, a[href^="/@"], a[href*="/@"]');
         result.channel = channelEl?.textContent?.trim() || '';
+      }
+      // Fallback: channel page header (works when card does not show channel text)
+      if (!result.channel) {
+        result.channel = getChannelPageName() || '';
       }
       // Fallback: try from watch page
       if (!result.channel) {
@@ -1192,8 +1288,11 @@
       }
       // Fallback: try from link URL (channel page)
       if (!result.channel && linkUrl) {
-        const channelMatch = linkUrl.match(/@([^/?]+)/);
-        if (channelMatch) result.channel = '@' + decodeURIComponent(channelMatch[1]);
+        result.channel = extractChannelNameFromUrl(linkUrl);
+      }
+      // Fallback: right-click theo ngữ cảnh page sẽ không có linkUrl
+      if (!result.channel && pageUrl) {
+        result.channel = extractChannelNameFromUrl(pageUrl);
       }
     }
 
@@ -1264,12 +1363,62 @@
     return channelEl?.textContent?.trim() || '';
   }
 
+  function getChannelPageName() {
+    const channelEl = document.querySelector(
+      'ytd-c4-tabbed-header-renderer #channel-name #text, ' +
+      'ytd-channel-name #text, ' +
+      'yt-content-metadata-view-model h1'
+    );
+    return channelEl?.textContent?.trim() || '';
+  }
+
+  function getCardChannelName(videoElement, context = 'other') {
+    const channelEl = videoElement?.querySelector?.(
+      '#channel-name a, ytd-channel-name a, a[href^="/@"], a[href*="/@"]'
+    );
+    const directChannelName = channelEl?.textContent?.trim() || '';
+    if (directChannelName) return directChannelName;
+
+    // Channel page cards often omit per-card channel text.
+    if (context === 'channel' || location.pathname.startsWith('/@') || location.pathname.startsWith('/channel/')) {
+      const pageChannelName = getChannelPageName();
+      if (pageChannelName) return pageChannelName;
+    }
+
+    return '';
+  }
+
   function extractVideoIdFromUrl(url = '') {
     const watchMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
     if (watchMatch) return watchMatch[1];
 
     const shortsMatch = url.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
     return shortsMatch ? shortsMatch[1] : '';
+  }
+
+  function extractChannelNameFromUrl(url = '') {
+    try {
+      const parsed = new URL(url, location.origin);
+      const pathname = parsed.pathname || '';
+
+      const handleMatch = pathname.match(/^\/@([^/?]+)/);
+      if (handleMatch) {
+        return '@' + decodeURIComponent(handleMatch[1]);
+      }
+
+      const channelMatch = pathname.match(/^\/channel\/([^/?]+)/);
+      if (channelMatch) {
+        return decodeURIComponent(channelMatch[1]);
+      }
+
+      const customMatch = pathname.match(/^\/(c|user)\/([^/?]+)/);
+      if (customMatch) {
+        return decodeURIComponent(customMatch[2]);
+      }
+    } catch (e) {
+      // Ignore malformed URLs and fallback to empty string
+    }
+    return '';
   }
 
   function getCurrentVideoKey() {

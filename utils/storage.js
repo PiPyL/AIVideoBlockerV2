@@ -13,6 +13,8 @@ const StorageManager = {
     parentalPassword: '',
     isLocked: false,
     whitelistedChannels: [],
+    /** Chế độ chỉ xem kênh trong whitelistedChannels; false = không đổi hành vi cũ */
+    allowOnlyWhitelistedChannels: false,
     blacklistedChannels: [],
     blockedVideos: [], // { videoId, title, channel, blockedAt }
     stats: {

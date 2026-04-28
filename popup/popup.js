@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnSetPassword = $('#btn-set-password');
   const passwordStatus = $('#password-status');
 
+  const checkboxAllowOnlyWhitelisted = $('#checkbox-allow-only-whitelisted');
+  const allowOnlyEmptyWarning = $('#allow-only-empty-warning');
   const whitelistInput = $('#whitelist-input');
   const btnAddWhitelist = $('#btn-add-whitelist');
   const whitelistContainer = $('#whitelist-container');
@@ -43,8 +45,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const blockedVideosContainer = $('#blocked-videos-container');
   const blockedVideosCount = $('#blocked-videos-count');
   const btnClearBlockedVideos = $('#btn-clear-blocked-videos');
+  const blockSearchInput = $('#block-search-input');
 
   const btnRescan = $('#btn-rescan');
+  const tabMainButton = $('#tab-main-button');
+  const tabParentalButton = $('#tab-parental-button');
+  const tabMainPanel = $('#tab-main-panel');
+  const tabParentalPanel = $('#tab-parental-panel');
 
   const checkboxAiEnabled = $('#checkbox-ai-enabled');
   const aiProviderHeader = $('#ai-provider-header');
@@ -76,6 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ==================== INITIALIZATION ====================
 
   let settings = await getSettings();
+  let blockSearchTerm = '';
 
   // Check parental lock
   if (settings.parentalPassword && settings.isLocked) {
@@ -110,6 +118,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // ==================== LOAD UI ====================
+
+  function updateAllowOnlyEmptyWarning(s) {
+    if (!allowOnlyEmptyWarning || !checkboxAllowOnlyWhitelisted) return;
+    const wl = s.whitelistedChannels || [];
+    if (checkboxAllowOnlyWhitelisted.checked && wl.length === 0) {
+      allowOnlyEmptyWarning.style.display = 'block';
+      allowOnlyEmptyWarning.textContent = 'Cảnh báo: danh sách kênh trống — hầu hết video trên YouTube sẽ bị chặn cho đến khi thêm ít nhất một kênh.';
+    } else {
+      allowOnlyEmptyWarning.style.display = 'none';
+      allowOnlyEmptyWarning.textContent = '';
+    }
+  }
 
   async function loadUI(s) {
     // Toggle
@@ -159,18 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Common
     checkboxAiThumbnail.checked = activeProvider === 'gemini' ? Boolean(gemini.includeThumbnail) : Boolean(openrouter.includeThumbnail);
 
-    // Channel lists
-    renderChannelList(whitelistContainer, s.whitelistedChannels, 'whitelist');
-    whitelistCount.textContent = s.whitelistedChannels.length;
-
-    renderChannelList(blacklistContainer, s.blacklistedChannels, 'blacklist');
-    blacklistCount.textContent = s.blacklistedChannels.length;
-
-    // Blocked videos
-    const blockedVideos = s.blockedVideos || [];
-    renderBlockedVideosList(blockedVideos);
-    blockedVideosCount.textContent = blockedVideos.length;
-    btnClearBlockedVideos.style.display = blockedVideos.length > 0 ? 'block' : 'none';
+    renderBlockListsWithFilter(s);
 
     // Stats
     await loadStats();
@@ -352,16 +361,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => { passwordStatus.textContent = ''; }, 2000);
   });
 
-  // Whitelist
-  btnAddWhitelist.addEventListener('click', () => addChannel('whitelist'));
+  // Chế độ chỉ xem kênh trong danh sách + whitelist trong popup
+  checkboxAllowOnlyWhitelisted.addEventListener('change', async () => {
+    settings = await getSettings();
+    const wl = settings.whitelistedChannels || [];
+    if (checkboxAllowOnlyWhitelisted.checked && wl.length === 0) {
+      const ok = window.confirm(
+        'Bạn đang bật chế độ chỉ cho phép xem các kênh trong danh sách, nhưng chưa có kênh nào trong danh sách được phép.\n\n' +
+        'Toàn bộ hoặc hầu hết video trên YouTube có thể bị chặn cho đến khi bạn thêm ít nhất một kênh. Tiếp tục?'
+      );
+      if (!ok) {
+        checkboxAllowOnlyWhitelisted.checked = false;
+        return;
+      }
+    }
+    await updateSetting({ allowOnlyWhitelistedChannels: checkboxAllowOnlyWhitelisted.checked });
+    settings = await getSettings();
+    updateAllowOnlyEmptyWarning(settings);
+  });
+
+  btnAddWhitelist.addEventListener('click', addWhitelistChannel);
   whitelistInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') addChannel('whitelist');
+    if (e.key === 'Enter') addWhitelistChannel();
   });
 
   // Blacklist
-  btnAddBlacklist.addEventListener('click', () => addChannel('blacklist'));
+  btnAddBlacklist.addEventListener('click', addBlacklistChannel);
   blacklistInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') addChannel('blacklist');
+    if (e.key === 'Enter') addBlacklistChannel();
   });
 
   // Rescan
@@ -388,52 +415,99 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnClearBlockedVideos.disabled = true;
     await updateSetting({ blockedVideos: [] });
     settings = await getSettings();
-    renderBlockedVideosList([]);
-    blockedVideosCount.textContent = '0';
+    renderBlockListsWithFilter(settings);
     btnClearBlockedVideos.style.display = 'none';
     btnClearBlockedVideos.disabled = false;
   });
 
+  blockSearchInput.addEventListener('input', async () => {
+    blockSearchTerm = blockSearchInput.value.trim();
+    settings = await getSettings();
+    renderBlockListsWithFilter(settings);
+  });
+
+  // Tabs
+  function activateTab(tabName) {
+    const showMain = tabName === 'main';
+    tabMainButton.classList.toggle('active', showMain);
+    tabMainButton.setAttribute('aria-selected', showMain ? 'true' : 'false');
+    tabMainPanel.classList.toggle('active', showMain);
+
+    tabParentalButton.classList.toggle('active', !showMain);
+    tabParentalButton.setAttribute('aria-selected', !showMain ? 'true' : 'false');
+    tabParentalPanel.classList.toggle('active', !showMain);
+  }
+
+  tabMainButton.addEventListener('click', () => activateTab('main'));
+  tabParentalButton.addEventListener('click', () => activateTab('parental'));
+
   // ==================== CHANNEL MANAGEMENT ====================
 
-  async function addChannel(listType) {
-    const input = listType === 'whitelist' ? whitelistInput : blacklistInput;
-    const name = input.value.trim();
+  async function addBlacklistChannel() {
+    const name = blacklistInput.value.trim();
     if (!name) return;
 
     settings = await getSettings();
-    const key = listType === 'whitelist' ? 'whitelistedChannels' : 'blacklistedChannels';
-    
-    if (!settings[key].includes(name)) {
-      settings[key].push(name);
-      await updateSetting({ [key]: settings[key] });
+    const blacklistedChannels = settings.blacklistedChannels || [];
+
+    if (!blacklistedChannels.includes(name)) {
+      blacklistedChannels.push(name);
+      await updateSetting({ blacklistedChannels });
     }
 
-    input.value = '';
-    
-    const container = listType === 'whitelist' ? whitelistContainer : blacklistContainer;
-    const countEl = listType === 'whitelist' ? whitelistCount : blacklistCount;
-    renderChannelList(container, settings[key], listType);
-    countEl.textContent = settings[key].length;
+    blacklistInput.value = '';
+
+    settings = await getSettings();
+    renderBlockListsWithFilter(settings);
+  }
+
+  async function addWhitelistChannel() {
+    const name = whitelistInput.value.trim();
+    if (!name) return;
+
+    settings = await getSettings();
+    const whitelistedChannels = settings.whitelistedChannels || [];
+
+    if (!whitelistedChannels.includes(name)) {
+      whitelistedChannels.push(name);
+      await updateSetting({ whitelistedChannels });
+    }
+
+    whitelistInput.value = '';
+
+    settings = await getSettings();
+    updateAllowOnlyEmptyWarning(settings);
+    renderBlockListsWithFilter(settings);
   }
 
   async function removeChannel(name, listType) {
     settings = await getSettings();
-    const key = listType === 'whitelist' ? 'whitelistedChannels' : 'blacklistedChannels';
-    settings[key] = settings[key].filter(c => c !== name);
-    await updateSetting({ [key]: settings[key] });
-
-    const container = listType === 'whitelist' ? whitelistContainer : blacklistContainer;
-    const countEl = listType === 'whitelist' ? whitelistCount : blacklistCount;
-    renderChannelList(container, settings[key], listType);
-    countEl.textContent = settings[key].length;
+    if (listType === 'blacklist') {
+      const blacklistedChannels = (settings.blacklistedChannels || []).filter(c => c !== name);
+      await updateSetting({ blacklistedChannels });
+    } else if (listType === 'whitelist') {
+      const whitelistedChannels = (settings.whitelistedChannels || []).filter(c => c !== name);
+      await updateSetting({ whitelistedChannels });
+    } else {
+      return;
+    }
+    settings = await getSettings();
+    updateAllowOnlyEmptyWarning(settings);
+    renderBlockListsWithFilter(settings);
   }
 
   function renderChannelList(container, channels, listType) {
     container.innerHTML = '';
+    if (!channels.length) {
+      const emptyBlacklist = blockSearchTerm ? 'Không có channel khớp từ khóa' : 'Chưa có channel nào trong danh sách chặn';
+      const emptyWhitelist = blockSearchTerm ? 'Không có channel khớp từ khóa' : 'Chưa có kênh nào trong danh sách được phép';
+      const emptyMsg = listType === 'whitelist' ? emptyWhitelist : emptyBlacklist;
+      container.innerHTML = `<p style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 8px 0;">${emptyMsg}</p>`;
+      return;
+    }
     channels.forEach(name => {
       const tag = document.createElement('div');
-      tag.className = 'channel-tag';
+      tag.className = listType === 'whitelist' ? 'channel-tag channel-tag-allow' : 'channel-tag';
       tag.innerHTML = `
         <span>${escapeHtml(name)}</span>
         <span class="channel-tag-remove">×</span>
@@ -448,7 +522,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderBlockedVideosList(blockedVideos) {
     blockedVideosContainer.innerHTML = '';
     if (!blockedVideos.length) {
-      blockedVideosContainer.innerHTML = '<p style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 8px 0;">Chưa có video nào bị chặn thủ công</p>';
+      blockedVideosContainer.innerHTML = `<p style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 8px 0;">${blockSearchTerm ? 'Không có video khớp từ khóa' : 'Chưa có video nào bị chặn thủ công'}</p>`;
       return;
     }
     blockedVideos.forEach(video => {
@@ -467,13 +541,43 @@ document.addEventListener('DOMContentLoaded', async () => {
       tag.querySelector('.channel-tag-remove').addEventListener('click', async () => {
         await sendMessage({ type: 'UNBLOCK_VIDEO', videoId: video.videoId });
         settings = await getSettings();
-        const updated = settings.blockedVideos || [];
-        renderBlockedVideosList(updated);
-        blockedVideosCount.textContent = updated.length;
-        btnClearBlockedVideos.style.display = updated.length > 0 ? 'block' : 'none';
+        renderBlockListsWithFilter(settings);
       });
       blockedVideosContainer.appendChild(tag);
     });
+  }
+
+  function renderBlockListsWithFilter(s) {
+    const whitelistedChannels = s.whitelistedChannels || [];
+    const blacklistedChannels = s.blacklistedChannels || [];
+    const blockedVideos = s.blockedVideos || [];
+    const normalizedSearch = normalizeForSearch(blockSearchTerm);
+
+    const filteredWhitelistedChannels = whitelistedChannels.filter((name) =>
+      matchBySearch(name, normalizedSearch)
+    );
+
+    const filteredBlacklistedChannels = blacklistedChannels.filter((name) => {
+      return matchBySearch(name, normalizedSearch);
+    });
+
+    const filteredBlockedVideos = blockedVideos.filter((video) => {
+      const searchableText = `${video.title || ''} ${video.channel || ''} ${video.videoId || ''}`;
+      return matchBySearch(searchableText, normalizedSearch);
+    });
+
+    renderChannelList(whitelistContainer, filteredWhitelistedChannels, 'whitelist');
+    renderChannelList(blacklistContainer, filteredBlacklistedChannels, 'blacklist');
+    renderBlockedVideosList(filteredBlockedVideos);
+
+    whitelistCount.textContent = getCountLabel(filteredWhitelistedChannels.length, whitelistedChannels.length, normalizedSearch);
+    blacklistCount.textContent = getCountLabel(filteredBlacklistedChannels.length, blacklistedChannels.length, normalizedSearch);
+    blockedVideosCount.textContent = getCountLabel(filteredBlockedVideos.length, blockedVideos.length, normalizedSearch);
+    btnClearBlockedVideos.style.display = blockedVideos.length > 0 ? 'block' : 'none';
+    updateAllowOnlyEmptyWarning(s);
+    if (checkboxAllowOnlyWhitelisted) {
+      checkboxAllowOnlyWhitelisted.checked = Boolean(s.allowOnlyWhitelistedChannels);
+    }
   }
 
   // ==================== HELPERS ====================
@@ -641,6 +745,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
     if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
     return String(n);
+  }
+
+  function normalizeForSearch(text) {
+    return (text || '')
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  function matchBySearch(text, normalizedSearch) {
+    if (!normalizedSearch) return true;
+    return normalizeForSearch(text).includes(normalizedSearch);
+  }
+
+  function getCountLabel(filteredCount, totalCount, normalizedSearch) {
+    if (!normalizedSearch || filteredCount === totalCount) return String(totalCount);
+    return `${filteredCount}/${totalCount}`;
   }
 
   function escapeHtml(text) {

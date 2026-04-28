@@ -122,6 +122,7 @@ async function updateBadge(count) {
 // ==================== WHITELIST ====================
 
 async function whitelistChannel(channel, url) {
+  if (!channel) return { ok: false, reason: 'missing_channel' };
   const settings = await StorageManager.getSettings();
   if (!settings.whitelistedChannels.includes(channel)) {
     settings.whitelistedChannels.push(channel);
@@ -1154,6 +1155,12 @@ chrome.runtime.onStartup.addListener(async () => {
 function createContextMenus() {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
+      id: 'safekid-allow-channel',
+      title: '🛡️ SafeKid: Cho phép channel này',
+      contexts: ['link', 'page'],
+      documentUrlPatterns: ['*://www.youtube.com/*', '*://youtube.com/*']
+    });
+    chrome.contextMenus.create({
       id: 'safekid-block-channel',
       title: '🛡️ SafeKid: Chặn channel này',
       contexts: ['link', 'page'],
@@ -1171,24 +1178,55 @@ function createContextMenus() {
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!tab?.id) return;
   const menuId = info.menuItemId;
-  if (menuId !== 'safekid-block-channel' && menuId !== 'safekid-block-video') return;
+  if (
+    menuId !== 'safekid-allow-channel' &&
+    menuId !== 'safekid-block-channel' &&
+    menuId !== 'safekid-block-video'
+  ) return;
 
   try {
+    let action = 'block_video';
+    if (menuId === 'safekid-allow-channel') action = 'allow_channel';
+    if (menuId === 'safekid-block-channel') action = 'block_channel';
     const results = await chrome.tabs.sendMessage(tab.id, {
       type: 'GET_CONTEXT_INFO',
-      action: menuId === 'safekid-block-channel' ? 'block_channel' : 'block_video',
+      action,
       linkUrl: info.linkUrl || '',
       pageUrl: info.pageUrl || ''
     });
 
-    if (results?.channel && menuId === 'safekid-block-channel') {
-      await blockChannel(results.channel);
+    const fallbackChannel = extractChannelNameFromUrl(info.linkUrl || info.pageUrl || '');
+    const resolvedChannel = (results?.channel || fallbackChannel || '').trim();
+
+    if (resolvedChannel && menuId === 'safekid-allow-channel') {
+      await whitelistChannel(resolvedChannel, info.linkUrl || info.pageUrl || '');
+    } else if (resolvedChannel && menuId === 'safekid-block-channel') {
+      await blockChannel(resolvedChannel);
     } else if (results?.videoId && menuId === 'safekid-block-video') {
-      await blockVideo(results.videoId, results.title || '', results.channel || '');
+      await blockVideo(results.videoId, results.title || '', (results.channel || fallbackChannel || '').trim());
     }
   } catch (e) {
     console.warn(`${LOG_PREFIX} Context menu action failed:`, e);
   }
 });
+
+function extractChannelNameFromUrl(rawUrl = '') {
+  try {
+    const url = new URL(rawUrl);
+    const pathname = url.pathname || '';
+
+    const handleMatch = pathname.match(/^\/@([^/?]+)/);
+    if (handleMatch) return '@' + decodeURIComponent(handleMatch[1]);
+
+    const channelMatch = pathname.match(/^\/channel\/([^/?]+)/);
+    if (channelMatch) return decodeURIComponent(channelMatch[1]);
+
+    const customMatch = pathname.match(/^\/(c|user)\/([^/?]+)/);
+    if (customMatch) return decodeURIComponent(customMatch[2]);
+  } catch (e) {
+    // ignore malformed URL
+  }
+  return '';
+}
 
 console.log(`${LOG_PREFIX} Service worker loaded`);

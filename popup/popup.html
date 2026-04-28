@@ -54,8 +54,31 @@
         </div>
       </div>
 
+      <!-- Tab Navigation -->
+      <div class="tabs-nav" role="tablist" aria-label="Nhóm cài đặt popup">
+        <button
+          id="tab-main-button"
+          class="tab-button active"
+          role="tab"
+          aria-selected="true"
+          aria-controls="tab-main-panel"
+        >
+          🧭 Tổng quan
+        </button>
+        <button
+          id="tab-parental-button"
+          class="tab-button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="tab-parental-panel"
+        >
+          👨‍👩‍👧 Quản lý nâng cao
+        </button>
+      </div>
+
       <!-- Settings Sections -->
       <div class="settings-container">
+        <div id="tab-main-panel" class="tab-panel active" role="tabpanel" aria-labelledby="tab-main-button">
 
         <!-- Sensitivity -->
         <div class="setting-group">
@@ -221,62 +244,6 @@
           </div>
         </div>
 
-        <!-- Parental Password -->
-        <div class="setting-group">
-          <div class="setting-header">
-            <span>🔐 Mật khẩu phụ huynh</span>
-          </div>
-          <div class="password-section">
-            <input type="password" id="new-password" placeholder="Đặt mật khẩu mới..." autocomplete="new-password">
-            <button id="btn-set-password" class="btn-small">Lưu</button>
-          </div>
-          <p id="password-status" class="status-text"></p>
-        </div>
-
-        <!-- Whitelist -->
-        <div class="setting-group">
-          <div class="setting-header">
-            <span>✅ Channel cho phép</span>
-            <span class="count-badge" id="whitelist-count">0</span>
-          </div>
-          <div class="channel-input-row">
-            <input type="text" id="whitelist-input" placeholder="Tên channel...">
-            <button id="btn-add-whitelist" class="btn-small btn-green">+</button>
-          </div>
-          <div class="channel-list" id="whitelist-container"></div>
-        </div>
-
-        <!-- Blacklist -->
-        <div class="setting-group">
-          <div class="setting-header">
-            <span>🚫 Channel luôn chặn</span>
-            <span class="count-badge count-red" id="blacklist-count">0</span>
-          </div>
-          <div class="channel-input-row">
-            <input type="text" id="blacklist-input" placeholder="Tên channel...">
-            <button id="btn-add-blacklist" class="btn-small btn-red">+</button>
-          </div>
-          <div class="channel-list" id="blacklist-container"></div>
-        </div>
-
-        <!-- Blocked Videos -->
-        <div class="setting-group">
-          <div class="setting-header" id="blocked-videos-header" style="cursor: pointer;">
-            <span>🎬 Video bị chặn thủ công</span>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="count-badge count-red" id="blocked-videos-count">0</span>
-              <span id="blocked-videos-chevron" style="transition: transform 0.3s; font-size: 10px; color: var(--text-muted);">▼</span>
-            </div>
-          </div>
-          <div id="blocked-videos-details" style="display: none;">
-            <p class="blocked-videos-info" style="font-size: 11px; color: var(--text-secondary); margin: 8px 0;">
-              Click chuột phải trên YouTube → "🛡️ SafeKid: Chặn video này" để thêm video vào danh sách.
-            </p>
-            <div class="channel-list" id="blocked-videos-container"></div>
-            <button id="btn-clear-blocked-videos" class="btn-small btn-red" style="margin-top: 8px; width: 100%; display: none;">🗑 Xóa tất cả video đã chặn</button>
-          </div>
-        </div>
-
         <!-- Detection Breakdown -->
         <div class="setting-group">
           <div class="setting-header">
@@ -298,6 +265,90 @@
             <div class="break-item">
               <span class="break-key">Method top</span>
               <span class="break-value" id="break-method">—</span>
+            </div>
+          </div>
+        </div>
+
+        </div>
+
+        <div id="tab-parental-panel" class="tab-panel" role="tabpanel" aria-labelledby="tab-parental-button">
+          <!-- Chỉ xem kênh trong danh sách -->
+          <div class="setting-group" id="allow-only-group">
+            <label class="checkbox-row" style="margin-bottom: 6px;">
+              <input type="checkbox" id="checkbox-allow-only-whitelisted">
+              <span>
+                Chỉ cho phép xem các kênh trong danh sách dưới đây
+                <small class="highlight-warning">Khi bật: mọi video từ kênh khác sẽ bị chặn (kể cả không phát hiện AI). Kênh trong danh sách được xem bình thường.</small>
+              </span>
+            </label>
+            <p id="allow-only-empty-warning" class="status-text" style="display: none; color: #fbbf24; font-size: 10px; margin-bottom: 6px;"></p>
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-header">
+              <span>✅ Kênh được phép xem</span>
+              <span class="count-badge count-green" id="whitelist-count">0</span>
+            </div>
+            <p style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">
+              Khớp đúng tên hiển thị trên YouTube (có thể thêm kênh từ nút trên overlay khi xem SafeKid đã phủ chặn).
+            </p>
+            <div class="channel-input-row">
+              <input type="text" id="whitelist-input" placeholder="Tên kênh...">
+              <button type="button" id="btn-add-whitelist" class="btn-small btn-green">+</button>
+            </div>
+            <div class="channel-list" id="whitelist-container"></div>
+          </div>
+
+          <!-- Parental Password -->
+          <div class="setting-group">
+            <div class="setting-header">
+              <span>🔐 Mật khẩu phụ huynh</span>
+            </div>
+            <div class="password-section">
+              <input type="password" id="new-password" placeholder="Đặt mật khẩu mới..." autocomplete="new-password">
+              <button id="btn-set-password" class="btn-small">Lưu</button>
+            </div>
+            <p id="password-status" class="status-text"></p>
+          </div>
+
+          <!-- Block Search -->
+          <div class="setting-group">
+            <div class="setting-header">
+              <span>🔎 Tìm nhanh trong danh sách chặn</span>
+            </div>
+            <div class="search-input-row">
+              <input type="text" id="block-search-input" placeholder="Tìm tên channel hoặc tên video...">
+            </div>
+          </div>
+
+          <!-- Blacklist -->
+          <div class="setting-group">
+            <div class="setting-header">
+              <span>🚫 Channel luôn chặn</span>
+              <span class="count-badge count-red" id="blacklist-count">0</span>
+            </div>
+            <div class="channel-input-row">
+              <input type="text" id="blacklist-input" placeholder="Tên channel...">
+              <button id="btn-add-blacklist" class="btn-small btn-red">+</button>
+            </div>
+            <div class="channel-list" id="blacklist-container"></div>
+          </div>
+
+          <!-- Blocked Videos -->
+          <div class="setting-group">
+            <div class="setting-header" id="blocked-videos-header" style="cursor: pointer;">
+              <span>🎬 Video bị chặn thủ công</span>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="count-badge count-red" id="blocked-videos-count">0</span>
+                <span id="blocked-videos-chevron" style="transition: transform 0.3s; font-size: 10px; color: var(--text-muted);">▼</span>
+              </div>
+            </div>
+            <div id="blocked-videos-details" style="display: none;">
+              <p class="blocked-videos-info" style="font-size: 11px; color: var(--text-secondary); margin: 8px 0;">
+                Click chuột phải trên YouTube → "🛡️ SafeKid: Chặn video này" để thêm video vào danh sách.
+              </p>
+              <div class="channel-list" id="blocked-videos-container"></div>
+              <button id="btn-clear-blocked-videos" class="btn-small btn-red" style="margin-top: 8px; width: 100%; display: none;">🗑 Xóa tất cả video đã chặn</button>
             </div>
           </div>
         </div>
