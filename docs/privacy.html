@@ -16,6 +16,10 @@
     
     <!-- Icons (Lucide) -->
     <script src="https://unpkg.com/lucide@latest" defer></script>
+    
+    <!-- Scripts -->
+    <script src="i18n.js" defer></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
 
@@ -29,11 +33,17 @@
                 </a>
             </div>
             <nav class="nav-links">
-                <a href="index.html#features">Tính năng</a>
-                <a href="index.html#how-it-works">Cách hoạt động</a>
-                <a href="index.html#faq">Hỏi đáp</a>
+                <a href="index.html#features" data-i18n="navFeatures">Tính năng</a>
+                <a href="index.html#how-it-works" data-i18n="navHowItWorks">Cách hoạt động</a>
+                <a href="index.html#faq" data-i18n="navFaq">Hỏi đáp</a>
             </nav>
-            <a href="index.html" class="btn btn-primary">Trang chủ</a>
+            <div class="header-actions">
+                <div class="lang-switcher">
+                    <button class="lang-btn active" data-lang="vi" title="Tiếng Việt">VI</button>
+                    <button class="lang-btn" data-lang="en" title="English">EN</button>
+                </div>
+                <a href="index.html" class="btn btn-primary" data-i18n="navHome">Trang chủ</a>
+            </div>
         </div>
     </header>
 
@@ -41,37 +51,37 @@
     <section class="policy-section" style="padding: 120px 0 60px; min-height: calc(100vh - 200px);">
         <div class="container" style="max-width: 800px; background: rgba(255, 255, 255, 0.9); padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2);">
             <div class="section-title" style="text-align: center; margin-bottom: 40px;">
-                <h1 style="font-size: 2.5rem; color: var(--text-color);">Chính sách bảo mật</h1>
-                <p style="color: var(--text-muted); margin-top: 10px;">Cập nhật lần cuối: Tháng 4, 2026</p>
+                <h1 style="font-size: 2.5rem; color: var(--text-color);" data-i18n="privacyTitle">Chính sách bảo mật</h1>
+                <p style="color: var(--text-muted); margin-top: 10px;" data-i18n="privacyLastUpdated">Cập nhật lần cuối: Tháng 4, 2026</p>
             </div>
             
             <div class="policy-content" style="line-height: 1.8; color: var(--text-color); font-size: 1.1rem;">
-                <p>Cảm ơn bạn đã sử dụng tiện ích SafeKid. Sự riêng tư và an toàn của trẻ em, cũng như dữ liệu của bạn là ưu tiên hàng đầu của chúng tôi. Chính sách này mô tả cách thức chúng tôi (không) thu thập, sử dụng và bảo vệ thông tin của bạn.</p>
+                <p data-i18n="privacyIntro">Cảm ơn bạn đã sử dụng tiện ích SafeKid. Sự riêng tư và an toàn của trẻ em, cũng như dữ liệu của bạn là ưu tiên hàng đầu của chúng tôi. Chính sách này mô tả cách thức chúng tôi (không) thu thập, sử dụng và bảo vệ thông tin của bạn.</p>
                 
-                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--primary-color);">1. Dữ liệu chúng tôi thu thập và cách sử dụng</h3>
-                <p><strong>SafeKid KHÔNG thu thập bất kỳ dữ liệu cá nhân nào của bạn.</strong></p>
-                <p>Mọi cài đặt, mật khẩu phụ huynh và danh sách kênh cho phép (whitelist) / bị chặn (blacklist) đều được <strong>lưu trữ cục bộ (local storage)</strong> trên trình duyệt Chrome của bạn. Chúng tôi không truyền bất kỳ thông tin nhận dạng cá nhân nào về máy chủ của chúng tôi.</p>
+                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--primary-color);" data-i18n="privacySec1Title">1. Dữ liệu chúng tôi thu thập và cách sử dụng</h3>
+                <p data-i18n-html="privacySec1P1"><strong>SafeKid KHÔNG thu thập bất kỳ dữ liệu cá nhân nào của bạn.</strong></p>
+                <p data-i18n-html="privacySec1P2">Mọi cài đặt, mật khẩu phụ huynh và danh sách kênh cho phép (whitelist) / bị chặn (blacklist) đều được <strong>lưu trữ cục bộ (local storage)</strong> trên trình duyệt Chrome của bạn. Chúng tôi không truyền bất kỳ thông tin nhận dạng cá nhân nào về máy chủ của chúng tôi.</p>
                 
-                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--primary-color);">2. Quyền của Tiện ích (Permissions)</h3>
-                <p>SafeKid yêu cầu một số quyền để có thể hoạt động đúng cách:</p>
+                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--primary-color);" data-i18n="privacySec2Title">2. Quyền của Tiện ích (Permissions)</h3>
+                <p data-i18n="privacySec2P1">SafeKid yêu cầu một số quyền để có thể hoạt động đúng cách:</p>
                 <ul style="margin-left: 20px; margin-bottom: 20px;">
-                    <li><strong>storage:</strong> Dùng để lưu trữ cài đặt cục bộ (như danh sách kênh, mật khẩu) trên máy tính của bạn.</li>
-                    <li><strong>activeTab / host_permissions (*://*.youtube.com/*, *://*.youtubekids.com/*):</strong> Dùng để quét và hiển thị giao diện phân tích, che đi các video không an toàn ngay khi bạn truy cập trang YouTube và YouTube Kids.</li>
-                    <li><strong>contextMenus:</strong> Dùng để tạo menu chuột phải giúp bạn (phụ huynh) có thể nhanh chóng chặn hoặc cho phép một kênh khi đang xem video.</li>
+                    <li data-i18n-html="privacySec2L1"><strong>storage:</strong> Dùng để lưu trữ cài đặt cục bộ (như danh sách kênh, mật khẩu) trên máy tính của bạn.</li>
+                    <li data-i18n-html="privacySec2L2"><strong>activeTab / host_permissions (*://*.youtube.com/*, *://*.youtubekids.com/*):</strong> Dùng để quét và hiển thị giao diện phân tích, che đi các video không an toàn ngay khi bạn truy cập trang YouTube và YouTube Kids.</li>
+                    <li data-i18n-html="privacySec2L3"><strong>contextMenus:</strong> Dùng để tạo menu chuột phải giúp bạn (phụ huynh) có thể nhanh chóng chặn hoặc cho phép một kênh khi đang xem video.</li>
                 </ul>
 
-                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--primary-color);">3. Việc truyền dữ liệu đến API bên thứ ba</h3>
-                <p>Nếu bạn kích hoạt tính năng kiểm tra bằng AI (Gemini hoặc OpenRouter), tiện ích sẽ chỉ gửi những dữ liệu <strong>hoàn toàn ẩn danh</strong> và mang tính công khai, bao gồm: tiêu đề video, tên kênh và mô tả video, đến các dịch vụ AI mà bạn chọn.</p>
-                <p>Chúng tôi tuyệt đối không gửi lịch sử duyệt web cá nhân, ID người dùng, token đăng nhập hay bất kỳ thông tin nào có thể liên kết trực tiếp với tài khoản YouTube của bạn.</p>
+                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--primary-color);" data-i18n="privacySec3Title">3. Việc truyền dữ liệu đến API bên thứ ba</h3>
+                <p data-i18n-html="privacySec3P1">Nếu bạn kích hoạt tính năng kiểm tra bằng AI (Gemini hoặc OpenRouter), tiện ích sẽ chỉ gửi những dữ liệu <strong>hoàn toàn ẩn danh</strong> và mang tính công khai, bao gồm: tiêu đề video, tên kênh và mô tả video, đến các dịch vụ AI mà bạn chọn.</p>
+                <p data-i18n="privacySec3P2">Chúng tôi tuyệt đối không gửi lịch sử duyệt web cá nhân, ID người dùng, token đăng nhập hay bất kỳ thông tin nào có thể liên kết trực tiếp với tài khoản YouTube của bạn.</p>
 
-                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--primary-color);">4. Bảo vệ dữ liệu trẻ em</h3>
-                <p>SafeKid được thiết kế đặc biệt để bảo vệ trẻ em trên Internet. Chúng tôi tuân thủ nghiêm ngặt các quy định về quyền riêng tư của trẻ em (như COPPA). Không có dữ liệu cá nhân nào của trẻ em được lưu lại, chia sẻ hoặc bán cho các bên thứ ba dưới bất kỳ hình thức nào.</p>
+                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--primary-color);" data-i18n="privacySec4Title">4. Bảo vệ dữ liệu trẻ em</h3>
+                <p data-i18n="privacySec4P1">SafeKid được thiết kế đặc biệt để bảo vệ trẻ em trên Internet. Chúng tôi tuân thủ nghiêm ngặt các quy định về quyền riêng tư của trẻ em (như COPPA). Không có dữ liệu cá nhân nào của trẻ em được lưu lại, chia sẻ hoặc bán cho các bên thứ ba dưới bất kỳ hình thức nào.</p>
 
-                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--primary-color);">5. Thay đổi Chính sách Bảo mật</h3>
-                <p>Chúng tôi có thể cập nhật chính sách này vào bất kỳ lúc nào để phản ánh những thay đổi trong tiện ích. Mọi thay đổi sẽ được cập nhật trên trang này. Việc bạn tiếp tục sử dụng tiện ích đồng nghĩa với việc bạn đồng ý với chính sách mới.</p>
+                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--primary-color);" data-i18n="privacySec5Title">5. Thay đổi Chính sách Bảo mật</h3>
+                <p data-i18n="privacySec5P1">Chúng tôi có thể cập nhật chính sách này vào bất kỳ lúc nào để phản ánh những thay đổi trong tiện ích. Mọi thay đổi sẽ được cập nhật trên trang này. Việc bạn tiếp tục sử dụng tiện ích đồng nghĩa với việc bạn đồng ý với chính sách mới.</p>
 
-                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--primary-color);">6. Liên hệ</h3>
-                <p>Nếu bạn có bất kỳ câu hỏi hoặc thắc mắc nào về Chính sách bảo mật này, xin vui lòng liên hệ với chúng tôi qua email: <strong>autowork365@gmail.com</strong> hoặc SĐT/Zalo: <strong>0394932696</strong>.</p>
+                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--primary-color);" data-i18n="privacySec6Title">6. Liên hệ</h3>
+                <p data-i18n-html="privacySec6P1">Nếu bạn có bất kỳ câu hỏi hoặc thắc mắc nào về Chính sách bảo mật này, xin vui lòng liên hệ với chúng tôi qua email: <strong>autowork365@gmail.com</strong> hoặc SĐT/Zalo: <strong>0394932696</strong>.</p>
             </div>
         </div>
     </section>
@@ -83,10 +93,10 @@
                 <img src="logo.png" alt="SafeKid Logo" class="brand-logo">
                 <span>SafeKid</span>
             </div>
-            <p class="copyright">&copy; 2026 AutoWork Team. Đảm bảo quyền riêng tư và an toàn.</p>
+            <p class="copyright" data-i18n="footerCopyright">&copy; 2026 AutoWork Team. Đảm bảo quyền riêng tư và an toàn.</p>
             <div class="footer-links">
-                <a href="privacy.html">Chính sách bảo mật</a>
-                <a href="terms.html">Điều khoản</a>
+                <a href="privacy.html" data-i18n="footerPrivacy">Chính sách bảo mật</a>
+                <a href="terms.html" data-i18n="footerTerms">Điều khoản</a>
             </div>
         </div>
     </footer>

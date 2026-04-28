@@ -258,9 +258,9 @@ const AIBlocker = {
     const content = this._createElement('div', `${this.PREFIX}-watch-overlay-content`);
     content.append(
       this._createElement('div', `${this.PREFIX}-shield-icon-large`, '🛡️'),
-      this._createElement('h2', '', options.title || 'Video Đã Bị Chặn'),
-      this._createElement('p', '', options.description || 'Nội dung này không phù hợp với trẻ em'),
-      this._createElement('p', `${this.PREFIX}-confidence-text`, options.meta || `Độ tin cậy: ${Math.round((options.confidence || 0) * 100)}% • ${this._getMethodLabel(options.method)}`)
+      this._createElement('h2', '', options.title || chrome.i18n.getMessage('blockerTitleAI') || 'Video Blocked'),
+      this._createElement('p', '', options.description || chrome.i18n.getMessage('blockerDescGeneric') || 'Content not suitable for children'),
+      this._createElement('p', `${this.PREFIX}-confidence-text`, options.meta || `${Math.round((options.confidence || 0) * 100)}% • ${this._getMethodLabel(options.method)}`)
     );
 
     const reasons = this._createElement('div', `${this.PREFIX}-watch-reasons`);
@@ -270,7 +270,7 @@ const AIBlocker = {
     content.appendChild(reasons);
 
     const actions = this._createElement('div', `${this.PREFIX}-watch-actions`);
-    const backButton = this._createElement('button', `${this.PREFIX}-btn-go-back`, '← Quay lại');
+    const backButton = this._createElement('button', `${this.PREFIX}-btn-go-back`, chrome.i18n.getMessage('blockerGoBack') || '← Go Back');
     backButton.id = options.backButtonId;
     actions.appendChild(backButton);
     content.appendChild(actions);
@@ -443,14 +443,14 @@ const AIBlocker = {
    */
   _getMethodLabel(method) {
     const labels = {
-      'label': '📋 YouTube Label',
-      'keyword': '🔍 Từ khóa AI',
-      'pattern': '🧩 Pattern Match',
+      'label': chrome.i18n.getMessage('blockerMethodLabel') || '📋 YouTube Label',
+      'keyword': chrome.i18n.getMessage('blockerMethodKeyword') || '🔍 AI Keyword',
+      'pattern': chrome.i18n.getMessage('blockerMethodPattern') || '🧩 Pattern Match',
       'channel': '📺 Channel AI',
-      'disclosure': '📣 Disclosure',
-      'childRisk': '🛡️ Rủi ro trẻ em',
-      'combination': '🧠 Multi-signal',
-      'none': '❓ Không xác định'
+      'disclosure': chrome.i18n.getMessage('blockerMethodDisclosure') || '📣 Disclosure',
+      'childRisk': chrome.i18n.getMessage('blockerMethodChildRisk') || '🛡️ Child Risk',
+      'combination': chrome.i18n.getMessage('blockerMethodCombination') || '🧠 Multi-signal',
+      'none': chrome.i18n.getMessage('blockerMethodNone') || '❓ Unknown'
     };
     return labels[method] || method;
   },
@@ -463,23 +463,24 @@ const AIBlocker = {
 
   _getBlockTitle(detection = {}) {
     if ((detection.childRiskScore || 0) >= (detection.syntheticScore || 0)) {
-      return 'Video Không Phù Hợp Đã Bị Chặn';
+      return chrome.i18n.getMessage('blockerTitleUnsafe') || 'Unsafe Video Blocked';
     }
-    return 'Video AI Đã Bị Chặn';
+    return chrome.i18n.getMessage('blockerTitleAI') || 'AI Video Blocked';
   },
 
   _getBlockDescription(detection = {}) {
     if ((detection.childRiskScore || 0) >= 0.3) {
-      return 'Nội dung này có dấu hiệu không phù hợp với trẻ em';
+      return chrome.i18n.getMessage('blockerDescUnsafe') || 'Content unsuitable for children';
     }
-    return 'Video này có dấu hiệu nội dung tạo bởi AI';
+    return chrome.i18n.getMessage('blockerDescAI') || 'This video shows signs of AI-generated content';
   },
 
   _getConfidenceLabel(detection = {}) {
     const synthetic = Math.round((detection.syntheticScore || 0) * 100);
     const childRisk = Math.round((detection.childRiskScore || 0) * 100);
     if (detection.riskLevel) {
-      return `AI ${synthetic}% • Rủi ro ${childRisk}% • ${this._getMethodLabel(detection.method)}`;
+      const riskLabel = chrome.i18n.getMessage('blockerMethodChildRisk')?.replace(/^[^\s]+\s/, '') || 'Risk';
+      return `AI ${synthetic}% • ${riskLabel} ${childRisk}% • ${this._getMethodLabel(detection.method)}`;
     }
     return `${Math.round((detection.confidence || 0) * 100)}% • ${this._getMethodLabel(detection.method)}`;
   },

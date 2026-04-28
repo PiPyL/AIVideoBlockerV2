@@ -236,6 +236,45 @@ a {
     color: var(--primary-blue);
 }
 
+/* Header Actions & Language Switcher */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.lang-switcher {
+    display: flex;
+    background: #F1F5F9;
+    border-radius: var(--radius-full);
+    padding: 3px;
+    border: 1px solid #E2E8F0;
+}
+
+.lang-btn {
+    padding: 0.3rem 0.75rem;
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+    line-height: 1;
+}
+
+.lang-btn:hover {
+    color: var(--primary-blue);
+}
+
+.lang-btn.active {
+    background: var(--primary-blue);
+    color: white;
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+}
+
 /* Hero Section */
 .hero {
     padding: 160px 0 100px;

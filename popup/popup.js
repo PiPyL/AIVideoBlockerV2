@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
 
+  // Initialize i18n with language override support
+  await I18n.init();
+
   // Elements
   const lockScreen = $('#lock-screen');
   const mainScreen = $('#main-screen');
@@ -56,6 +59,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tabMainPanel = $('#tab-main-panel');
   const tabParentalPanel = $('#tab-parental-panel');
 
+  const btnLangToggle = $('#btn-lang-toggle');
+  const langFlag = $('#lang-flag');
+  const langCode = $('#lang-code');
+
   const checkboxAiEnabled = $('#checkbox-ai-enabled');
   const aiProviderHeader = $('#ai-provider-header');
   const aiProviderDetails = $('#ai-provider-details');
@@ -88,14 +95,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   let settings = await getSettings();
   let blockSearchTerm = '';
 
+  // Update language toggle button state (both header + lock screen)
+  function updateLangButton() {
+    const lang = I18n.getLanguage();
+    const flag = lang === 'vi' ? '\ud83c\uddfb\ud83c\uddf3' : '\ud83c\uddfa\ud83c\uddf8';
+    const code = lang === 'vi' ? 'VI' : 'EN';
+    if (langFlag) langFlag.textContent = flag;
+    if (langCode) langCode.textContent = code;
+    const lockFlag = $('#lock-lang-flag');
+    const lockCode = $('#lock-lang-code');
+    if (lockFlag) lockFlag.textContent = flag;
+    if (lockCode) lockCode.textContent = code;
+  }
+  updateLangButton();
+
   // Check parental lock
   if (settings.parentalPassword && settings.isLocked) {
     lockScreen.style.display = 'flex';
     mainScreen.style.display = 'none';
+    I18n.applyToDOM();
     passwordInput.focus();
   } else {
     lockScreen.style.display = 'none';
     mainScreen.style.display = 'block';
+    I18n.applyToDOM();
     await loadUI(settings);
   }
 
@@ -106,6 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (result.valid) {
       lockScreen.style.display = 'none';
       mainScreen.style.display = 'block';
+      I18n.applyToDOM();
       settings = await getSettings();
       await loadUI(settings);
     } else {
@@ -120,6 +144,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.key === 'Enter') btnUnlock.click();
   });
 
+  // Lock screen language toggle
+  const btnLockLang = $('#btn-lock-lang');
+  if (btnLockLang) {
+    btnLockLang.addEventListener('click', async () => {
+      const current = I18n.getLanguage();
+      const next = current === 'vi' ? 'en' : 'vi';
+      await I18n.setLanguage(next);
+      updateLangButton();
+    });
+  }
+
   // ==================== LOAD UI ====================
 
   function updateAllowOnlyEmptyWarning(s) {
@@ -127,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const wl = s.whitelistedChannels || [];
     if (checkboxAllowOnlyWhitelisted.checked && wl.length === 0) {
       allowOnlyEmptyWarning.style.display = 'block';
-      allowOnlyEmptyWarning.textContent = 'Cảnh báo: danh sách kênh trống — hầu hết video trên YouTube sẽ bị chặn cho đến khi thêm ít nhất một kênh.';
+      allowOnlyEmptyWarning.textContent = I18n.t('allowOnlyEmptyWarning');
     } else {
       allowOnlyEmptyWarning.style.display = 'none';
       allowOnlyEmptyWarning.textContent = '';
@@ -161,22 +196,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const activeSettings = activeProvider === 'gemini' ? gemini : openrouter;
     checkboxAiEnabled.checked = Boolean(activeSettings.enabled && activeSettings.hasApiKey);
-    activeProviderBadge.textContent = checkboxAiEnabled.checked ? (activeProvider === 'gemini' ? 'Gemini' : 'OpenRouter') : 'Tắt';
+    activeProviderBadge.textContent = checkboxAiEnabled.checked ? (activeProvider === 'gemini' ? 'Gemini' : 'OpenRouter') : I18n.t('aiProviderOff');
     activeProviderBadge.style.color = checkboxAiEnabled.checked ? 'white' : 'var(--text-muted)';
     activeProviderBadge.style.background = checkboxAiEnabled.checked ? 'var(--accent-indigo)' : 'rgba(99, 102, 241, 0.1)';
 
     // OpenRouter
     openrouterApiKey.value = '';
-    openrouterApiKey.placeholder = openrouter.hasApiKey ? 'API key đã lưu an toàn' : 'Nhập OpenRouter API key...';
+    openrouterApiKey.placeholder = openrouter.hasApiKey ? I18n.t('openrouterKeySaved') : I18n.t('openrouterPlaceholder');
     openrouterModel.value = openrouter.model || 'google/gemini-2.0-flash-lite-preview-02-05:free';
-    openrouterStatusText.textContent = openrouter.hasApiKey ? 'Đã lưu Key' : 'Chưa cấu hình';
+    openrouterStatusText.textContent = openrouter.hasApiKey ? I18n.t('statusKeySaved') : I18n.t('statusNotConfigured');
     openrouterStatusText.style.color = openrouter.hasApiKey ? 'var(--accent-green)' : 'var(--text-secondary)';
 
     // Gemini
     geminiApiKey.value = '';
-    geminiApiKey.placeholder = gemini.hasApiKey ? 'API key đã lưu an toàn' : 'Nhập Gemini API key...';
+    geminiApiKey.placeholder = gemini.hasApiKey ? I18n.t('geminiKeySaved') : I18n.t('geminiPlaceholder');
     geminiModel.value = gemini.model || 'gemini-3.1-flash-lite-preview';
-    geminiStatusText.textContent = gemini.hasApiKey ? 'Đã lưu Key' : 'Chưa cấu hình';
+    geminiStatusText.textContent = gemini.hasApiKey ? I18n.t('statusKeySaved') : I18n.t('statusNotConfigured');
     geminiStatusText.style.color = gemini.hasApiKey ? 'var(--accent-green)' : 'var(--text-secondary)';
 
     // Common
@@ -268,7 +303,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (checkboxAiEnabled.checked && !providerSettings.hasApiKey && !apiKeyInput.value.trim()) {
       checkboxAiEnabled.checked = false;
-      setStatus('Nhập API key rồi bấm Kiểm tra trước khi bật.', 'error');
+      setStatus(I18n.t('apiKeyRequired'), 'error');
       return;
     }
 
@@ -279,7 +314,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     await saveProviderPartial(activeProvider, { enabled: checkboxAiEnabled.checked });
-    setStatus(checkboxAiEnabled.checked ? `${activeProvider} API đã bật.` : `${activeProvider} API đã tắt.`, 'success');
+    setStatus(checkboxAiEnabled.checked ? `${activeProvider} API ✓` : `${activeProvider} API ✗`, 'success');
     await loadUI(await getSettings());
   });
 
@@ -290,7 +325,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   openrouterModel.addEventListener('change', async () => {
     await saveProviderPartial('openrouter', { model: openrouterModel.value });
-    setOpenrouterStatus('Đã lưu model OpenRouter.', 'success');
+    setOpenrouterStatus('OpenRouter model ✓', 'success');
   });
 
   btnClearOpenrouterKey.addEventListener('click', async () => {
@@ -302,7 +337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (settings.activeProvider === 'openrouter') checkboxAiEnabled.checked = false;
     
     await loadUI(settings);
-    setOpenrouterStatus('Đã xóa API key OpenRouter khỏi kho secret.', 'success');
+    setOpenrouterStatus('OpenRouter API key ✓ cleared', 'success');
     btnClearOpenrouterKey.disabled = false;
   });
 
@@ -313,7 +348,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   geminiModel.addEventListener('change', async () => {
     await saveProviderPartial('gemini', { model: geminiModel.value });
-    setGeminiStatus('Đã lưu model Gemini.', 'success');
+    setGeminiStatus('Gemini model ✓', 'success');
   });
 
   btnClearGeminiKey.addEventListener('click', async () => {
@@ -325,7 +360,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (settings.activeProvider === 'gemini') checkboxAiEnabled.checked = false;
     
     await loadUI(settings);
-    setGeminiStatus('Đã xóa API key Gemini khỏi kho secret.', 'success');
+    setGeminiStatus('Gemini API key ✓ cleared', 'success');
     btnClearGeminiKey.disabled = false;
   });
 
@@ -338,7 +373,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       timeoutMs: checkboxAiThumbnail.checked ? (activeProvider === 'gemini' ? 6000 : 8000) : (activeProvider === 'gemini' ? 3500 : 5000)
     });
     const setStatus = activeProvider === 'gemini' ? setGeminiStatus : setOpenrouterStatus;
-    setStatus(checkboxAiThumbnail.checked ? 'Đã bật phân tích thumbnail.' : 'Đã tắt phân tích thumbnail.', 'success');
+    setStatus(checkboxAiThumbnail.checked ? I18n.t('thumbnailEnabled') : I18n.t('thumbnailDisabled'), 'success');
   });
 
   btnClearAiCache.addEventListener('click', async () => {
@@ -349,7 +384,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     settings = await getSettings();
     const activeProvider = settings.activeProvider || 'openrouter';
     const setStatus = activeProvider === 'gemini' ? setGeminiStatus : setOpenrouterStatus;
-    setStatus('Đã xóa cache phân tích AI.', 'success');
+    setStatus(I18n.t('cacheClearedMsg'), 'success');
     
     btnClearAiCache.disabled = false;
   });
@@ -358,13 +393,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   btnSetPassword.addEventListener('click', async () => {
     const pwd = newPassword.value.trim();
     if (pwd.length < 4) {
-      passwordStatus.textContent = 'Mật khẩu ít nhất 4 ký tự!';
+      passwordStatus.textContent = I18n.t('passwordMinLength');
       passwordStatus.style.color = '#ef4444';
       return;
     }
     await updateSetting({ parentalPassword: pwd, isLocked: true });
     newPassword.value = '';
-    passwordStatus.textContent = '✅ Đã lưu mật khẩu!';
+    passwordStatus.textContent = I18n.t('passwordSaved');
     passwordStatus.style.color = '#22c55e';
     if (passwordSetBadge) passwordSetBadge.style.display = 'inline-block';
     if (clearPasswordRow) clearPasswordRow.style.display = 'block';
@@ -373,13 +408,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Clear password
   btnClearPassword.addEventListener('click', async () => {
-    const ok = window.confirm(
-      'Xóa mật khẩu sẽ tắt tính năng khóa phụ huynh.\nBất kỳ ai cũng có thể thay đổi cài đặt. Tiếp tục?'
-    );
+    const ok = window.confirm(I18n.t('confirmClearPassword'));
     if (!ok) return;
     await updateSetting({ parentalPassword: '', isLocked: false });
     newPassword.value = '';
-    passwordStatus.textContent = '🔓 Đã xóa mật khẩu. Không yêu cầu mật khẩu nữa.';
+    passwordStatus.textContent = I18n.t('passwordCleared');
     passwordStatus.style.color = '#94a3b8';
     if (passwordSetBadge) passwordSetBadge.style.display = 'none';
     if (clearPasswordRow) clearPasswordRow.style.display = 'none';
@@ -391,10 +424,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     settings = await getSettings();
     const wl = settings.whitelistedChannels || [];
     if (checkboxAllowOnlyWhitelisted.checked && wl.length === 0) {
-      const ok = window.confirm(
-        'Bạn đang bật chế độ chỉ cho phép xem các kênh trong danh sách, nhưng chưa có kênh nào trong danh sách được phép.\n\n' +
-        'Toàn bộ hoặc hầu hết video trên YouTube có thể bị chặn cho đến khi bạn thêm ít nhất một kênh. Tiếp tục?'
-      );
+      const ok = window.confirm(I18n.t('confirmAllowOnlyEmpty'));
       if (!ok) {
         checkboxAllowOnlyWhitelisted.checked = false;
         return;
@@ -418,12 +448,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Rescan
   btnRescan.addEventListener('click', async () => {
-    btnRescan.textContent = '⏳ Đang quét...';
+    btnRescan.textContent = I18n.t('btnScanning');
     btnRescan.disabled = true;
     await sendMessage({ type: 'RESCAN_ALL' });
     setTimeout(async () => {
       await loadStats();
-      btnRescan.textContent = '🔄 Quét lại';
+      btnRescan.textContent = I18n.t('btnRescan');
       btnRescan.disabled = false;
     }, 1500);
   });
@@ -465,6 +495,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   tabMainButton.addEventListener('click', () => activateTab('main'));
   tabParentalButton.addEventListener('click', () => activateTab('parental'));
+
+  // Language toggle
+  if (btnLangToggle) {
+    btnLangToggle.addEventListener('click', async () => {
+      const current = I18n.getLanguage();
+      const next = current === 'vi' ? 'en' : 'vi';
+      await I18n.setLanguage(next);
+      updateLangButton();
+      // Re-load dynamic UI content that uses I18n.t() in JS
+      settings = await getSettings();
+      await loadUI(settings);
+    });
+  }
 
   // ==================== CHANNEL MANAGEMENT ====================
 
@@ -524,8 +567,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderChannelList(container, channels, listType) {
     container.innerHTML = '';
     if (!channels.length) {
-      const emptyBlacklist = blockSearchTerm ? 'Không có channel khớp từ khóa' : 'Chưa có channel nào trong danh sách chặn';
-      const emptyWhitelist = blockSearchTerm ? 'Không có channel khớp từ khóa' : 'Chưa có kênh nào trong danh sách được phép';
+      const emptyBlacklist = blockSearchTerm ? I18n.t('noSearchMatch') : I18n.t('blacklistEmpty');
+      const emptyWhitelist = blockSearchTerm ? I18n.t('noSearchMatch') : I18n.t('whitelistEmpty');
       const emptyMsg = listType === 'whitelist' ? emptyWhitelist : emptyBlacklist;
       container.innerHTML = `<p style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 8px 0;">${emptyMsg}</p>`;
       return;
@@ -547,7 +590,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderBlockedVideosList(blockedVideos) {
     blockedVideosContainer.innerHTML = '';
     if (!blockedVideos.length) {
-      blockedVideosContainer.innerHTML = `<p style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 8px 0;">${blockSearchTerm ? 'Không có video khớp từ khóa' : 'Chưa có video nào bị chặn thủ công'}</p>`;
+      blockedVideosContainer.innerHTML = `<p style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 8px 0;">${blockSearchTerm ? I18n.t('noVideoSearchMatch') : I18n.t('blockedVideosEmpty')}</p>`;
       return;
     }
     blockedVideos.forEach(video => {
@@ -635,14 +678,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const hasSavedKey = Boolean(settings.gemini?.hasApiKey);
 
     if (!apiKey && !hasSavedKey) {
-      setGeminiStatus('Chưa có API key để kiểm tra.', 'error');
+      setGeminiStatus(I18n.t('apiKeyNoKey'), 'error');
       if (settings.activeProvider === 'gemini') checkboxAiEnabled.checked = false;
       return;
     }
 
     btnTestGemini.disabled = true;
-    btnTestGemini.textContent = 'Đang kiểm...';
-    setGeminiStatus('Đang kiểm tra API key...', 'neutral');
+    btnTestGemini.textContent = I18n.t('btnTesting');
+    setGeminiStatus(I18n.t('apiKeyChecking'), 'neutral');
 
     const result = apiKey
       ? await sendMessage({
@@ -658,7 +701,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
     btnTestGemini.disabled = false;
-    btnTestGemini.textContent = 'Kiểm tra';
+    btnTestGemini.textContent = I18n.t('btnTest');
 
     if (!result?.ok) {
       if (settings.activeProvider === 'gemini') checkboxAiEnabled.checked = false;
@@ -679,7 +722,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     settings = await getSettings();
     await loadUI(settings);
-    setGeminiStatus('API key hợp lệ.', 'success');
+    setGeminiStatus(I18n.t('apiKeyValid'), 'success');
   }
 
   async function testAndSaveOpenrouterKey(enableAfterSuccess = false) {
@@ -688,14 +731,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const hasSavedKey = Boolean(settings.openrouter?.hasApiKey);
 
     if (!apiKey && !hasSavedKey) {
-      setOpenrouterStatus('Chưa có API key để kiểm tra.', 'error');
+      setOpenrouterStatus(I18n.t('apiKeyNoKey'), 'error');
       if (settings.activeProvider === 'openrouter') checkboxAiEnabled.checked = false;
       return;
     }
 
     btnTestOpenrouter.disabled = true;
-    btnTestOpenrouter.textContent = 'Đang kiểm...';
-    setOpenrouterStatus('Đang kiểm tra API key...', 'neutral');
+    btnTestOpenrouter.textContent = I18n.t('btnTesting');
+    setOpenrouterStatus(I18n.t('apiKeyChecking'), 'neutral');
 
     const result = apiKey
       ? await sendMessage({
@@ -710,7 +753,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
     btnTestOpenrouter.disabled = false;
-    btnTestOpenrouter.textContent = 'Kiểm tra';
+    btnTestOpenrouter.textContent = I18n.t('btnTest');
 
     if (!result?.ok) {
       if (settings.activeProvider === 'openrouter') checkboxAiEnabled.checked = false;
@@ -729,7 +772,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     settings = await getSettings();
     await loadUI(settings);
-    setOpenrouterStatus('API key hợp lệ.', 'success');
+    setOpenrouterStatus(I18n.t('apiKeyValid'), 'success');
   }
 
   function setGeminiStatus(text, tone = 'neutral') {
@@ -746,15 +789,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function getApiErrorText(result = {}, provider = 'API') {
     const labels = {
-      missing_api_key: 'Thiếu API key.',
-      invalid_api_key: 'API key không hợp lệ hoặc chưa có quyền.',
-      model_unavailable: 'Model chưa khả dụng cho key này.',
-      rate_limited: 'Key đang bị giới hạn quota, thử lại sau.',
-      service_unavailable: `${provider} tạm thời không phản hồi.`,
-      timeout: 'Kiểm tra key quá thời gian chờ.',
-      request_failed: `Không gọi được ${provider}.`
+      missing_api_key: I18n.t('errMissingApiKey'),
+      invalid_api_key: I18n.t('errInvalidApiKey'),
+      model_unavailable: I18n.t('errModelUnavailable'),
+      rate_limited: I18n.t('errRateLimited'),
+      service_unavailable: `${provider} — service unavailable`,
+      timeout: I18n.t('errTimeout'),
+      request_failed: `${provider} — request failed`
     };
-    return labels[result.reason] || `Không kiểm tra được API key${result.status ? ` (${result.status})` : ''}.`;
+    return labels[result.reason] || `${I18n.t('errGeneric')}${result.status ? ` (${result.status})` : ''}`;
   }
 
   function sendMessage(msg) {
@@ -807,16 +850,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
     const labels = {
-      label: 'YouTube label',
-      keyword: 'Từ khóa AI',
+      label: I18n.t('methodLabel'),
+      keyword: I18n.t('methodKeyword'),
       pattern: 'Pattern',
       channel: 'Channel',
-      manual: 'Chặn thủ công',
+      manual: I18n.t('methodManual'),
       disclosure: 'Disclosure',
-      childRisk: 'Rủi ro trẻ em',
+      childRisk: I18n.t('methodChildRisk'),
       gemini: 'Gemini API',
       openrouter: 'OpenRouter API',
-      combination: 'Kết hợp'
+      combination: I18n.t('methodCombination')
     };
     return labels[key] || key;
   }

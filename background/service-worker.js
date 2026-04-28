@@ -1184,19 +1184,19 @@ function createContextMenus() {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: 'safekid-allow-channel',
-      title: '🛡️ SafeKid: Cho phép channel này',
+      title: chrome.i18n.getMessage('contextMenuAllow') || '🛡️ SafeKid: Allow this channel',
       contexts: ['link', 'page'],
       documentUrlPatterns: YT_PATTERNS
     });
     chrome.contextMenus.create({
       id: 'safekid-block-channel',
-      title: '🛡️ SafeKid: Chặn channel này',
+      title: chrome.i18n.getMessage('contextMenuBlock') || '🛡️ SafeKid: Block this channel',
       contexts: ['link', 'page'],
       documentUrlPatterns: YT_PATTERNS
     });
     chrome.contextMenus.create({
       id: 'safekid-block-video',
-      title: '🛡️ SafeKid: Chặn video này',
+      title: chrome.i18n.getMessage('contextMenuBlockVideo') || '🛡️ SafeKid: Block this video',
       contexts: ['link', 'page'],
       documentUrlPatterns: YT_PATTERNS
     });

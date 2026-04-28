@@ -40,12 +40,18 @@
                 <span>SafeKid</span>
             </div>
             <nav class="nav-links">
-                <a href="#features">Tính năng</a>
-                <a href="#how-it-works">Cách hoạt động</a>
-                <a href="guide.html">Hướng dẫn</a>
-                <a href="#faq">Hỏi đáp</a>
+                <a href="#features" data-i18n="navFeatures">Tính năng</a>
+                <a href="#how-it-works" data-i18n="navHowItWorks">Cách hoạt động</a>
+                <a href="guide.html" data-i18n="navGuide">Hướng dẫn</a>
+                <a href="#faq" data-i18n="navFaq">Hỏi đáp</a>
             </nav>
-            <button onclick="openInstallModal()" class="btn btn-primary">Tải bản ZIP (Thủ công)</button>
+            <div class="header-actions">
+                <div class="lang-switcher">
+                    <button class="lang-btn active" data-lang="vi" title="Tiếng Việt">VI</button>
+                    <button class="lang-btn" data-lang="en" title="English">EN</button>
+                </div>
+                <button onclick="openInstallModal()" class="btn btn-primary" data-i18n="btnInstall">Cài đặt miễn phí</button>
+            </div>
         </div>
     </header>
 
@@ -53,18 +59,18 @@
     <section class="hero">
         <div class="container hero-container">
             <div class="hero-content">
-                <h1>Hỗ trợ chặn kênh/video không phù hợp với trẻ em</h1>
-                <p>SafeKid hỗ trợ chặn kênh hoặc video không phù hợp với trẻ em do phụ huynh tự thiết lập hoặc thông qua cơ chế tự động phát hiện. Hoạt động trên cả <strong>YouTube</strong> và <strong>YouTube Kids</strong> — miễn phí, riêng tư 100%.</p>
+                <h1 data-i18n="heroTitle">Hỗ trợ chặn kênh/video không phù hợp với trẻ em</h1>
+                <p data-i18n-html="heroSubtitle">SafeKid hỗ trợ chặn kênh hoặc video không phù hợp với trẻ em do phụ huynh tự thiết lập hoặc thông qua cơ chế tự động phát hiện. Hoạt động trên cả <strong>YouTube</strong> và <strong>YouTube Kids</strong> — miễn phí, riêng tư 100%.</p>
                 
                 <div class="hero-cta">
                     <button onclick="openInstallModal()" class="btn btn-primary btn-large pulse-animation">
                         <i data-lucide="download"></i>
-                        Tải file ZIP miễn phí
+                        <span data-i18n="heroBtnDownload">Tải file ZIP miễn phí</span>
                     </button>
                     <div class="hero-trust-badges">
-                        <span class="trust-badge"><i data-lucide="lock" class="icon-small"></i> Bảo mật 100%</span>
-                        <span class="trust-badge"><i data-lucide="monitor-play" class="icon-small"></i> YouTube & YouTube Kids</span>
-                        <span class="trust-badge"><i data-lucide="sparkles" class="icon-small"></i> Tích hợp AI</span>
+                        <span class="trust-badge"><i data-lucide="lock" class="icon-small"></i> <span data-i18n="heroTrust1">Bảo mật 100%</span></span>
+                        <span class="trust-badge"><i data-lucide="monitor-play" class="icon-small"></i> <span data-i18n="heroTrust2">YouTube & YouTube Kids</span></span>
+                        <span class="trust-badge"><i data-lucide="sparkles" class="icon-small"></i> <span data-i18n="heroTrust3">Tích hợp AI</span></span>
                     </div>
                 </div>
             </div>
@@ -78,14 +84,14 @@
                         <div class="video-grid">
                             <div class="video-card safe">
                                 <div class="thumbnail"></div>
-                                <div class="info">Kênh thiếu nhi an toàn</div>
+                                <div class="info" data-i18n="mockupSafe">Kênh thiếu nhi an toàn</div>
                             </div>
                             <div class="video-card blocked">
                                 <div class="thumbnail blur">
                                     <i data-lucide="shield-alert" class="text-red"></i>
-                                    <span>Đã chặn Video AI</span>
+                                    <span data-i18n="mockupBlocked">Đã chặn Video AI</span>
                                 </div>
-                                <div class="info text-muted">Spam content...</div>
+                                <div class="info text-muted" data-i18n="mockupSpam">Spam content...</div>
                             </div>
                         </div>
                     </div>
@@ -97,7 +103,7 @@
                         <i data-lucide="info"></i>
                     </div>
                     <div class="notice-text">
-                        <p><strong>Lưu ý:</strong> Cơ chế phát hiện video AI hiện đang trong quá trình hoàn thiện nên có thể xảy ra sai sót. SafeKid đang không ngừng nâng cấp công nghệ để liên tục cải thiện hiệu quả bảo vệ trong tương lai.</p>
+                        <p><strong data-i18n="noticePrefix">Lưu ý:</strong> <span data-i18n="noticeText">Cơ chế phát hiện video AI hiện đang trong quá trình hoàn thiện nên có thể xảy ra sai sót. SafeKid đang không ngừng nâng cấp công nghệ để liên tục cải thiện hiệu quả bảo vệ trong tương lai.</span></p>
                     </div>
                 </div>
             </div>
@@ -108,8 +114,8 @@
     <section id="features" class="features bg-light">
         <div class="container">
             <div class="section-title">
-                <h2>Hành động ngay trước vấn nạn "Rác AI"</h2>
-                <p>Theo thư ngỏ từ hơn 200 chuyên gia, nội dung AI độc hại đang thu lợi nhuận khổng lồ trên sự an toàn của trẻ. SafeKid là giải pháp tức thời cho cha mẹ.</p>
+                <h2 data-i18n="featSectionTitle">Hành động ngay trước vấn nạn "Rác AI"</h2>
+                <p data-i18n="featSectionDesc">Theo thư ngỏ từ hơn 200 chuyên gia, nội dung AI độc hại đang thu lợi nhuận khổng lồ trên sự an toàn của trẻ. SafeKid là giải pháp tức thời cho cha mẹ.</p>
             </div>
             <div class="features-grid">
                 <!-- Card 1: Phát hiện đa lớp -->
@@ -117,50 +123,50 @@
                     <div class="feature-icon icon-blue">
                         <i data-lucide="brain-circuit"></i>
                     </div>
-                    <h3>Phát hiện đa lớp thông minh</h3>
-                    <p>Hệ thống 3 tầng: nhãn dán YouTube → phân tích ngôn ngữ NLP & keyword → AI phân tích sâu (Gemini/OpenRouter). Kết hợp tiêu đề, mô tả và phụ đề video để không bỏ sót.</p>
+                    <h3 data-i18n="feat1Title">Phát hiện đa lớp thông minh</h3>
+                    <p data-i18n="feat1Desc">Hệ thống 3 tầng: nhãn dán YouTube → phân tích ngôn ngữ NLP & keyword → AI phân tích sâu (Gemini/OpenRouter). Kết hợp tiêu đề, mô tả và phụ đề video để không bỏ sót.</p>
                 </div>
                 <!-- Card 2: Whitelist-Only Mode (NEW) -->
                 <div class="feature-card feature-card--highlight">
-                    <div class="feature-badge">Mới</div>
+                    <div class="feature-badge" data-i18n="featNewBadge">Mới</div>
                     <div class="feature-icon icon-amber">
                         <i data-lucide="list-checks"></i>
                     </div>
-                    <h3>Chế độ "Chỉ kênh đã duyệt"</h3>
-                    <p>Con bạn CHỈ xem được các kênh mà bạn đã kiểm duyệt và phê duyệt. Mọi kênh lạ đều bị chặn hoàn toàn — an toàn tuyệt đối cho trẻ nhỏ.</p>
+                    <h3 data-i18n="feat2Title">Chế độ "Chỉ kênh đã duyệt"</h3>
+                    <p data-i18n="feat2Desc">Con bạn CHỈ xem được các kênh mà bạn đã kiểm duyệt và phê duyệt. Mọi kênh lạ đều bị chặn hoàn toàn — an toàn tuyệt đối cho trẻ nhỏ.</p>
                 </div>
                 <!-- Card 3: Kiểm soát phụ huynh -->
                 <div class="feature-card">
                     <div class="feature-icon icon-green">
                         <i data-lucide="key"></i>
                     </div>
-                    <h3>Kiểm soát phụ huynh toàn diện</h3>
-                    <p>Mật khẩu bảo vệ mọi cài đặt. Danh sách chặn/cho phép kênh linh hoạt. Chuột phải vào video để chặn hoặc cho phép kênh ngay lập tức.</p>
+                    <h3 data-i18n="feat3Title">Kiểm soát phụ huynh toàn diện</h3>
+                    <p data-i18n="feat3Desc">Mật khẩu bảo vệ mọi cài đặt. Danh sách chặn/cho phép kênh linh hoạt. Chuột phải vào video để chặn hoặc cho phép kênh ngay lập tức.</p>
                 </div>
                 <!-- Card 4: YouTube Kids (NEW) -->
                 <div class="feature-card feature-card--highlight">
-                    <div class="feature-badge">Mới</div>
+                    <div class="feature-badge" data-i18n="featNewBadge">Mới</div>
                     <div class="feature-icon icon-red">
                         <i data-lucide="tv-2"></i>
                     </div>
-                    <h3>Hỗ trợ YouTube Kids</h3>
-                    <p>Không chỉ YouTube.com — SafeKid còn bảo vệ trẻ trên YouTube Kids với công nghệ deep traversal, đảm bảo không lọt nội dung độc hại trên mọi nền tảng.</p>
+                    <h3 data-i18n="feat4Title">Hỗ trợ YouTube Kids</h3>
+                    <p data-i18n="feat4Desc">Không chỉ YouTube.com — SafeKid còn bảo vệ trẻ trên YouTube Kids với công nghệ deep traversal, đảm bảo không lọt nội dung độc hại trên mọi nền tảng.</p>
                 </div>
                 <!-- Card 5: 8 danh mục (NEW) -->
                 <div class="feature-card">
                     <div class="feature-icon icon-rose">
                         <i data-lucide="alert-triangle"></i>
                     </div>
-                    <h3>Lọc 8 loại nội dung nguy hại</h3>
-                    <p>Tự động phát hiện: tình dục, bạo lực, kinh dị, tự gây hại, hành vi nguy hiểm, ma túy, ngôn ngữ tục tĩu và hoạt hình biến thái (Elsagate).</p>
+                    <h3 data-i18n="feat5Title">Lọc 8 loại nội dung nguy hại</h3>
+                    <p data-i18n="feat5Desc">Tự động phát hiện: tình dục, bạo lực, kinh dị, tự gây hại, hành vi nguy hiểm, ma túy, ngôn ngữ tục tĩu và hoạt hình biến thái (Elsagate).</p>
                 </div>
                 <!-- Card 6: Performance -->
                 <div class="feature-card">
                     <div class="feature-icon icon-teal">
                         <i data-lucide="zap"></i>
                     </div>
-                    <h3>Siêu mượt, siêu nhẹ</h3>
-                    <p>Hoạt động ngầm với hiệu năng tối ưu, không làm chậm trình duyệt. Cache thông minh giúp scan nhanh hơn theo thời gian sử dụng.</p>
+                    <h3 data-i18n="feat6Title">Siêu mượt, siêu nhẹ</h3>
+                    <p data-i18n="feat6Desc">Hoạt động ngầm với hiệu năng tối ưu, không làm chậm trình duyệt. Cache thông minh giúp scan nhanh hơn theo thời gian sử dụng.</p>
                 </div>
             </div>
         </div>
@@ -170,32 +176,32 @@
     <section id="how-it-works" class="how-it-works">
         <div class="container">
             <div class="section-title">
-                <h2>Cách thức hoạt động</h2>
-                <p>Bảo vệ con yêu chỉ trong 4 bước đơn giản.</p>
+                <h2 data-i18n="howTitle">Cách thức hoạt động</h2>
+                <p data-i18n="howSubtitle">Bảo vệ con yêu chỉ trong 4 bước đơn giản.</p>
             </div>
             <div class="steps-container">
                 <div class="step">
                     <div class="step-number">1</div>
-                    <h3>Cài đặt tiện ích</h3>
-                    <p>Tải file ZIP và thêm SafeKid vào Chrome hoàn toàn miễn phí.</p>
+                    <h3 data-i18n="how1Title">Cài đặt tiện ích</h3>
+                    <p data-i18n="how1Desc">Tải file ZIP và thêm SafeKid vào Chrome hoàn toàn miễn phí.</p>
                 </div>
                 <div class="step-connector"></div>
                 <div class="step">
                     <div class="step-number">2</div>
-                    <h3>Thiết lập bảo mật</h3>
-                    <p>Tạo mật khẩu phụ huynh và thêm các kênh an toàn vào danh sách cho phép.</p>
+                    <h3 data-i18n="how2Title">Thiết lập bảo mật</h3>
+                    <p data-i18n="how2Desc">Tạo mật khẩu phụ huynh và thêm các kênh an toàn vào danh sách cho phép.</p>
                 </div>
                 <div class="step-connector"></div>
                 <div class="step">
                     <div class="step-number">3</div>
-                    <h3>Kích hoạt AI</h3>
-                    <p>Thêm API key Gemini hoặc OpenRouter để tăng độ chính xác. Có nhiều model <strong>miễn phí</strong>!</p>
+                    <h3 data-i18n="how3Title">Kích hoạt AI</h3>
+                    <p data-i18n-html="how3Desc">Thêm API key Gemini hoặc OpenRouter để tăng độ chính xác. Có nhiều model <strong>miễn phí</strong>!</p>
                 </div>
                 <div class="step-connector"></div>
                 <div class="step">
                     <div class="step-number">4</div>
-                    <h3>Tận hưởng an toàn</h3>
-                    <p>SafeKid tự động chặn video AI độc hại. Bạn yên tâm, con vui chơi!</p>
+                    <h3 data-i18n="how4Title">Tận hưởng an toàn</h3>
+                    <p data-i18n="how4Desc">SafeKid tự động chặn video AI độc hại. Bạn yên tâm, con vui chơi!</p>
                 </div>
             </div>
         </div>
@@ -205,62 +211,62 @@
     <section id="faq" class="faq-section bg-light">
         <div class="container">
             <div class="section-title">
-                <h2>Câu hỏi thường gặp</h2>
-                <p>Giải đáp mọi thắc mắc về SafeKid.</p>
+                <h2 data-i18n="faqTitle">Câu hỏi thường gặp</h2>
+                <p data-i18n="faqSubtitle">Giải đáp mọi thắc mắc về SafeKid.</p>
             </div>
             <div class="faq-list">
                 <div class="faq-item">
                     <button class="faq-question" id="faq-btn-1" aria-expanded="false" aria-controls="faq-answer-1">
-                        <span>SafeKid có miễn phí không?</span>
+                        <span data-i18n="faq1Q">SafeKid có miễn phí không?</span>
                         <i data-lucide="chevron-down" class="faq-chevron"></i>
                     </button>
                     <div class="faq-answer" id="faq-answer-1" role="region" aria-labelledby="faq-btn-1">
-                        <p>Hoàn toàn miễn phí. Bạn chỉ cần tải file ZIP và cài đặt thủ công vào Chrome. Không có phí ẩn, không quảng cáo, không thu thập dữ liệu.</p>
+                        <p data-i18n="faq1A">Hoàn toàn miễn phí. Bạn chỉ cần tải file ZIP và cài đặt thủ công vào Chrome. Không có phí ẩn, không quảng cáo, không thu thập dữ liệu.</p>
                     </div>
                 </div>
                 <div class="faq-item">
                     <button class="faq-question" id="faq-btn-2" aria-expanded="false" aria-controls="faq-answer-2">
-                        <span>Tại sao chưa có trên Chrome Web Store?</span>
+                        <span data-i18n="faq2Q">Tại sao chưa có trên Chrome Web Store?</span>
                         <i data-lucide="chevron-down" class="faq-chevron"></i>
                     </button>
                     <div class="faq-answer" id="faq-answer-2" role="region" aria-labelledby="faq-btn-2">
-                        <p>SafeKid đang chờ duyệt trên Chrome Web Store. Hiện tại bạn cài đặt bằng cách load unpacked — hướng dẫn chi tiết sẽ hiện khi bạn nhấn nút <strong>"Tải file ZIP"</strong>.</p>
+                        <p data-i18n-html="faq2A">SafeKid đang chờ duyệt trên Chrome Web Store. Hiện tại bạn cài đặt bằng cách load unpacked — hướng dẫn chi tiết sẽ hiện khi bạn nhấn nút <strong>"Tải file ZIP"</strong>.</p>
                     </div>
                 </div>
                 <div class="faq-item">
                     <button class="faq-question" id="faq-btn-3" aria-expanded="false" aria-controls="faq-answer-3">
-                        <span>AI phát hiện có chính xác 100% không?</span>
+                        <span data-i18n="faq3Q">AI phát hiện có chính xác 100% không?</span>
                         <i data-lucide="chevron-down" class="faq-chevron"></i>
                     </button>
                     <div class="faq-answer" id="faq-answer-3" role="region" aria-labelledby="faq-btn-3">
-                        <p>Không có hệ thống nào hoàn hảo. SafeKid sử dụng 3 tầng phát hiện (labels + NLP + AI) và liên tục cải thiện. Bạn có thể bổ sung bằng chế độ <strong>"Chỉ kênh đã duyệt"</strong> để đảm bảo an toàn tuyệt đối — chỉ cho con xem các kênh bạn đã kiểm duyệt.</p>
+                        <p data-i18n-html="faq3A">Không có hệ thống nào hoàn hảo. SafeKid sử dụng 3 tầng phát hiện (labels + NLP + AI) và liên tục cải thiện. Bạn có thể bổ sung bằng chế độ <strong>"Chỉ kênh đã duyệt"</strong> để đảm bảo an toàn tuyệt đối — chỉ cho con xem các kênh bạn đã kiểm duyệt.</p>
                     </div>
                 </div>
                 <div class="faq-item">
                     <button class="faq-question" id="faq-btn-4" aria-expanded="false" aria-controls="faq-answer-4">
-                        <span>Dữ liệu của tôi có bị thu thập không?</span>
+                        <span data-i18n="faq4Q">Dữ liệu của tôi có bị thu thập không?</span>
                         <i data-lucide="chevron-down" class="faq-chevron"></i>
                     </button>
                     <div class="faq-answer" id="faq-answer-4" role="region" aria-labelledby="faq-btn-4">
-                        <p><strong>KHÔNG.</strong> Mọi dữ liệu xử lý tại local trên máy bạn. API key được lưu trong bộ nhớ bảo mật riêng (IndexedDB). SafeKid không gửi bất kỳ dữ liệu cá nhân nào ra bên ngoài.</p>
+                        <p data-i18n-html="faq4A"><strong>KHÔNG.</strong> Mọi dữ liệu xử lý tại local trên máy bạn. API key được lưu trong bộ nhớ bảo mật riêng (IndexedDB). SafeKid không gửi bất kỳ dữ liệu cá nhân nào ra bên ngoài.</p>
                     </div>
                 </div>
                 <div class="faq-item">
                     <button class="faq-question" id="faq-btn-5" aria-expanded="false" aria-controls="faq-answer-5">
-                        <span>SafeKid có hoạt động trên YouTube Kids không?</span>
+                        <span data-i18n="faq5Q">SafeKid có hoạt động trên YouTube Kids không?</span>
                         <i data-lucide="chevron-down" class="faq-chevron"></i>
                     </button>
                     <div class="faq-answer" id="faq-answer-5" role="region" aria-labelledby="faq-btn-5">
-                        <p><strong>CÓ!</strong> SafeKid hỗ trợ cả <code>youtube.com</code> và <code>youtubekids.com</code> với công nghệ nhận diện platform tự động. Danh sách kênh được đồng bộ giữa 2 nền tảng.</p>
+                        <p data-i18n-html="faq5A"><strong>CÓ!</strong> SafeKid hỗ trợ cả <code>youtube.com</code> và <code>youtubekids.com</code> với công nghệ nhận diện platform tự động. Danh sách kênh được đồng bộ giữa 2 nền tảng.</p>
                     </div>
                 </div>
                 <div class="faq-item">
                     <button class="faq-question" id="faq-btn-6" aria-expanded="false" aria-controls="faq-answer-6">
-                        <span>Cần API key để sử dụng không?</span>
+                        <span data-i18n="faq6Q">Cần API key để sử dụng không?</span>
                         <i data-lucide="chevron-down" class="faq-chevron"></i>
                     </button>
                     <div class="faq-answer" id="faq-answer-6" role="region" aria-labelledby="faq-btn-6">
-                        <p><strong>Không bắt buộc.</strong> SafeKid hoạt động tốt chỉ với bộ lọc local (labels + keywords). API key giúp tăng thêm độ chính xác với phân tích AI. OpenRouter cung cấp nhiều model hoàn toàn miễn phí như Gemma 4, Qwen3, GPT-OSS.</p>
+                        <p data-i18n-html="faq6A"><strong>Không bắt buộc.</strong> SafeKid hoạt động tốt chỉ với bộ lọc local (labels + keywords). API key giúp tăng thêm độ chính xác với phân tích AI. OpenRouter cung cấp nhiều model hoàn toàn miễn phí như Gemma 4, Qwen3, GPT-OSS.</p>
                     </div>
                 </div>
             </div>
@@ -271,10 +277,10 @@
     <section class="final-cta">
         <div class="container">
             <div class="glass-card cta-card">
-                <h2>Hãy để con có một tuổi thơ kỹ thuật số an toàn</h2>
-                <p>Tham gia cùng hàng ngàn phụ huynh đang bảo vệ con em mình trên Internet.</p>
+                <h2 data-i18n="ctaTitle">Hãy để con có một tuổi thơ kỹ thuật số an toàn</h2>
+                <p data-i18n="ctaDesc">Tham gia cùng hàng ngàn phụ huynh đang bảo vệ con em mình trên Internet.</p>
                 <button onclick="openInstallModal()" class="btn btn-primary btn-large pulse-animation">
-                    Tải về máy ngay (File ZIP)
+                    <span data-i18n="ctaBtn">Tải về máy ngay (File ZIP)</span>
                 </button>
             </div>
         </div>
@@ -287,12 +293,12 @@
                 <img src="logo.png" alt="SafeKid Logo" class="brand-logo">
                 <span>SafeKid</span>
             </div>
-            <p class="copyright">&copy; 2026 AutoWork Team. Đảm bảo quyền riêng tư và an toàn.</p>
+            <p class="copyright" data-i18n="footerCopyright">&copy; 2026 AutoWork Team. Đảm bảo quyền riêng tư và an toàn.</p>
             <div class="footer-links">
-                <a href="guide.html">Hướng dẫn sử dụng</a>
-                <a href="privacy.html">Chính sách bảo mật</a>
-                <a href="terms.html">Điều khoản</a>
-                <a href="#" onclick="openContactModal(); return false;">Liên hệ</a>
+                <a href="guide.html" data-i18n="footerGuide">Hướng dẫn sử dụng</a>
+                <a href="privacy.html" data-i18n="footerPrivacy">Chính sách bảo mật</a>
+                <a href="terms.html" data-i18n="footerTerms">Điều khoản</a>
+                <a href="#" onclick="openContactModal(); return false;" data-i18n="footerContact">Liên hệ</a>
             </div>
         </div>
     </footer>
@@ -305,8 +311,8 @@
                 <i data-lucide="x"></i>
             </button>
             <div class="modal-header">
-                <h2>Thông tin liên hệ</h2>
-                <p>Nếu bạn cần hỗ trợ hoặc có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi qua:</p>
+                <h2 data-i18n="contactTitle">Thông tin liên hệ</h2>
+                <p data-i18n="contactDesc">Nếu bạn cần hỗ trợ hoặc có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi qua:</p>
             </div>
             
             <div class="modal-steps" style="margin-top: 20px;">
@@ -315,7 +321,7 @@
                         <i data-lucide="mail"></i>
                     </div>
                     <div class="step-info">
-                        <strong>Email:</strong>
+                        <strong data-i18n="contactEmail">Email:</strong>
                         <p><a href="mailto:autowork365@gmail.com" style="color: var(--primary-color); font-weight: 500;">autowork365@gmail.com</a></p>
                     </div>
                 </div>
@@ -324,7 +330,7 @@
                         <i data-lucide="phone"></i>
                     </div>
                     <div class="step-info">
-                        <strong>SĐT / Zalo:</strong>
+                        <strong data-i18n="contactPhone">SĐT / Zalo:</strong>
                         <p><a href="tel:0394932696" style="color: var(--primary-color); font-weight: 500;">0394932696</a></p>
                     </div>
                 </div>
@@ -340,40 +346,40 @@
                 <i data-lucide="x"></i>
             </button>
             <div class="modal-header">
-                <h2>Hướng dẫn cài đặt thủ công</h2>
-                <p>Do tiện ích đang chờ duyệt trên Chrome Store, bạn vui lòng cài đặt theo 4 bước đơn giản sau:</p>
+                <h2 data-i18n="installTitle">Hướng dẫn cài đặt thủ công</h2>
+                <p data-i18n="installDesc">Do tiện ích đang chờ duyệt trên Chrome Store, bạn vui lòng cài đặt theo 4 bước đơn giản sau:</p>
             </div>
             
             <div class="modal-steps">
                 <div class="install-step">
                     <div class="step-badge">1</div>
                     <div class="step-info">
-                        <strong>Tải và giải nén</strong>
-                        <p>Tải file ZIP bên dưới về máy tính và giải nén ra một thư mục.</p>
+                        <strong data-i18n="installStep1">Tải và giải nén</strong>
+                        <p data-i18n="installStep1Desc">Tải file ZIP bên dưới về máy tính và giải nén ra một thư mục.</p>
                         <a id="latest-download-link" href="https://github.com/PiPyL/safekid-extension/raw/main/safekid-extension.zip" class="btn btn-primary download-btn" download>
-                            <i data-lucide="download"></i> Click để tải file ZIP
+                            <i data-lucide="download"></i> <span data-i18n="installStep1Btn">Click để tải file ZIP</span>
                         </a>
                     </div>
                 </div>
                 <div class="install-step">
                     <div class="step-badge">2</div>
                     <div class="step-info">
-                        <strong>Mở trang Quản lý tiện ích</strong>
-                        <p>Mở trình duyệt, copy và dán đường dẫn này vào thanh địa chỉ: <code class="highlight-code">chrome://extensions/</code> (sau đó nhấn Enter).</p>
+                        <strong data-i18n="installStep2">Mở trang Quản lý tiện ích</strong>
+                        <p data-i18n-html="installStep2Desc">Mở trình duyệt, copy và dán đường dẫn này vào thanh địa chỉ: <code class="highlight-code">chrome://extensions/</code> (sau đó nhấn Enter).</p>
                     </div>
                 </div>
                 <div class="install-step">
                     <div class="step-badge">3</div>
                     <div class="step-info">
-                        <strong>Bật Chế độ nhà phát triển</strong>
-                        <p>Nhìn lên góc <strong>phải, phía trên</strong> màn hình và bật công tắc <strong>Chế độ dành cho nhà phát triển</strong> (Developer mode).</p>
+                        <strong data-i18n="installStep3">Bật Chế độ nhà phát triển</strong>
+                        <p data-i18n-html="installStep3Desc">Nhìn lên góc <strong>phải, phía trên</strong> màn hình và bật công tắc <strong>Chế độ dành cho nhà phát triển</strong> (Developer mode).</p>
                     </div>
                 </div>
                 <div class="install-step">
                     <div class="step-badge">4</div>
                     <div class="step-info">
-                        <strong>Tải thư mục lên</strong>
-                        <p>Nhấn vào nút <strong>Tải tiện ích đã giải nén</strong> (Load unpacked) ở góc trái và chọn thư mục bạn vừa giải nén ở Bước 1. Xong!</p>
+                        <strong data-i18n="installStep4">Tải thư mục lên</strong>
+                        <p data-i18n-html="installStep4Desc">Nhấn vào nút <strong>Tải tiện ích đã giải nén</strong> (Load unpacked) ở góc trái và chọn thư mục bạn vừa giải nén ở Bước 1. Xong!</p>
                     </div>
                 </div>
             </div>
@@ -388,15 +394,15 @@
                 <i data-lucide="x"></i>
             </button>
             <div class="modal-header">
-                <h2>Cảnh báo "Rác AI" trên YouTube</h2>
-                <p>Sự bùng nổ của AI là không thể đảo ngược, nhưng an toàn của trẻ không thể bị đánh đổi.</p>
+                <h2 data-i18n="videoWarnTitle">Cảnh báo "Rác AI" trên YouTube</h2>
+                <p data-i18n="videoWarnDesc">Sự bùng nổ của AI là không thể đảo ngược, nhưng an toàn của trẻ không thể bị đánh đổi.</p>
             </div>
             <div class="video-wrapper external-video">
                 <a href="https://www.youtube.com/watch?v=LOIRTF_prcY" target="_blank" rel="noopener noreferrer" class="video-thumbnail-link">
                     <img src="https://img.youtube.com/vi/LOIRTF_prcY/hqdefault.jpg" alt="VTV Cảnh báo Rác AI" class="video-thumbnail">
                     <div class="play-button-overlay">
                         <i data-lucide="play-circle"></i>
-                        <span>Xem trên YouTube</span>
+                        <span data-i18n="videoWatchOnYT">Xem trên YouTube</span>
                     </div>
                 </a>
             </div>
@@ -404,14 +410,15 @@
                 <label class="checkbox-container">
                     <input type="checkbox" id="hideVideoCheckbox">
                     <span class="checkmark"></span>
-                    <span class="checkbox-text">Không hiển thị lại thông báo này</span>
+                    <span class="checkbox-text" data-i18n="videoDontShow">Không hiển thị lại thông báo này</span>
                 </label>
-                <button class="btn btn-primary" onclick="closeVideoModal()">Tôi đã hiểu</button>
+                <button class="btn btn-primary" onclick="closeVideoModal()" data-i18n="videoGotIt">Tôi đã hiểu</button>
             </div>
         </div>
     </div>
 
     <!-- Scripts -->
+    <script src="i18n.js"></script>
     <script src="script.js" defer></script>
 </body>
 </html>
