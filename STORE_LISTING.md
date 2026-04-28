@@ -1,6 +1,10 @@
 # Cấu hình Cửa hàng (Store Listing) - Chrome Web Store
 
-## Ngôn ngữ: Tiếng Việt (Vietnamese)
+Tài liệu này chứa thông tin để bạn sao chép và dán vào Chrome Developer Dashboard cho 2 ngôn ngữ: Tiếng Việt và Tiếng Anh.
+
+---
+
+## 🇻🇳 Ngôn ngữ: Tiếng Việt (Vietnamese)
 
 ### Tên tiện ích (Tối đa 45 ký tự)
 **SafeKid - Chặn Video AI & Độc Hại**
@@ -36,7 +40,53 @@ Không thu thập dữ liệu cá nhân. Không quảng cáo. Mọi thiết lậ
 ---
 👉 Hãy chung tay mang đến cho trẻ em một môi trường kỹ thuật số trong sạch và an toàn! 
 
-Liên hệ hỗ trợ: support@safekid.pipyl.dev
+Liên hệ hỗ trợ: autowork365@gmail.com
+SĐT/Zalo: 0394932696
 Website: https://pipyl.github.io/AIVideoBlockerV2/
 
 *(Lưu ý: Tiện ích hoạt động tốt nhất khi được cấu hình thêm API Key cá nhân miễn phí từ OpenRouter hoặc Gemini để tăng cường khả năng phát hiện AI).*
+
+---
+---
+
+## 🇬🇧 Ngôn ngữ: Tiếng Anh (English)
+
+### Tên tiện ích (Title - Max 45 characters)
+**SafeKid - Block AI & Harmful Videos**
+
+### Mô tả ngắn (Short description - Max 132 characters)
+Block inappropriate channels or videos for children, either manually configured by parents or automatically detected by our system.
+
+### Mô tả chi tiết (Detailed description - Max 16000 characters)
+**SafeKid: The #1 Extension for Child Protection on YouTube & YouTube Kids**
+
+SafeKid empowers parents to block inappropriate channels or videos for children, either through manual configurations or an automatic detection mechanism. Let SafeKid help you protect your children safely, intelligently, and with absolute privacy!
+
+🛡️ **KEY FEATURES:**
+
+✅ **Multi-Layered "AI Trash" Detection:** 
+SafeKid uses a smart filter combining keywords, natural language processing (NLP), and artificial intelligence (with optional integration via free Gemini/OpenRouter API) to scan and immediately blur videos exhibiting signs of AI spam and clickbait before your child clicks on them.
+
+✅ **"Whitelist-Only" Mode:**
+The ultimate parental control feature! When activated, your child can **ONLY** watch channels that you have manually reviewed and approved. All unknown channels and strange content are completely blocked.
+
+✅ **Comprehensive YouTube Kids Support:**
+Not only working on youtube.com, SafeKid is one of the few extensions capable of scanning and blocking content that slips through the cracks right on the YouTube Kids platform.
+
+✅ **Filters 8 Other Harmful Categories:**
+SafeKid supports automatically blocking videos related to: Sexual content, Violence, Horror, Drugs, Profanity, Self-harm, Dangerous acts, and Inappropriate cartoons (Elsagate).
+
+✅ **Secure Parental Password:**
+Set up a password to protect the dashboard, preventing children from altering the channel list or turning off the extension without permission. (Right-click any video to quickly block or unblock channels).
+
+✅ **Absolute Privacy Protection (100% Privacy):**
+No personal data collection. No advertisements. All your settings, passwords, and blocklists are stored entirely locally on your browser (Local Storage).
+
+---
+👉 Join us in providing a clean and safe digital environment for children!
+
+Support Contact: autowork365@gmail.com
+Phone/WhatsApp: 0394932696
+Website: https://pipyl.github.io/AIVideoBlockerV2/
+
+*(Note: The extension works best when configured with a free personal API Key from OpenRouter or Gemini to enhance AI detection capabilities).*
