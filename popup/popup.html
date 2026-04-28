@@ -12,10 +12,14 @@
     <div id="lock-screen" class="screen" style="display: none;">
       <div class="lock-content">
         <div class="lock-icon">🔒</div>
-        <h2>Nhập mật khẩu phụ huynh</h2>
-        <input type="password" id="password-input" placeholder="Mật khẩu..." autocomplete="off">
-        <button id="btn-unlock" class="btn-primary">Mở khóa</button>
-        <p id="lock-error" class="error-text" style="display: none;">Sai mật khẩu!</p>
+        <h2 data-i18n="lockTitle">Nhập mật khẩu phụ huynh</h2>
+        <input type="password" id="password-input" data-i18n-placeholder="lockPlaceholder" placeholder="Mật khẩu..." autocomplete="off">
+        <button id="btn-unlock" class="btn-primary" data-i18n="lockUnlock">Mở khóa</button>
+        <p id="lock-error" class="error-text" style="display: none;" data-i18n="lockWrong">Sai mật khẩu!</p>
+        <button id="btn-lock-lang" class="btn-lang" style="margin-top: 8px;" title="Switch language">
+          <span id="lock-lang-flag">🇻🇳</span>
+          <span id="lock-lang-code">VI</span>
+        </button>
       </div>
     </div>
 
@@ -27,30 +31,36 @@
           <img src="../icons/icon48.png" alt="Logo" class="header-icon-img">
           <div>
             <h1>SafeKid</h1>
-            <p class="header-subtitle">Bảo vệ trẻ em khỏi video AI</p>
+            <p class="header-subtitle" data-i18n="headerSubtitle">Bảo vệ trẻ em khỏi video AI</p>
           </div>
         </div>
-        <label class="toggle-switch" id="toggle-enabled">
-          <input type="checkbox" id="checkbox-enabled">
-          <span class="toggle-slider"></span>
-        </label>
+        <div class="header-actions">
+          <button id="btn-lang-toggle" class="btn-lang" title="Switch language">
+            <span id="lang-flag">🇻🇳</span>
+            <span id="lang-code">VI</span>
+          </button>
+          <label class="toggle-switch" id="toggle-enabled">
+            <input type="checkbox" id="checkbox-enabled">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
       </header>
 
       <!-- Stats Bar -->
       <div class="stats-bar">
         <div class="stat-item">
           <span class="stat-value" id="stat-blocked">0</span>
-          <span class="stat-label">Đã chặn</span>
+          <span class="stat-label" data-i18n="statBlocked">Đã chặn</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
           <span class="stat-value" id="stat-scanned">0</span>
-          <span class="stat-label">Đã quét</span>
+          <span class="stat-label" data-i18n="statScanned">Đã quét</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
           <span class="stat-value" id="stat-accuracy">—</span>
-          <span class="stat-label">Phát hiện</span>
+          <span class="stat-label" data-i18n="statDetected">Phát hiện</span>
         </div>
       </div>
 
@@ -62,6 +72,7 @@
           role="tab"
           aria-selected="true"
           aria-controls="tab-main-panel"
+          data-i18n="tabOverview"
         >
           🧭 Tổng quan
         </button>
@@ -71,6 +82,7 @@
           role="tab"
           aria-selected="false"
           aria-controls="tab-parental-panel"
+          data-i18n="tabAdvanced"
         >
           👨‍👩‍👧 Quản lý nâng cao
         </button>
@@ -83,28 +95,28 @@
         <!-- Sensitivity -->
         <div class="setting-group">
           <div class="setting-header">
-            <span>⚡ Độ nhạy phát hiện</span>
+            <span data-i18n="sensitivityTitle">⚡ Độ nhạy phát hiện</span>
           </div>
           <div class="radio-group" id="sensitivity-group">
             <label class="radio-option">
               <input type="radio" name="sensitivity" value="low">
               <span class="radio-label">
-                <strong>Thấp</strong>
-                <small>Chỉ chặn khi rất chắc chắn</small>
+                <strong data-i18n="sensitivityLow">Thấp</strong>
+                <small data-i18n="sensitivityLowDesc">Chỉ chặn khi rất chắc chắn</small>
               </span>
             </label>
             <label class="radio-option">
               <input type="radio" name="sensitivity" value="medium">
               <span class="radio-label">
-                <strong>Trung bình</strong>
-                <small>Cân bằng giữa chặn và cho phép</small>
+                <strong data-i18n="sensitivityMedium">Trung bình</strong>
+                <small data-i18n="sensitivityMediumDesc">Cân bằng giữa chặn và cho phép</small>
               </span>
             </label>
             <label class="radio-option">
               <input type="radio" name="sensitivity" value="high" checked>
               <span class="radio-label">
-                <strong>Cao</strong>
-                <small>Chặn khi có nghi ngờ nhẹ</small>
+                <strong data-i18n="sensitivityHigh">Cao</strong>
+                <small data-i18n="sensitivityHighDesc">Chặn khi có nghi ngờ nhẹ</small>
               </span>
             </label>
           </div>
@@ -113,21 +125,21 @@
         <!-- Detection Profile -->
         <div class="setting-group">
           <div class="setting-header">
-            <span>🎯 Hồ sơ nhận diện</span>
+            <span data-i18n="profileTitle">🎯 Hồ sơ nhận diện</span>
           </div>
           <div class="radio-group" id="profile-group">
             <label class="radio-option">
               <input type="radio" name="detectionProfile" value="balanced">
               <span class="radio-label">
-                <strong>Cân bằng</strong>
-                <small>Giảm chặn nhầm, độ lọc vừa phải</small>
+                <strong data-i18n="profileBalanced">Cân bằng</strong>
+                <small data-i18n="profileBalancedDesc">Giảm chặn nhầm, độ lọc vừa phải</small>
               </span>
             </label>
             <label class="radio-option">
               <input type="radio" name="detectionProfile" value="recall-first" checked>
               <span class="radio-label">
-                <strong>Ưu tiên bắt AI</strong>
-                <small>Tăng độ nhạy để giảm lọt video AI</small>
+                <strong data-i18n="profileRecallFirst">Ưu tiên bắt AI</strong>
+                <small data-i18n="profileRecallFirstDesc">Tăng độ nhạy để giảm lọt video AI</small>
               </span>
             </label>
           </div>
@@ -137,8 +149,8 @@
         <div class="setting-group" id="ai-provider-group">
           <div class="setting-header" style="cursor: pointer;" id="ai-provider-header">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span>🤖 Phân tích AI nâng cao</span>
-              <span class="count-badge" id="active-provider-badge" style="font-weight: 600;">Tắt</span>
+              <span data-i18n="aiProviderTitle">🤖 Phân tích AI nâng cao</span>
+              <span class="count-badge" id="active-provider-badge" style="font-weight: 600;" data-i18n="aiProviderOff">Tắt</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <label class="toggle-switch toggle-small" id="toggle-ai-enabled" style="margin-right: 8px;">
@@ -150,25 +162,25 @@
           </div>
           
           <div class="provider-details" id="ai-provider-details" style="display: none; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
-            <p class="gemini-warning" style="margin-bottom: 12px; color: var(--text-secondary); background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.2);">
+            <p class="gemini-warning" style="margin-bottom: 12px; color: var(--text-secondary); background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.2);" data-i18n="aiProviderDesc">
               Khi bật, nội dung text (tiêu đề, mô tả, phụ đề) và hình ảnh (nếu chọn) sẽ được phân tích bởi AI để phát hiện video độc hại chính xác hơn.
             </p>
             
             <div class="provider-selector" style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 11px; color: var(--text-secondary);">CHỌN NGUỒN PHÂN TÍCH</label>
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 11px; color: var(--text-secondary);" data-i18n="aiProviderChoose">CHỌN NGUỒN PHÂN TÍCH</label>
               <div class="radio-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 <label class="radio-option">
                   <input type="radio" name="activeProvider" value="openrouter" checked>
                   <span class="radio-label">
                     <strong>OpenRouter</strong>
-                    <small>Nhiều model miễn phí</small>
+                    <small data-i18n="openrouterDesc">Nhiều model miễn phí</small>
                   </span>
                 </label>
                 <label class="radio-option">
                   <input type="radio" name="activeProvider" value="gemini">
                   <span class="radio-label">
                     <strong>Gemini API</strong>
-                    <small>Cần API key riêng</small>
+                    <small data-i18n="geminiDesc">Cần API key riêng</small>
                   </span>
                 </label>
               </div>
@@ -177,27 +189,27 @@
             <!-- OpenRouter Form -->
             <div class="gemini-form" id="openrouter-form">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">OPENROUTER API KEY</label>
-                <a href="https://openrouter.ai/docs/quickstart" target="_blank" style="font-size: 10px; color: var(--accent-indigo-light); text-decoration: none;">Lấy key miễn phí</a>
+                <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary);" data-i18n="openrouterKeyLabel">OPENROUTER API KEY</label>
+                <a href="https://openrouter.ai/docs/quickstart" target="_blank" style="font-size: 10px; color: var(--accent-indigo-light); text-decoration: none;" data-i18n="openrouterGetKey">Lấy key miễn phí</a>
               </div>
               <div class="gemini-key-row">
-                <input type="password" id="openrouter-api-key" placeholder="Nhập OpenRouter API key..." autocomplete="off">
-                <button id="btn-test-openrouter" class="btn-small">Kiểm tra</button>
+                <input type="password" id="openrouter-api-key" data-i18n-placeholder="openrouterPlaceholder" placeholder="Nhập OpenRouter API key..." autocomplete="off">
+                <button id="btn-test-openrouter" class="btn-small" data-i18n="btnTest">Kiểm tra</button>
               </div>
               <select id="openrouter-model" class="gemini-select">
-                <option value="openrouter/free">OpenRouter Auto (Miễn phí - Khuyên dùng)</option>
-                <option value="google/gemma-4-31b-it:free">Google: Gemma 4 31B (Miễn phí)</option>
-                <option value="qwen/qwen3-coder:free">Qwen: Qwen3 Coder (Miễn phí)</option>
-                <option value="openai/gpt-oss-20b:free">OpenAI: GPT-OSS 20B (Miễn phí)</option>
-                <option value="nvidia/nemotron-nano-9b-v2:free">NVIDIA: Nemotron 9B (Miễn phí)</option>
+                <option value="openrouter/free" data-i18n="openrouterRecommended">OpenRouter Auto (Miễn phí - Khuyên dùng)</option>
+                <option value="google/gemma-4-31b-it:free">Google: Gemma 4 31B (Free)</option>
+                <option value="qwen/qwen3-coder:free">Qwen: Qwen3 Coder (Free)</option>
+                <option value="openai/gpt-oss-20b:free">OpenAI: GPT-OSS 20B (Free)</option>
+                <option value="nvidia/nemotron-nano-9b-v2:free">NVIDIA: Nemotron 9B (Free)</option>
               </select>
               <div class="gemini-cache-row" style="margin-top: 6px;">
-                <span>Fallback: <small>Tự động chọn model miễn phí khác nếu lỗi</small></span>
+                <span>Fallback: <small data-i18n="fallbackDesc">Tự động chọn model miễn phí khác nếu lỗi</small></span>
               </div>
               <div class="gemini-cache-row" style="margin-top: 6px;">
-                <span>Trạng thái: <strong id="openrouter-status-text">Chưa cấu hình</strong></span>
+                <span><span data-i18n="statusLabel">Trạng thái:</span> <strong id="openrouter-status-text" data-i18n="statusNotConfigured">Chưa cấu hình</strong></span>
                 <div class="gemini-actions">
-                  <button id="btn-clear-openrouter-key" class="btn-small btn-red">Xóa key</button>
+                  <button id="btn-clear-openrouter-key" class="btn-small btn-red" data-i18n="btnDeleteKey">Xóa key</button>
                 </div>
               </div>
               <p id="openrouter-status" class="status-text"></p>
@@ -206,12 +218,12 @@
             <!-- Gemini Form -->
             <div class="gemini-form" id="gemini-form" style="display: none;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">GEMINI API KEY</label>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size: 10px; color: var(--accent-indigo-light); text-decoration: none;">Lấy key miễn phí</a>
+                <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary);" data-i18n="geminiKeyLabel">GEMINI API KEY</label>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size: 10px; color: var(--accent-indigo-light); text-decoration: none;" data-i18n="geminiGetKey">Lấy key miễn phí</a>
               </div>
               <div class="gemini-key-row">
-                <input type="password" id="gemini-api-key" placeholder="Nhập Gemini API key..." autocomplete="off">
-                <button id="btn-test-gemini" class="btn-small">Kiểm tra</button>
+                <input type="password" id="gemini-api-key" data-i18n-placeholder="geminiPlaceholder" placeholder="Nhập Gemini API key..." autocomplete="off">
+                <button id="btn-test-gemini" class="btn-small" data-i18n="btnTest">Kiểm tra</button>
               </div>
               <select id="gemini-model" class="gemini-select">
                 <option value="gemini-3.1-flash-lite-preview">gemini-3.1-flash-lite-preview</option>
@@ -219,9 +231,9 @@
                 <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
               </select>
               <div class="gemini-cache-row" style="margin-top: 6px;">
-                <span>Trạng thái: <strong id="gemini-status-text">Chưa cấu hình</strong></span>
+                <span><span data-i18n="statusLabel">Trạng thái:</span> <strong id="gemini-status-text" data-i18n="statusNotConfigured">Chưa cấu hình</strong></span>
                 <div class="gemini-actions">
-                  <button id="btn-clear-gemini-key" class="btn-small btn-red">Xóa key</button>
+                  <button id="btn-clear-gemini-key" class="btn-small btn-red" data-i18n="btnDeleteKey">Xóa key</button>
                 </div>
               </div>
               <p id="gemini-status" class="status-text"></p>
@@ -232,12 +244,12 @@
             <!-- Common AI Settings -->
             <label class="checkbox-row" style="margin-bottom: 10px;">
               <input type="checkbox" id="checkbox-ai-thumbnail">
-              <span>Phân tích thêm thumbnail <small>chính xác hơn nhưng chậm hơn</small></span>
+              <span><span data-i18n="thumbnailAnalysis">Phân tích thêm thumbnail</span> <small data-i18n="thumbnailAnalysisDesc">chính xác hơn nhưng chậm hơn</small></span>
             </label>
             <div class="gemini-cache-row">
-              <span>Cache phân tích AI: <strong id="ai-cache-count">0</strong></span>
+              <span><span data-i18n="aiCacheLabel">Cache phân tích AI:</span> <strong id="ai-cache-count">0</strong></span>
               <div class="gemini-actions">
-                <button id="btn-clear-ai-cache" class="btn-small">Xóa cache</button>
+                <button id="btn-clear-ai-cache" class="btn-small" data-i18n="btnClearCache">Xóa cache</button>
               </div>
             </div>
             
@@ -247,7 +259,7 @@
         <!-- Detection Breakdown -->
         <div class="setting-group">
           <div class="setting-header">
-            <span>📊 Tín hiệu nhận diện</span>
+            <span data-i18n="signalTitle">📊 Tín hiệu nhận diện</span>
           </div>
           <div class="breakdown-grid">
             <div class="break-item">
@@ -275,16 +287,16 @@
           <!-- Parental Password — ĐẦU TAB -->
           <div class="setting-group">
             <div class="setting-header">
-              <span>🔐 Mật khẩu phụ huynh</span>
-              <span id="password-set-badge" class="count-badge" style="display:none; background: rgba(34,197,94,0.15); color: #22c55e;">Đã đặt</span>
+              <span data-i18n="passwordTitle">🔐 Mật khẩu phụ huynh</span>
+              <span id="password-set-badge" class="count-badge" style="display:none; background: rgba(34,197,94,0.15); color: #22c55e;" data-i18n="passwordSet">Đã đặt</span>
             </div>
             <div class="password-section">
-              <input type="password" id="new-password" placeholder="Đặt mật khẩu mới..." autocomplete="new-password">
-              <button id="btn-set-password" class="btn-small">Lưu</button>
+              <input type="password" id="new-password" data-i18n-placeholder="passwordPlaceholder" placeholder="Đặt mật khẩu mới..." autocomplete="new-password">
+              <button id="btn-set-password" class="btn-small" data-i18n="btnSave">Lưu</button>
             </div>
             <p id="password-status" class="status-text"></p>
             <div id="clear-password-row" style="display:none; margin-top: 8px;">
-              <button id="btn-clear-password" class="btn-small btn-red" style="width:100%;">🗑 Xóa mật khẩu (tắt yêu cầu mật khẩu)</button>
+              <button id="btn-clear-password" class="btn-small btn-red" style="width:100%;" data-i18n="btnClearPassword">🗑 Xóa mật khẩu (tắt yêu cầu mật khẩu)</button>
             </div>
           </div>
 
@@ -293,8 +305,8 @@
             <label class="checkbox-row" style="margin-bottom: 6px;">
               <input type="checkbox" id="checkbox-allow-only-whitelisted">
               <span>
-                Chỉ cho phép xem các kênh trong danh sách dưới đây
-                <small class="highlight-warning">Khi bật: mọi video từ kênh khác sẽ bị chặn (kể cả không phát hiện AI). Kênh trong danh sách được xem bình thường.</small>
+                <span data-i18n="allowOnlyLabel">Chỉ cho phép xem các kênh trong danh sách dưới đây</span>
+                <small class="highlight-warning" data-i18n="allowOnlyWarning">Khi bật: mọi video từ kênh khác sẽ bị chặn (kể cả không phát hiện AI). Kênh trong danh sách được xem bình thường.</small>
               </span>
             </label>
             <p id="allow-only-empty-warning" class="status-text" style="display: none; color: #fbbf24; font-size: 10px; margin-bottom: 6px;"></p>
@@ -302,14 +314,14 @@
 
           <div class="setting-group">
             <div class="setting-header">
-              <span>✅ Kênh được phép xem</span>
+              <span data-i18n="whitelistTitle">✅ Kênh được phép xem</span>
               <span class="count-badge count-green" id="whitelist-count">0</span>
             </div>
-            <p style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">
+            <p style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;" data-i18n="whitelistHint">
               Khớp đúng tên hiển thị trên YouTube (có thể thêm kênh từ nút trên overlay khi xem SafeKid đã phủ chặn).
             </p>
             <div class="channel-input-row">
-              <input type="text" id="whitelist-input" placeholder="Tên kênh...">
+              <input type="text" id="whitelist-input" data-i18n-placeholder="whitelistPlaceholder" placeholder="Tên kênh...">
               <button type="button" id="btn-add-whitelist" class="btn-small btn-green">+</button>
             </div>
             <div class="channel-list" id="whitelist-container"></div>
@@ -318,21 +330,21 @@
           <!-- Block Search -->
           <div class="setting-group">
             <div class="setting-header">
-              <span>🔎 Tìm nhanh trong danh sách chặn</span>
+              <span data-i18n="searchTitle">🔎 Tìm nhanh trong danh sách chặn</span>
             </div>
             <div class="search-input-row">
-              <input type="text" id="block-search-input" placeholder="Tìm tên channel hoặc tên video...">
+              <input type="text" id="block-search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Tìm tên channel hoặc tên video...">
             </div>
           </div>
 
           <!-- Blacklist -->
           <div class="setting-group">
             <div class="setting-header">
-              <span>🚫 Channel luôn chặn</span>
+              <span data-i18n="blacklistTitle">🚫 Channel luôn chặn</span>
               <span class="count-badge count-red" id="blacklist-count">0</span>
             </div>
             <div class="channel-input-row">
-              <input type="text" id="blacklist-input" placeholder="Tên channel...">
+              <input type="text" id="blacklist-input" data-i18n-placeholder="blacklistPlaceholder" placeholder="Tên channel...">
               <button id="btn-add-blacklist" class="btn-small btn-red">+</button>
             </div>
             <div class="channel-list" id="blacklist-container"></div>
@@ -341,18 +353,18 @@
           <!-- Blocked Videos -->
           <div class="setting-group">
             <div class="setting-header" id="blocked-videos-header" style="cursor: pointer;">
-              <span>🎬 Video bị chặn thủ công</span>
+              <span data-i18n="blockedVideosTitle">🎬 Video bị chặn thủ công</span>
               <div style="display: flex; align-items: center; gap: 6px;">
                 <span class="count-badge count-red" id="blocked-videos-count">0</span>
                 <span id="blocked-videos-chevron" style="transition: transform 0.3s; font-size: 10px; color: var(--text-muted);">▼</span>
               </div>
             </div>
             <div id="blocked-videos-details" style="display: none;">
-              <p class="blocked-videos-info" style="font-size: 11px; color: var(--text-secondary); margin: 8px 0;">
+              <p class="blocked-videos-info" style="font-size: 11px; color: var(--text-secondary); margin: 8px 0;" data-i18n="blockedVideosHint">
                 Click chuột phải trên YouTube → "🛡️ SafeKid: Chặn video này" để thêm video vào danh sách.
               </p>
               <div class="channel-list" id="blocked-videos-container"></div>
-              <button id="btn-clear-blocked-videos" class="btn-small btn-red" style="margin-top: 8px; width: 100%; display: none;">🗑 Xóa tất cả video đã chặn</button>
+              <button id="btn-clear-blocked-videos" class="btn-small btn-red" style="margin-top: 8px; width: 100%; display: none;" data-i18n="btnClearAllVideos">🗑 Xóa tất cả video đã chặn</button>
             </div>
           </div>
         </div>
@@ -360,12 +372,13 @@
 
       <!-- Footer Actions -->
       <div class="footer-actions">
-        <button id="btn-rescan" class="btn-secondary">🔄 Quét lại</button>
+        <button id="btn-rescan" class="btn-secondary" data-i18n="btnRescan">🔄 Quét lại</button>
         <span class="version-text">v1.0.0</span>
       </div>
     </div>
   </div>
 
+  <script src="../utils/i18n.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

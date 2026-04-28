@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "SafeKid",
+  "name": "__MSG_appName__",
   "version": "1.0.6",
-  "description": "Hỗ trợ chặn kênh hoặc video không phù hợp với trẻ em do phụ huynh tự thiết lập hoặc qua cơ chế tự động phát hiện.",
+  "default_locale": "vi",
+  "description": "__MSG_appDescription__",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
