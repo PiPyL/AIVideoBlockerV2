@@ -23,8 +23,13 @@ out/
 # AI & Agents
 .playwright-mcp/
 .gemini/
+.agent/
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Environment
+.env
+.env.*
