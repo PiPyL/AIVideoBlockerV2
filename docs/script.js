@@ -135,12 +135,29 @@ function closeContactModal() {
     }
 }
 
+function openDonateModal() {
+    const modal = document.getElementById('donateModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeDonateModal() {
+    const modal = document.getElementById('donateModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
 // Close modal when pressing Escape key
 document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
         closeInstallModal();
         closeVideoModal();
         closeContactModal();
+        closeDonateModal();
     }
 });
 

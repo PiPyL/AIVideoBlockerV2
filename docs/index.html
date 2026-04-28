@@ -62,6 +62,20 @@
                 <h1 data-i18n="heroTitle">Hỗ trợ chặn kênh/video không phù hợp với trẻ em</h1>
                 <p data-i18n-html="heroSubtitle">SafeKid hỗ trợ chặn kênh hoặc video không phù hợp với trẻ em do phụ huynh tự thiết lập hoặc thông qua cơ chế tự động phát hiện. Hoạt động trên cả <strong>YouTube</strong> và <strong>YouTube Kids</strong> — miễn phí, riêng tư 100%.</p>
                 
+                <!-- Chrome Web Store Review Status Banner -->
+                <div class="store-review-banner" id="store-review-banner">
+                    <div class="store-review-icon">
+                        <i data-lucide="store" class="store-icon"></i>
+                    </div>
+                    <div class="store-review-content">
+                        <div class="store-review-status">
+                            <span class="store-review-dot"></span>
+                            <strong data-i18n="storeReviewStatus">Đã gửi lên Chrome Web Store</strong>
+                        </div>
+                        <p data-i18n="storeReviewDesc">SafeKid đã được gửi lên Google Chrome Web Store và hiện đang trong quá trình xem xét, chờ phê duyệt. Trong thời gian chờ đợi, bạn vẫn có thể cài đặt thủ công bằng file ZIP.</p>
+                    </div>
+                </div>
+
                 <div class="hero-cta">
                     <button onclick="openInstallModal()" class="btn btn-primary btn-large pulse-animation">
                         <i data-lucide="download"></i>
@@ -414,6 +428,49 @@
                 </label>
                 <button class="btn btn-primary" onclick="closeVideoModal()" data-i18n="videoGotIt">Tôi đã hiểu</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Donate Floating Button -->
+    <button id="donateFloatingBtn" class="donate-floating-btn" onclick="openDonateModal()" title="Ủng hộ dự án">
+        <i data-lucide="heart" class="donate-heart-icon"></i>
+    </button>
+
+    <!-- Donate Modal -->
+    <div id="donateModal" class="modal">
+        <div class="modal-overlay" onclick="closeDonateModal()"></div>
+        <div class="modal-content donate-modal-content">
+            <button class="modal-close" onclick="closeDonateModal()">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="modal-header">
+                <div class="donate-header-icon">
+                    <i data-lucide="heart" class="donate-header-heart"></i>
+                </div>
+                <h2>Ủng hộ SafeKid</h2>
+                <p class="donate-subtitle">SafeKid là dự án 100% miễn phí. Nếu bạn thấy hữu ích, một ly cà phê từ bạn sẽ giúp chúng mình có thêm động lực phát triển! ☕</p>
+            </div>
+            
+            <div class="donate-qr-wrapper">
+                <img src="qrcode.jpg" alt="QR Code chuyển khoản VIB" class="donate-qr-image">
+            </div>
+            
+            <div class="donate-bank-info">
+                <div class="donate-info-row">
+                    <span class="donate-label">Ngân hàng</span>
+                    <span class="donate-value">VIB</span>
+                </div>
+                <div class="donate-info-row">
+                    <span class="donate-label">Chủ tài khoản</span>
+                    <span class="donate-value">Le Phuoc</span>
+                </div>
+                <div class="donate-info-row">
+                    <span class="donate-label">Số tài khoản</span>
+                    <span class="donate-value donate-account-number">010406529</span>
+                </div>
+            </div>
+            
+            <p class="donate-thanks">Cảm ơn bạn đã đồng hành cùng SafeKid! 💚</p>
         </div>
     </div>
 
