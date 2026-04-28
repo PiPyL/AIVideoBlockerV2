@@ -1,6 +1,6 @@
 # SafeKid V2 - Bảo vệ trẻ em khỏi video AI độc hại trên YouTube
 
-SafeKid là một Chrome Extension (Manifest V3) mã nguồn mở, giúp cha mẹ bảo vệ trẻ em khỏi các nội dung "AI slop" (video rác được tạo hàng loạt bằng AI) trên YouTube.
+SafeKid là một Chrome Extension (Manifest V3) mã nguồn mở, hỗ trợ chặn kênh hoặc video không phù hợp với trẻ em do phụ huynh tự thiết lập hoặc cơ chế tự động phát hiện.
 
 [Tiếng Việt](./README.md) | [English](./README_EN.md)
 

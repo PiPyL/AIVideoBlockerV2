@@ -6,12 +6,12 @@
 **SafeKid - Chặn Video AI & Độc Hại**
 
 ### Mô tả ngắn (Tối đa 132 ký tự)
-Tự động phát hiện và chặn các video YouTube do AI tạo ra. Bảo vệ trẻ em khỏi nội dung độc hại với bộ lọc thông minh, an toàn.
+Hỗ trợ chặn kênh hoặc video không phù hợp với trẻ em do phụ huynh tự thiết lập hoặc cơ chế tự động phát hiện.
 
 ### Mô tả chi tiết (Tối đa 16000 ký tự)
 **SafeKid: Tiện ích Số 1 Bảo Vệ Trẻ Em Trên YouTube & YouTube Kids**
 
-Nỗi lo về "Rác AI", những video được tạo hàng loạt bởi trí tuệ nhân tạo với nội dung không phù hợp đang tràn ngập YouTube. Hãy để SafeKid giúp bạn bảo vệ con yêu một cách an toàn, thông minh và riêng tư tuyệt đối!
+SafeKid hỗ trợ chặn kênh hoặc video không phù hợp với trẻ em do phụ huynh tự thiết lập hoặc cơ chế tự động phát hiện. Hãy để SafeKid giúp bạn bảo vệ con yêu một cách an toàn, thông minh và riêng tư tuyệt đối!
 
 🛡️ **TÍNH NĂNG NỔI BẬT:**
 
