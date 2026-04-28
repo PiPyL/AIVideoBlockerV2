@@ -3,24 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafeKid - Bảo vệ trẻ em khỏi video AI độc hại trên YouTube</title>
+    <title>SafeKid - Bảo vệ trẻ em khỏi video AI & nội dung độc hại trên YouTube & YouTube Kids</title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="logo.png">
     
-    <!-- SEO & Meta Tags (seo-specialist) -->
-    <meta name="description" content="Tiện ích mở rộng tự động phát hiện và chặn nội dung AI 'rác' trên YouTube. Bảo vệ con bạn với tính năng kiểm soát của phụ huynh an toàn, riêng tư 100%.">
-    <meta name="keywords" content="AI video blocker, chặn video AI YouTube, bảo vệ trẻ em trên YouTube, parental control youtube, tiện ích an toàn cho trẻ">
+    <!-- SEO & Meta Tags -->
+    <meta name="description" content="Tiện ích Chrome miễn phí tự động phát hiện và chặn video AI 'rác' cùng 8 loại nội dung nguy hại trên YouTube và YouTube Kids. Chế độ kênh đã duyệt, kiểm soát phụ huynh, riêng tư 100%.">
+    <meta name="keywords" content="SafeKid, chặn video AI YouTube, bảo vệ trẻ em, parental control, YouTube Kids safe, chặn nội dung độc hại, AI slop blocker, tiện ích an toàn cho trẻ, kiểm soát phụ huynh YouTube">
     <meta name="author" content="SafeKid Team">
-    <meta property="og:title" content="SafeKid - Bảo vệ trẻ em trên mạng">
-    <meta property="og:description" content="Tự động phát hiện và ẩn video do AI tạo trên YouTube. Cài đặt miễn phí để bảo vệ con bạn ngay hôm nay.">
+    <meta property="og:title" content="SafeKid — Chặn video AI & nội dung độc hại trên YouTube">
+    <meta property="og:description" content="Bảo vệ trẻ em trên YouTube & YouTube Kids. Phát hiện đa lớp AI, chế độ kênh đã duyệt, miễn phí 100%.">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="https://safekid.pipyl.dev">
     
-    <!-- Performance Optimization (performance-optimizer) -->
+    <!-- Performance Optimization -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
-    <!-- Typography (frontend-specialist) -->
+    <!-- Typography -->
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
     
     <!-- Styles -->
@@ -41,7 +42,7 @@
             <nav class="nav-links">
                 <a href="#features">Tính năng</a>
                 <a href="#how-it-works">Cách hoạt động</a>
-                <a href="#testimonials">Đánh giá</a>
+                <a href="#faq">Hỏi đáp</a>
             </nav>
             <button onclick="openInstallModal()" class="btn btn-primary">Tải bản ZIP (Thủ công)</button>
         </div>
@@ -51,15 +52,19 @@
     <section class="hero">
         <div class="container hero-container">
             <div class="hero-content">
-                <h1>Bảo vệ trẻ em khỏi <span class="text-highlight">"Rác AI" (AI Slop)</span> trên YouTube</h1>
-                <p>Khoảng 95% video cho trẻ nhỏ trên YouTube không đạt chất lượng. Tiện ích của chúng tôi chặn "Rác AI" tạo hàng loạt vô nghĩa, ngăn chặn việc làm mờ ranh giới thực-ảo và bóp méo nhận thức của trẻ.</p>
+                <h1>Bảo vệ trẻ em khỏi <span class="text-highlight">"Rác AI"</span> & nội dung độc hại trên YouTube</h1>
+                <p>SafeKid tự động phát hiện và chặn video do AI tạo hàng loạt, đồng thời lọc <strong>8 loại nội dung nguy hại</strong> cho trẻ nhỏ. Hoạt động trên cả <strong>YouTube</strong> và <strong>YouTube Kids</strong> — miễn phí, riêng tư 100%.</p>
                 
                 <div class="hero-cta">
                     <button onclick="openInstallModal()" class="btn btn-primary btn-large pulse-animation">
                         <i data-lucide="download"></i>
                         Tải file ZIP miễn phí
                     </button>
-                    <p class="trust-text"><i data-lucide="lock" class="icon-small"></i> Bảo mật 100% - Không theo dõi dữ liệu</p>
+                    <div class="hero-trust-badges">
+                        <span class="trust-badge"><i data-lucide="lock" class="icon-small"></i> Bảo mật 100%</span>
+                        <span class="trust-badge"><i data-lucide="monitor-play" class="icon-small"></i> YouTube & YouTube Kids</span>
+                        <span class="trust-badge"><i data-lucide="sparkles" class="icon-small"></i> Tích hợp AI</span>
+                    </div>
                 </div>
             </div>
             <div class="hero-visual">
@@ -85,7 +90,7 @@
                     </div>
                 </div>
                 
-                <!-- Notice Card (New & Rephrased) -->
+                <!-- Notice Card -->
                 <div class="notice-card glass-card">
                     <div class="notice-icon">
                         <i data-lucide="info"></i>
@@ -106,26 +111,55 @@
                 <p>Theo thư ngỏ từ hơn 200 chuyên gia, nội dung AI độc hại đang thu lợi nhuận khổng lồ trên sự an toàn của trẻ. SafeKid là giải pháp tức thời cho cha mẹ.</p>
             </div>
             <div class="features-grid">
+                <!-- Card 1: Phát hiện đa lớp -->
                 <div class="feature-card">
                     <div class="feature-icon icon-blue">
                         <i data-lucide="brain-circuit"></i>
                     </div>
-                    <h3>Phát hiện đa lớp</h3>
-                    <p>Sử dụng trí tuệ nhân tạo để đối đầu với AI. Kết hợp nhãn dán YouTube, phân tích ngôn ngữ (NLP) và bộ lọc thông minh. Chúng tôi liên tục cập nhật dữ liệu để ngày càng hoàn thiện hơn. Rất mong nhận được đóng góp ý kiến từ mọi người trong quá trình sử dụng. Xin cám ơn</p>
+                    <h3>Phát hiện đa lớp thông minh</h3>
+                    <p>Hệ thống 3 tầng: nhãn dán YouTube → phân tích ngôn ngữ NLP & keyword → AI phân tích sâu (Gemini/OpenRouter). Kết hợp tiêu đề, mô tả và phụ đề video để không bỏ sót.</p>
                 </div>
+                <!-- Card 2: Whitelist-Only Mode (NEW) -->
+                <div class="feature-card feature-card--highlight">
+                    <div class="feature-badge">Mới</div>
+                    <div class="feature-icon icon-amber">
+                        <i data-lucide="list-checks"></i>
+                    </div>
+                    <h3>Chế độ "Chỉ kênh đã duyệt"</h3>
+                    <p>Con bạn CHỈ xem được các kênh mà bạn đã kiểm duyệt và phê duyệt. Mọi kênh lạ đều bị chặn hoàn toàn — an toàn tuyệt đối cho trẻ nhỏ.</p>
+                </div>
+                <!-- Card 3: Kiểm soát phụ huynh -->
                 <div class="feature-card">
                     <div class="feature-icon icon-green">
                         <i data-lucide="key"></i>
                     </div>
-                    <h3>Kiểm soát của phụ huynh</h3>
-                    <p>Mọi cài đặt đều được bảo vệ bằng mật khẩu an toàn. Trẻ em không thể tự ý tắt tiện ích hoặc thay đổi cấp độ bảo vệ.</p>
+                    <h3>Kiểm soát phụ huynh toàn diện</h3>
+                    <p>Mật khẩu bảo vệ mọi cài đặt. Danh sách chặn/cho phép kênh linh hoạt. Chuột phải vào video để chặn hoặc cho phép kênh ngay lập tức.</p>
                 </div>
+                <!-- Card 4: YouTube Kids (NEW) -->
+                <div class="feature-card feature-card--highlight">
+                    <div class="feature-badge">Mới</div>
+                    <div class="feature-icon icon-red">
+                        <i data-lucide="tv-2"></i>
+                    </div>
+                    <h3>Hỗ trợ YouTube Kids</h3>
+                    <p>Không chỉ YouTube.com — SafeKid còn bảo vệ trẻ trên YouTube Kids với công nghệ deep traversal, đảm bảo không lọt nội dung độc hại trên mọi nền tảng.</p>
+                </div>
+                <!-- Card 5: 8 danh mục (NEW) -->
                 <div class="feature-card">
-                    <div class="feature-icon icon-purple">
+                    <div class="feature-icon icon-rose">
+                        <i data-lucide="alert-triangle"></i>
+                    </div>
+                    <h3>Lọc 8 loại nội dung nguy hại</h3>
+                    <p>Tự động phát hiện: tình dục, bạo lực, kinh dị, tự gây hại, hành vi nguy hiểm, ma túy, ngôn ngữ tục tĩu và hoạt hình biến thái (Elsagate).</p>
+                </div>
+                <!-- Card 6: Performance -->
+                <div class="feature-card">
+                    <div class="feature-icon icon-teal">
                         <i data-lucide="zap"></i>
                     </div>
                     <h3>Siêu mượt, siêu nhẹ</h3>
-                    <p>Hoạt động ngầm với hiệu năng tối ưu, hoàn toàn không làm chậm trình duyệt hay ảnh hưởng đến tốc độ xem video.</p>
+                    <p>Hoạt động ngầm với hiệu năng tối ưu, không làm chậm trình duyệt. Cache thông minh giúp scan nhanh hơn theo thời gian sử dụng.</p>
                 </div>
             </div>
         </div>
@@ -136,25 +170,97 @@
         <div class="container">
             <div class="section-title">
                 <h2>Cách thức hoạt động</h2>
-                <p>Bảo vệ con yêu chỉ trong 3 bước đơn giản.</p>
+                <p>Bảo vệ con yêu chỉ trong 4 bước đơn giản.</p>
             </div>
             <div class="steps-container">
                 <div class="step">
                     <div class="step-number">1</div>
                     <h3>Cài đặt tiện ích</h3>
-                    <p>Thêm SafeKid vào trình duyệt Chrome của bạn hoàn toàn miễn phí.</p>
+                    <p>Tải file ZIP và thêm SafeKid vào Chrome hoàn toàn miễn phí.</p>
                 </div>
                 <div class="step-connector"></div>
                 <div class="step">
                     <div class="step-number">2</div>
-                    <h3>Thiết lập mật khẩu</h3>
-                    <p>Tạo mật khẩu phụ huynh để khóa các cài đặt quan trọng.</p>
+                    <h3>Thiết lập bảo mật</h3>
+                    <p>Tạo mật khẩu phụ huynh và thêm các kênh an toàn vào danh sách cho phép.</p>
                 </div>
                 <div class="step-connector"></div>
                 <div class="step">
                     <div class="step-number">3</div>
+                    <h3>Kích hoạt AI</h3>
+                    <p>Thêm API key Gemini hoặc OpenRouter để tăng độ chính xác. Có nhiều model <strong>miễn phí</strong>!</p>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-number">4</div>
                     <h3>Tận hưởng an toàn</h3>
-                    <p>Yên tâm để trẻ khám phá YouTube, chúng tôi sẽ tự động làm mờ và chặn các video AI độc hại.</p>
+                    <p>SafeKid tự động chặn video AI độc hại. Bạn yên tâm, con vui chơi!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="faq-section bg-light">
+        <div class="container">
+            <div class="section-title">
+                <h2>Câu hỏi thường gặp</h2>
+                <p>Giải đáp mọi thắc mắc về SafeKid.</p>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item">
+                    <button class="faq-question" id="faq-btn-1" aria-expanded="false" aria-controls="faq-answer-1">
+                        <span>SafeKid có miễn phí không?</span>
+                        <i data-lucide="chevron-down" class="faq-chevron"></i>
+                    </button>
+                    <div class="faq-answer" id="faq-answer-1" role="region" aria-labelledby="faq-btn-1">
+                        <p>Hoàn toàn miễn phí. Bạn chỉ cần tải file ZIP và cài đặt thủ công vào Chrome. Không có phí ẩn, không quảng cáo, không thu thập dữ liệu.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" id="faq-btn-2" aria-expanded="false" aria-controls="faq-answer-2">
+                        <span>Tại sao chưa có trên Chrome Web Store?</span>
+                        <i data-lucide="chevron-down" class="faq-chevron"></i>
+                    </button>
+                    <div class="faq-answer" id="faq-answer-2" role="region" aria-labelledby="faq-btn-2">
+                        <p>SafeKid đang chờ duyệt trên Chrome Web Store. Hiện tại bạn cài đặt bằng cách load unpacked — hướng dẫn chi tiết sẽ hiện khi bạn nhấn nút <strong>"Tải file ZIP"</strong>.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" id="faq-btn-3" aria-expanded="false" aria-controls="faq-answer-3">
+                        <span>AI phát hiện có chính xác 100% không?</span>
+                        <i data-lucide="chevron-down" class="faq-chevron"></i>
+                    </button>
+                    <div class="faq-answer" id="faq-answer-3" role="region" aria-labelledby="faq-btn-3">
+                        <p>Không có hệ thống nào hoàn hảo. SafeKid sử dụng 3 tầng phát hiện (labels + NLP + AI) và liên tục cải thiện. Bạn có thể bổ sung bằng chế độ <strong>"Chỉ kênh đã duyệt"</strong> để đảm bảo an toàn tuyệt đối — chỉ cho con xem các kênh bạn đã kiểm duyệt.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" id="faq-btn-4" aria-expanded="false" aria-controls="faq-answer-4">
+                        <span>Dữ liệu của tôi có bị thu thập không?</span>
+                        <i data-lucide="chevron-down" class="faq-chevron"></i>
+                    </button>
+                    <div class="faq-answer" id="faq-answer-4" role="region" aria-labelledby="faq-btn-4">
+                        <p><strong>KHÔNG.</strong> Mọi dữ liệu xử lý tại local trên máy bạn. API key được lưu trong bộ nhớ bảo mật riêng (IndexedDB). SafeKid không gửi bất kỳ dữ liệu cá nhân nào ra bên ngoài.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" id="faq-btn-5" aria-expanded="false" aria-controls="faq-answer-5">
+                        <span>SafeKid có hoạt động trên YouTube Kids không?</span>
+                        <i data-lucide="chevron-down" class="faq-chevron"></i>
+                    </button>
+                    <div class="faq-answer" id="faq-answer-5" role="region" aria-labelledby="faq-btn-5">
+                        <p><strong>CÓ!</strong> SafeKid hỗ trợ cả <code>youtube.com</code> và <code>youtubekids.com</code> với công nghệ nhận diện platform tự động. Danh sách kênh được đồng bộ giữa 2 nền tảng.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" id="faq-btn-6" aria-expanded="false" aria-controls="faq-answer-6">
+                        <span>Cần API key để sử dụng không?</span>
+                        <i data-lucide="chevron-down" class="faq-chevron"></i>
+                    </button>
+                    <div class="faq-answer" id="faq-answer-6" role="region" aria-labelledby="faq-btn-6">
+                        <p><strong>Không bắt buộc.</strong> SafeKid hoạt động tốt chỉ với bộ lọc local (labels + keywords). API key giúp tăng thêm độ chính xác với phân tích AI. OpenRouter cung cấp nhiều model hoàn toàn miễn phí như Gemma 4, Qwen3, GPT-OSS.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -256,7 +362,7 @@
                         <span>Xem trên YouTube</span>
                     </div>
                 </a>
-k            </div>
+            </div>
             <div class="modal-footer video-modal-footer">
                 <label class="checkbox-container">
                     <input type="checkbox" id="hideVideoCheckbox">

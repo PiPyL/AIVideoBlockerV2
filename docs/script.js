@@ -45,6 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const animateElements = [
         ...document.querySelectorAll('.feature-card'),
         ...document.querySelectorAll('.step'),
+        ...document.querySelectorAll('.stat-item'),
+        ...document.querySelectorAll('.faq-item'),
         document.querySelector('.cta-card')
     ];
     
@@ -52,15 +54,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (el) {
             el.style.opacity = '0';
             el.style.transform = 'translateY(20px)';
-            el.style.transition = `opacity 0.6s ease-out ${index * 0.1}s, transform 0.6s ease-out ${index * 0.1}s`;
+            el.style.transition = `opacity 0.6s ease-out ${index * 0.05}s, transform 0.6s ease-out ${index * 0.05}s`;
             observer.observe(el);
         }
+    });
+
+    // FAQ Accordion
+    document.querySelectorAll('.faq-question').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = btn.closest('.faq-item');
+            const isActive = item.classList.contains('active');
+            // Close all others
+            document.querySelectorAll('.faq-item.active').forEach(openItem => {
+                if (openItem !== item) openItem.classList.remove('active');
+            });
+            // Toggle current
+            item.classList.toggle('active', !isActive);
+            btn.setAttribute('aria-expanded', !isActive);
+        });
     });
 
     // Check localStorage for Video Modal
     const hideVideoPopup = localStorage.getItem('hideVideoPopup');
     if (!hideVideoPopup) {
-        setTimeout(openVideoModal, 500); // Small delay for better UX
+        setTimeout(openVideoModal, 500);
     }
 });
 
