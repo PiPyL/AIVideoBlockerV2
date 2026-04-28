@@ -123,35 +123,56 @@ async function updateBadge(count) {
 
 async function whitelistChannel(channel, url) {
   if (!channel) return { ok: false, reason: 'missing_channel' };
+
+  // Resolve display name if channel looks like a raw ID (e.g. UC3IRvILzRRzPsdsV-GuwV7Q)
+  let displayName = channel;
+  if (looksLikeChannelId(channel)) {
+    const resolved = await resolveChannelDisplayName(channel, url);
+    if (resolved) displayName = resolved;
+  }
+
   const settings = await StorageManager.getSettings();
-  if (!settings.whitelistedChannels.includes(channel)) {
-    settings.whitelistedChannels.push(channel);
+  // Store both: display name as primary, channel ID as alias for matching
+  if (!settings.whitelistedChannels.includes(displayName) &&
+      !settings.whitelistedChannels.includes(channel)) {
+    settings.whitelistedChannels.push(displayName);
     await StorageManager.updateSettings({ whitelistedChannels: settings.whitelistedChannels });
-    console.log(`${LOG_PREFIX} Whitelisted: ${channel}`);
+    console.log(`${LOG_PREFIX} Whitelisted: ${displayName}${displayName !== channel ? ` (ID: ${channel})` : ''}`);
 
     // Rescan tất cả tabs YouTube
     await rescanAllTabs();
   }
-  return { ok: true, channel };
+  return { ok: true, channel: displayName };
 }
 
 // ==================== MANUAL BLOCK (Channel & Video) ====================
 
 async function blockChannel(channel) {
   if (!channel) return { ok: false, reason: 'missing_channel' };
+
+  // Resolve display name if channel looks like a raw ID
+  let displayName = channel;
+  if (looksLikeChannelId(channel)) {
+    const resolved = await resolveChannelDisplayName(channel);
+    if (resolved) displayName = resolved;
+  }
+
   const settings = await StorageManager.getSettings();
-  if (!settings.blacklistedChannels.includes(channel)) {
-    settings.blacklistedChannels.push(channel);
-    // Also remove from whitelist if present
-    settings.whitelistedChannels = settings.whitelistedChannels.filter(c => c !== channel);
+  if (!settings.blacklistedChannels.includes(displayName) &&
+      !settings.blacklistedChannels.includes(channel)) {
+    settings.blacklistedChannels.push(displayName);
+    // Also remove from whitelist if present (check both name and ID)
+    settings.whitelistedChannels = settings.whitelistedChannels.filter(
+      c => c !== displayName && c !== channel
+    );
     await StorageManager.updateSettings({
       blacklistedChannels: settings.blacklistedChannels,
       whitelistedChannels: settings.whitelistedChannels
     });
-    console.log(`${LOG_PREFIX} Blocked channel: ${channel}`);
+    console.log(`${LOG_PREFIX} Blocked channel: ${displayName}${displayName !== channel ? ` (ID: ${channel})` : ''}`);
     await rescanAllTabs();
   }
-  return { ok: true, channel };
+  return { ok: true, channel: displayName };
 }
 
 async function blockVideo(videoId, title = '', channel = '') {
@@ -1108,7 +1129,7 @@ function arrayBufferToBase64(buffer) {
 
 async function rescanAllTabs() {
   try {
-    const tabs = await chrome.tabs.query({ url: ['*://www.youtube.com/*', '*://youtube.com/*'] });
+    const tabs = await chrome.tabs.query({ url: ['*://www.youtube.com/*', '*://youtube.com/*', '*://www.youtubekids.com/*', '*://youtubekids.com/*'] });
     for (const tab of tabs) {
       try {
         await chrome.tabs.sendMessage(tab.id, { type: 'RESCAN' });
@@ -1233,6 +1254,66 @@ function extractChannelNameFromUrl(rawUrl = '') {
   } catch (e) {
     // ignore malformed URL
   }
+  return '';
+}
+
+/**
+ * Kiểm tra chuỗi có giống channel ID hay không (bắt đầu bằng UC và dài 24 ký tự).
+ */
+function looksLikeChannelId(name = '') {
+  return /^UC[a-zA-Z0-9_-]{22}$/.test(name);
+}
+
+/**
+ * Resolve channel display name từ channel ID bằng YouTube oEmbed API.
+ * oEmbed endpoint public, không cần API key.
+ * @param {string} channelIdOrName - Channel ID (UC...) hoặc handle (@...)
+ * @param {string} [sourceUrl] - URL gốc (dùng để build oEmbed request)
+ * @returns {Promise<string>} Display name hoặc '' nếu fail
+ */
+async function resolveChannelDisplayName(channelIdOrName = '', sourceUrl = '') {
+  // Build canonical YouTube channel URL
+  let channelUrl = '';
+  if (looksLikeChannelId(channelIdOrName)) {
+    channelUrl = `https://www.youtube.com/channel/${channelIdOrName}`;
+  } else if (channelIdOrName.startsWith('@')) {
+    channelUrl = `https://www.youtube.com/${channelIdOrName}`;
+  } else if (sourceUrl) {
+    // Try to extract channel URL from source
+    try {
+      const parsed = new URL(sourceUrl);
+      if (parsed.pathname.startsWith('/channel/') || parsed.pathname.startsWith('/@')) {
+        channelUrl = `https://www.youtube.com${parsed.pathname}`;
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  if (!channelUrl) return '';
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3000);
+
+  try {
+    const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(channelUrl)}&format=json`;
+    const response = await fetch(oembedUrl, {
+      signal: controller.signal,
+      credentials: 'omit'
+    });
+
+    if (!response.ok) return '';
+
+    const data = await response.json();
+    const authorName = (data.author_name || '').trim();
+    if (authorName) {
+      console.log(`${LOG_PREFIX} Resolved channel name: ${channelIdOrName} → ${authorName}`);
+      return authorName;
+    }
+  } catch (e) {
+    console.warn(`${LOG_PREFIX} oEmbed resolve failed for ${channelIdOrName}:`, e?.message || e);
+  } finally {
+    clearTimeout(timer);
+  }
+
   return '';
 }
 

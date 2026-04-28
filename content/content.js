@@ -222,7 +222,11 @@
       // Kiểm tra whitelist
       const channelName = getCardChannelName(el, context);
       const channelPageUrl = context === 'channel' ? location.href : '';
-      const channelPolicy = getChannelPolicy(channelName, channelPageUrl);
+      // YouTube Kids: enrich channel URL from card links for better matching
+      const cardChannelUrl = isYTKids
+        ? getYTKidsChannelUrlFromElement(el) || channelPageUrl
+        : channelPageUrl;
+      const channelPolicy = getChannelPolicy(channelName, cardChannelUrl);
       if (channelPolicy === 'whitelist') {
         el.dataset.aivbProcessed = 'true';
         el.dataset.aivbIsAi = 'false';
@@ -356,7 +360,9 @@
 
     const detection = AIDetector.analyzeVideoPage(settings);
     const channelName = detection.channelName || getWatchChannelName();
-    const channelPolicy = getChannelPolicy(channelName, detection.channelUrl || '');
+    // YouTube Kids: enrich channelUrl from page context (list param, channel links)
+    const channelUrl = detection.channelUrl || getYTKidsChannelUrlFromPage() || '';
+    const channelPolicy = getChannelPolicy(channelName, channelUrl);
     let effectiveDetection = detection;
 
     if (channelPolicy === 'whitelist') {
@@ -1371,17 +1377,31 @@
           : 'a[href*="/@"], a[href*="/channel/"], a[href*="/c/"], a[href*="/user/"]';
         const clickedLink = clickedElement.closest?.(channelLinkSelector);
         if (clickedLink) {
-          result.channel = (clickedLink.textContent || '').trim();
+          const linkText = (clickedLink.textContent || '').trim();
+          if (!isJunkChannelName(linkText)) {
+            result.channel = linkText;
+          }
         }
       }
       // Extract channel name from video card
       if (!result.channel && videoCard) {
         const channelEl = videoCard.querySelector('#channel-name a, ytd-channel-name a, a[href^="/@"], a[href*="/@"]');
-        result.channel = channelEl?.textContent?.trim() || '';
+        const cardText = channelEl?.textContent?.trim() || '';
+        if (!isJunkChannelName(cardText)) {
+          result.channel = cardText;
+        }
       }
       // YouTube Kids: use platformConfig.extractChannel if still empty
       if (!result.channel && isYTKids && videoCard && platformConfig.extractChannel) {
-        result.channel = platformConfig.extractChannel(videoCard) || '';
+        const extracted = platformConfig.extractChannel(videoCard) || '';
+        if (!isJunkChannelName(extracted)) {
+          result.channel = extracted;
+        }
+      }
+      // YouTube Kids: prefer URL-based channel name BEFORE DOM scraping
+      // (DOM trên YTK hay match nhầm vào UI text như "Parents only")
+      if (!result.channel && isYTKids) {
+        result.channel = extractChannelNameFromUrl(linkUrl || pageUrl || location.href);
       }
       // Fallback: channel page header (works when card does not show channel text)
       if (!result.channel) {
@@ -1470,8 +1490,34 @@
   }
 
   function getWatchChannelName() {
+    // Standard YouTube selectors
     const channelEl = document.querySelector('#owner #channel-name a, #upload-info ytd-channel-name a, ytd-watch-metadata ytd-channel-name a');
-    return channelEl?.textContent?.trim() || '';
+    if (channelEl?.textContent?.trim()) return channelEl.textContent.trim();
+
+    // YouTube Kids: watch page selectors
+    if (isYTKids) {
+      const kidsSelectors = [
+        '[class*="channel"] a', '[class*="byline"] a',
+        '[class*="creator"] a', 'a[href*="/channel/"]',
+        'a[href*="/@"]'
+      ];
+      for (const sel of kidsSelectors) {
+        const el = document.querySelector(sel);
+        const text = el?.textContent?.trim() || '';
+        if (text && !isJunkChannelName(text)) return text;
+      }
+
+      // Shadow DOM fallback
+      if (typeof ShadowDomHelper !== 'undefined') {
+        for (const sel of ['[class*="channel-name"]', '[class*="creator-name"]', 'a[href*="/channel/"]']) {
+          const el = ShadowDomHelper.deepQuery(sel);
+          const text = el?.textContent?.trim() || '';
+          if (text && !isJunkChannelName(text)) return text;
+        }
+      }
+    }
+
+    return '';
   }
 
   function getShortsChannelName() {
@@ -1479,6 +1525,87 @@
     const channelEl = activeShort?.querySelector('ytd-channel-name a, #channel-name a, a[href^="/@"]') ||
       document.querySelector('ytd-reel-player-header-renderer ytd-channel-name a, ytd-reel-player-header-renderer a[href^="/@"], ytd-reel-player-overlay-renderer a[href^="/@"], ytd-shorts a[href^="/@"]');
     return channelEl?.textContent?.trim() || '';
+  }
+
+  /**
+   * Kiểm tra tên channel có phải là text "rác" từ UI (không phải tên thật).
+   * YouTube Kids có nhiều text UI dễ bị match nhầm.
+   */
+  function isJunkChannelName(name = '') {
+    if (!name) return true;
+    const normalized = name.toLowerCase().trim();
+    const junkPatterns = [
+      'parents only',
+      'dành cho cha mẹ',
+      'youtube kids',
+      'youtube',
+      'settings',
+      'cài đặt',
+      'search',
+      'tìm kiếm',
+      'home',
+      'trang chủ',
+      'back',
+      'quay lại',
+      'sign in',
+      'đăng nhập',
+      'timer',
+    ];
+    return junkPatterns.some(p => normalized === p) || normalized.length < 2;
+  }
+
+  /**
+   * YouTube Kids: extract channel URL from the current page context.
+   * Watch pages often have channel info in:
+   * - `list` URL parameter (uploads playlist UU... → channel UC...)
+   * - Channel links on the page
+   * - Referrer header
+   */
+  function getYTKidsChannelUrlFromPage() {
+    if (!isYTKids) return '';
+
+    // 1. Extract from `list` URL parameter (UU... → UC...)
+    try {
+      const params = new URLSearchParams(location.search);
+      const list = params.get('list') || '';
+      // Uploads playlist ID starts with UU, convert to channel ID UC
+      if (/^UU[a-zA-Z0-9_-]{22}$/.test(list)) {
+        const channelId = 'UC' + list.slice(2);
+        return `https://www.youtube.com/channel/${channelId}`;
+      }
+      // Direct channel ID in list
+      if (/^UC[a-zA-Z0-9_-]{22}$/.test(list)) {
+        return `https://www.youtube.com/channel/${list}`;
+      }
+    } catch (e) { /* ignore */ }
+
+    // 2. Find channel link on the page
+    const channelLink = document.querySelector(
+      'a[href*="/channel/UC"], a[href*="/@"]'
+    );
+    if (channelLink?.href) return channelLink.href;
+
+    // 3. Shadow DOM fallback
+    if (typeof ShadowDomHelper !== 'undefined') {
+      const shadowLink = ShadowDomHelper.deepQuery('a[href*="/channel/"], a[href*="/@"]');
+      if (shadowLink?.href) return shadowLink.href;
+    }
+
+    return '';
+  }
+
+  /**
+   * YouTube Kids: extract channel URL from a video card element.
+   */
+  function getYTKidsChannelUrlFromElement(el) {
+    if (!isYTKids || !el) return '';
+    const link = el.querySelector('a[href*="/channel/"], a[href*="/@"]');
+    if (link?.href) return link.href;
+    if (typeof ShadowDomHelper !== 'undefined') {
+      const shadowLink = ShadowDomHelper.deepQuery('a[href*="/channel/"], a[href*="/@"]', el);
+      if (shadowLink?.href) return shadowLink.href;
+    }
+    return '';
   }
 
   function getChannelPageName() {
@@ -1492,22 +1619,33 @@
 
     // YouTube Kids: channel header uses different structure
     if (isYTKids) {
-      const kidsChannelEl = document.querySelector(
-        'h1[class*="channel"], [class*="channel-name"] h1, ' +
-        '[class*="channel-header"] h1, [class*="byline"], ' +
-        '[class*="channel-title"]'
-      );
-      if (kidsChannelEl?.textContent?.trim()) return kidsChannelEl.textContent.trim();
+      // Ưu tiên cao nhất: lấy từ URL (luôn chính xác)
+      const urlChannelName = extractChannelNameFromUrl(location.href);
+      if (urlChannelName) return urlChannelName;
 
-      // Try shadow DOM
+      // Thử selectors cụ thể (tránh quá generic)
+      const kidsChannelEl = document.querySelector(
+        'h1[class*="channel-title"], [class*="channel-name"] h1, ' +
+        '[class*="channel-header"] h1, h1[class*="channel"]'
+      );
+      const kidsText = kidsChannelEl?.textContent?.trim() || '';
+      if (kidsText && !isJunkChannelName(kidsText)) return kidsText;
+
+      // Try shadow DOM — chỉ tìm elements có class cụ thể, tránh h1 generic
       if (typeof ShadowDomHelper !== 'undefined') {
-        const shadowEl = ShadowDomHelper.deepQuery('h1, [class*="channel-name"]');
-        if (shadowEl?.textContent?.trim()) return shadowEl.textContent.trim();
+        const shadowEl = ShadowDomHelper.deepQuery(
+          '[class*="channel-name"], [class*="channel-title"], [class*="creator-name"]'
+        );
+        const shadowText = shadowEl?.textContent?.trim() || '';
+        if (shadowText && !isJunkChannelName(shadowText)) return shadowText;
       }
 
-      // Fallback: parse from document.title (YouTube Kids includes channel name)
+      // Fallback: parse from document.title
+      // YouTube Kids title format: "Channel Name - YouTube Kids" hoặc chỉ "YouTube Kids"
       const titleText = document.title.replace(/\s*-\s*YouTube Kids\s*$/i, '').trim();
-      if (titleText && titleText.length > 0 && titleText.length < 100) return titleText;
+      if (titleText && !isJunkChannelName(titleText) && titleText.length < 100) {
+        return titleText;
+      }
     }
 
     return '';
