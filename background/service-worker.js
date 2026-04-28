@@ -99,6 +99,18 @@ async function handleMessage(msg, sender) {
     case 'CLEAR_OPENROUTER_KEY':
       return await clearOpenRouterKey();
 
+    case 'TIKTOK_BLOCK_CHANNEL':
+      return await tiktokBlockChannel(msg.username);
+
+    case 'TIKTOK_WHITELIST_CHANNEL':
+      return await tiktokWhitelistChannel(msg.username);
+
+    case 'TIKTOK_UNBLOCK_CHANNEL':
+      return await tiktokUnblockChannel(msg.username);
+
+    case 'TIKTOK_UNWHITELIST_CHANNEL':
+      return await tiktokUnwhitelistChannel(msg.username);
+
     default:
       return { error: 'Unknown message type' };
   }
@@ -213,6 +225,90 @@ async function handleContextMenuFromContent(msg, sender) {
     return await blockVideo(videoId, title, channel);
   }
   return { ok: false, reason: 'invalid_action' };
+}
+
+// ==================== TIKTOK CHANNEL MANAGEMENT ====================
+
+function normalizeTikTokUsername(raw) {
+  return (raw || '').trim().replace(/^@/, '').toLowerCase();
+}
+
+async function tiktokBlockChannel(username) {
+  const normalized = normalizeTikTokUsername(username);
+  if (!normalized) return { ok: false, reason: 'missing_username' };
+
+  const settings = await StorageManager.getSettings();
+  const tt = settings.tiktok || {};
+  const blacklist = tt.blacklistedChannels || [];
+  const whitelist = tt.whitelistedChannels || [];
+
+  if (blacklist.some(e => normalizeTikTokUsername(e) === normalized)) {
+    return { ok: true, username: normalized, already: true };
+  }
+
+  blacklist.push(normalized);
+  const newWhitelist = whitelist.filter(e => normalizeTikTokUsername(e) !== normalized);
+
+  await StorageManager.updateSettings({
+    tiktok: { ...tt, blacklistedChannels: blacklist, whitelistedChannels: newWhitelist }
+  });
+  console.log(`${LOG_PREFIX} TikTok blocked: @${normalized}`);
+  await rescanAllTabs();
+  return { ok: true, username: normalized };
+}
+
+async function tiktokWhitelistChannel(username) {
+  const normalized = normalizeTikTokUsername(username);
+  if (!normalized) return { ok: false, reason: 'missing_username' };
+
+  const settings = await StorageManager.getSettings();
+  const tt = settings.tiktok || {};
+  const whitelist = tt.whitelistedChannels || [];
+  const blacklist = tt.blacklistedChannels || [];
+
+  if (whitelist.some(e => normalizeTikTokUsername(e) === normalized)) {
+    return { ok: true, username: normalized, already: true };
+  }
+
+  whitelist.push(normalized);
+  const newBlacklist = blacklist.filter(e => normalizeTikTokUsername(e) !== normalized);
+
+  await StorageManager.updateSettings({
+    tiktok: { ...tt, whitelistedChannels: whitelist, blacklistedChannels: newBlacklist }
+  });
+  console.log(`${LOG_PREFIX} TikTok whitelisted: @${normalized}`);
+  await rescanAllTabs();
+  return { ok: true, username: normalized };
+}
+
+async function tiktokUnblockChannel(username) {
+  const normalized = normalizeTikTokUsername(username);
+  if (!normalized) return { ok: false, reason: 'missing_username' };
+
+  const settings = await StorageManager.getSettings();
+  const tt = settings.tiktok || {};
+  const blacklist = (tt.blacklistedChannels || []).filter(e => normalizeTikTokUsername(e) !== normalized);
+
+  await StorageManager.updateSettings({
+    tiktok: { ...tt, blacklistedChannels: blacklist }
+  });
+  await rescanAllTabs();
+  return { ok: true, username: normalized };
+}
+
+async function tiktokUnwhitelistChannel(username) {
+  const normalized = normalizeTikTokUsername(username);
+  if (!normalized) return { ok: false, reason: 'missing_username' };
+
+  const settings = await StorageManager.getSettings();
+  const tt = settings.tiktok || {};
+  const whitelist = (tt.whitelistedChannels || []).filter(e => normalizeTikTokUsername(e) !== normalized);
+
+  await StorageManager.updateSettings({
+    tiktok: { ...tt, whitelistedChannels: whitelist }
+  });
+  await rescanAllTabs();
+  return { ok: true, username: normalized };
 }
 
 // ==================== STATS ====================

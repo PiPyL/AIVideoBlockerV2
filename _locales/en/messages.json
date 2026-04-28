@@ -113,5 +113,13 @@
   "blockerMethodNone": { "message": "❓ Unknown" },
   "contextMenuAllow": { "message": "🛡️ SafeKid: Allow this channel" },
   "contextMenuBlock": { "message": "🛡️ SafeKid: Block this channel" },
-  "contextMenuBlockVideo": { "message": "🛡️ SafeKid: Block this video" }
+  "contextMenuBlockVideo": { "message": "🛡️ SafeKid: Block this video" },
+  "tiktokTitle": { "message": "🎵 TikTok Management" },
+  "tiktokWhitelistTitle": { "message": "✅ Allowed TikTok Channels" },
+  "tiktokBlacklistTitle": { "message": "🚫 Always Block TikTok Channels" },
+  "tiktokAllowOnly": { "message": "Only allow TikTok channels in the list below" },
+  "tiktokAllowOnlyWarning": { "message": "When enabled: all TikTok videos from other channels will be blocked." },
+  "tiktokPlaceholder": { "message": "@username..." },
+  "tiktokChannelBlocked": { "message": "Channel is in the block list" },
+  "tiktokChannelNotAllowed": { "message": "Channel is not in the allowed list" }
 }

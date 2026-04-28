@@ -367,6 +367,58 @@
               <button id="btn-clear-blocked-videos" class="btn-small btn-red" style="margin-top: 8px; width: 100%; display: none;" data-i18n="btnClearAllVideos">🗑 Xóa tất cả video đã chặn</button>
             </div>
           </div>
+
+          <!-- TikTok Channel Management -->
+          <div class="setting-group" id="tiktok-section">
+            <div class="setting-header" id="tiktok-header" style="cursor: pointer;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span data-i18n="tiktokTitle">🎵 Quản lý TikTok</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label class="toggle-switch toggle-small" id="toggle-tiktok-enabled">
+                  <input type="checkbox" id="checkbox-tiktok-enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+                <span id="tiktok-chevron" style="transition: transform 0.3s; font-size: 10px; color: var(--text-muted);">▼</span>
+              </div>
+            </div>
+            <div id="tiktok-details" style="display: none; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px;">
+              <!-- TikTok Allow Only -->
+              <label class="checkbox-row" style="margin-bottom: 10px;">
+                <input type="checkbox" id="checkbox-tiktok-allow-only">
+                <span>
+                  <span data-i18n="tiktokAllowOnly">Chỉ cho phép xem kênh TikTok trong danh sách dưới</span>
+                  <small class="highlight-warning" data-i18n="tiktokAllowOnlyWarning">Khi bật: mọi video TikTok từ kênh khác sẽ bị chặn.</small>
+                </span>
+              </label>
+
+              <!-- TikTok Whitelist -->
+              <div style="margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                  <span style="font-size: 12px; font-weight: 600;" data-i18n="tiktokWhitelistTitle">✅ Kênh TikTok được phép</span>
+                  <span class="count-badge count-green" id="tiktok-whitelist-count">0</span>
+                </div>
+                <div class="channel-input-row">
+                  <input type="text" id="tiktok-whitelist-input" data-i18n-placeholder="tiktokPlaceholder" placeholder="@username...">
+                  <button type="button" id="btn-add-tiktok-whitelist" class="btn-small btn-green">+</button>
+                </div>
+                <div class="channel-list" id="tiktok-whitelist-container"></div>
+              </div>
+
+              <!-- TikTok Blacklist -->
+              <div>
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                  <span style="font-size: 12px; font-weight: 600;" data-i18n="tiktokBlacklistTitle">🚫 Kênh TikTok luôn chặn</span>
+                  <span class="count-badge count-red" id="tiktok-blacklist-count">0</span>
+                </div>
+                <div class="channel-input-row">
+                  <input type="text" id="tiktok-blacklist-input" data-i18n-placeholder="tiktokPlaceholder" placeholder="@username...">
+                  <button type="button" id="btn-add-tiktok-blacklist" class="btn-small btn-red">+</button>
+                </div>
+                <div class="channel-list" id="tiktok-blacklist-container"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

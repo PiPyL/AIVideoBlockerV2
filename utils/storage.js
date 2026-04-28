@@ -86,6 +86,18 @@ const StorageManager = {
       ],
       timeoutMs: 5000
     },
+    // TikTok platform settings (separate from YouTube)
+    tiktok: {
+      enabled: true,
+      whitelistedChannels: [],
+      blacklistedChannels: [],
+      allowOnlyWhitelistedChannels: false,
+      stats: {
+        totalBlocked: 0,
+        totalScanned: 0,
+        lastActive: null
+      }
+    },
     // Backward-compatible synthetic/AI keyword database.
     aiKeywords: {
       high: [
@@ -239,6 +251,17 @@ const StorageManager = {
         ...current.openrouter,
         ...cleanedPartial.openrouter
       });
+    }
+    if (cleanedPartial.tiktok) {
+      updated.tiktok = {
+        ...this.DEFAULT_SETTINGS.tiktok,
+        ...current.tiktok,
+        ...cleanedPartial.tiktok,
+        stats: {
+          ...(current.tiktok?.stats || this.DEFAULT_SETTINGS.tiktok.stats),
+          ...(cleanedPartial.tiktok.stats || {})
+        }
+      };
     }
     const persistableSettings = { ...updated };
     delete persistableSettings.aiToolPatterns;

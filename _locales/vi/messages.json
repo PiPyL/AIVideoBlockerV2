@@ -113,5 +113,13 @@
   "blockerMethodNone": { "message": "❓ Không xác định" },
   "contextMenuAllow": { "message": "🛡️ SafeKid: Cho phép channel này" },
   "contextMenuBlock": { "message": "🛡️ SafeKid: Chặn channel này" },
-  "contextMenuBlockVideo": { "message": "🛡️ SafeKid: Chặn video này" }
+  "contextMenuBlockVideo": { "message": "🛡️ SafeKid: Chặn video này" },
+  "tiktokTitle": { "message": "🎵 Quản lý TikTok" },
+  "tiktokWhitelistTitle": { "message": "✅ Kênh TikTok được phép" },
+  "tiktokBlacklistTitle": { "message": "🚫 Kênh TikTok luôn chặn" },
+  "tiktokAllowOnly": { "message": "Chỉ cho phép xem kênh TikTok trong danh sách dưới" },
+  "tiktokAllowOnlyWarning": { "message": "Khi bật: mọi video TikTok từ kênh khác sẽ bị chặn." },
+  "tiktokPlaceholder": { "message": "@username..." },
+  "tiktokChannelBlocked": { "message": "Kênh nằm trong danh sách chặn" },
+  "tiktokChannelNotAllowed": { "message": "Kênh không nằm trong danh sách được phép" }
 }

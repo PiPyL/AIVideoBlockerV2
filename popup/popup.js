@@ -90,6 +90,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   const aiCacheCount = $('#ai-cache-count');
   const btnClearAiCache = $('#btn-clear-ai-cache');
 
+  // TikTok elements
+  const tiktokHeader = $('#tiktok-header');
+  const tiktokDetails = $('#tiktok-details');
+  const tiktokChevron = $('#tiktok-chevron');
+  const checkboxTiktokEnabled = $('#checkbox-tiktok-enabled');
+  const checkboxTiktokAllowOnly = $('#checkbox-tiktok-allow-only');
+  const tiktokWhitelistInput = $('#tiktok-whitelist-input');
+  const btnAddTiktokWhitelist = $('#btn-add-tiktok-whitelist');
+  const tiktokWhitelistContainer = $('#tiktok-whitelist-container');
+  const tiktokWhitelistCount = $('#tiktok-whitelist-count');
+  const tiktokBlacklistInput = $('#tiktok-blacklist-input');
+  const btnAddTiktokBlacklist = $('#btn-add-tiktok-blacklist');
+  const tiktokBlacklistContainer = $('#tiktok-blacklist-container');
+  const tiktokBlacklistCount = $('#tiktok-blacklist-count');
+
   // ==================== INITIALIZATION ====================
 
   let settings = await getSettings();
@@ -218,6 +233,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     checkboxAiThumbnail.checked = activeProvider === 'gemini' ? Boolean(gemini.includeThumbnail) : Boolean(openrouter.includeThumbnail);
 
     renderBlockListsWithFilter(s);
+
+    // TikTok
+    const tt = s.tiktok || {};
+    if (checkboxTiktokEnabled) checkboxTiktokEnabled.checked = Boolean(tt.enabled !== false);
+    if (checkboxTiktokAllowOnly) checkboxTiktokAllowOnly.checked = Boolean(tt.allowOnlyWhitelistedChannels);
 
     // Password badge & clear row
     const hasPassword = Boolean(s.parentalPassword);
@@ -481,6 +501,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderBlockListsWithFilter(settings);
   });
 
+  // TikTok section collapsible
+  if (tiktokHeader) {
+    tiktokHeader.addEventListener('click', (e) => {
+      if (e.target.closest('.toggle-switch')) return;
+      const isHidden = tiktokDetails.style.display === 'none';
+      tiktokDetails.style.display = isHidden ? 'block' : 'none';
+      tiktokChevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    });
+  }
+
+  // TikTok enabled toggle
+  if (checkboxTiktokEnabled) {
+    checkboxTiktokEnabled.addEventListener('change', async () => {
+      await updateSetting({ tiktok: { enabled: checkboxTiktokEnabled.checked } });
+    });
+  }
+
+  // TikTok allow only whitelisted
+  if (checkboxTiktokAllowOnly) {
+    checkboxTiktokAllowOnly.addEventListener('change', async () => {
+      await updateSetting({ tiktok: { allowOnlyWhitelistedChannels: checkboxTiktokAllowOnly.checked } });
+    });
+  }
+
+  // TikTok whitelist add
+  if (btnAddTiktokWhitelist) {
+    btnAddTiktokWhitelist.addEventListener('click', addTiktokWhitelist);
+    tiktokWhitelistInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addTiktokWhitelist();
+    });
+  }
+
+  // TikTok blacklist add
+  if (btnAddTiktokBlacklist) {
+    btnAddTiktokBlacklist.addEventListener('click', addTiktokBlacklist);
+    tiktokBlacklistInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addTiktokBlacklist();
+    });
+  }
+
   // Tabs
   function activateTab(tabName) {
     const showMain = tabName === 'main';
@@ -562,6 +622,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     settings = await getSettings();
     updateAllowOnlyEmptyWarning(settings);
     renderBlockListsWithFilter(settings);
+  }
+
+  // ==================== TIKTOK CHANNEL MANAGEMENT ====================
+
+  async function addTiktokWhitelist() {
+    const raw = (tiktokWhitelistInput?.value || '').trim();
+    if (!raw) return;
+    await sendMessage({ type: 'TIKTOK_WHITELIST_CHANNEL', username: raw });
+    tiktokWhitelistInput.value = '';
+    settings = await getSettings();
+    renderBlockListsWithFilter(settings);
+  }
+
+  async function addTiktokBlacklist() {
+    const raw = (tiktokBlacklistInput?.value || '').trim();
+    if (!raw) return;
+    await sendMessage({ type: 'TIKTOK_BLOCK_CHANNEL', username: raw });
+    tiktokBlacklistInput.value = '';
+    settings = await getSettings();
+    renderBlockListsWithFilter(settings);
+  }
+
+  async function removeTiktokChannel(username, listType) {
+    const msgType = listType === 'whitelist' ? 'TIKTOK_UNWHITELIST_CHANNEL' : 'TIKTOK_UNBLOCK_CHANNEL';
+    await sendMessage({ type: msgType, username });
+    settings = await getSettings();
+    renderBlockListsWithFilter(settings);
+  }
+
+  function renderTiktokChannelList(container, channels, listType) {
+    if (!container) return;
+    container.innerHTML = '';
+    if (!channels.length) {
+      container.innerHTML = `<p style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 6px 0;">Chưa có kênh nào</p>`;
+      return;
+    }
+    channels.forEach(name => {
+      const tag = document.createElement('div');
+      tag.className = listType === 'whitelist' ? 'channel-tag channel-tag-allow' : 'channel-tag';
+      tag.innerHTML = `
+        <span>@${escapeHtml(name)}</span>
+        <span class="channel-tag-remove">×</span>
+      `;
+      tag.querySelector('.channel-tag-remove').addEventListener('click', () => {
+        removeTiktokChannel(name, listType);
+      });
+      container.appendChild(tag);
+    });
   }
 
   function renderChannelList(container, channels, listType) {
@@ -646,6 +754,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (checkboxAllowOnlyWhitelisted) {
       checkboxAllowOnlyWhitelisted.checked = Boolean(s.allowOnlyWhitelistedChannels);
     }
+
+    // TikTok lists
+    const tt = s.tiktok || {};
+    const ttWhitelist = tt.whitelistedChannels || [];
+    const ttBlacklist = tt.blacklistedChannels || [];
+    renderTiktokChannelList(tiktokWhitelistContainer, ttWhitelist, 'whitelist');
+    renderTiktokChannelList(tiktokBlacklistContainer, ttBlacklist, 'blacklist');
+    if (tiktokWhitelistCount) tiktokWhitelistCount.textContent = String(ttWhitelist.length);
+    if (tiktokBlacklistCount) tiktokBlacklistCount.textContent = String(ttBlacklist.length);
   }
 
   // ==================== HELPERS ====================
