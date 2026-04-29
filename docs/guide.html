@@ -234,7 +234,7 @@
                     <button class="lang-btn active" data-lang="vi" title="Tiếng Việt">VI</button>
                     <button class="lang-btn" data-lang="en" title="English">EN</button>
                 </div>
-                <a href="index.html" class="btn btn-primary" style="padding: 0.5rem 1.25rem; font-size: 1rem;">Trang chủ</a>
+                <a href="https://chromewebstore.google.com/detail/safekid/dbgnblfmefkncfhnnomcdoljchmjapoo" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="padding: 0.5rem 1.25rem; font-size: 1rem;">Cài đặt</a>
             </div>
         </div>
     </header>
@@ -267,6 +267,32 @@
             <!-- 1. CÀI ĐẶT -->
             <div class="guide-section" id="install">
                 <h2><i data-lucide="download-cloud" class="text-highlight"></i> <span data-i18n="guideSec1Title">1. Cài đặt tiện ích</span></h2>
+                
+                <!-- Phương thức 1: Chrome Web Store -->
+                <h3 data-i18n="guideSec1CWSTitle">Cách 1: Cài đặt từ Chrome Web Store (Khuyên dùng)</h3>
+                <div class="guide-card" style="border: 2px solid var(--safe-green); border-left: 4px solid var(--safe-green);">
+                    <h4><i data-lucide="globe" class="text-highlight"></i> <span data-i18n="guideSec1CWSCardTitle">Cài đặt chính thức — 1 click duy nhất</span></h4>
+                    <p data-i18n-html="guideSec1CWSCardDesc">SafeKid đã <strong>chính thức có mặt</strong> trên Google Chrome Web Store. Chỉ cần nhấn nút bên dưới, sau đó nhấn "Thêm vào Chrome" là xong. Chrome sẽ tự động cài đặt và cập nhật SafeKid cho bạn.</p>
+                    <a href="https://chromewebstore.google.com/detail/safekid/dbgnblfmefkncfhnnomcdoljchmjapoo" target="_blank" rel="noopener noreferrer" class="btn btn-primary download-btn" style="margin-top: 1rem;">
+                        <i data-lucide="external-link"></i> <span data-i18n="guideSec1CWSBtn">Mở Chrome Web Store</span>
+                    </a>
+                </div>
+                <div class="guide-tip">
+                    <i data-lucide="lightbulb"></i>
+                    <div>
+                        <span data-i18n-html="guideSec1CWSTip"><strong>Mẹo:</strong> Sau khi cài đặt, hãy nhấp vào biểu tượng mảnh ghép trên Chrome và "Ghim" biểu tượng SafeKid lên thanh công cụ để dễ dàng truy cập.</span>
+                    </div>
+                </div>
+
+                <!-- Phương thức 2: ZIP (ẩn/hiện tự động theo version) -->
+                <div id="guide-zip-section">
+                <h3 data-i18n="guideSec1ZipTitle">Cách 2: Cài đặt từ file ZIP (Bản cập nhật mới nhất)</h3>
+                <div class="guide-warn">
+                    <i data-lucide="info"></i>
+                    <div>
+                        <span data-i18n-html="guideSec1ZipNotice">Phương thức này dành cho trường hợp có <strong>bản cập nhật mới</strong> nhưng chưa được Google phê duyệt trên Chrome Web Store. Bạn sẽ luôn có phiên bản mới nhất ngay lập tức.</span>
+                    </div>
+                </div>
                 <div class="guide-grid" style="margin-top: 1.5rem;">
                     <div class="guide-card">
                         <h4><div class="step-badge-number">1</div> <span data-i18n="guideSec1Step1">Tải và giải nén</span></h4>
@@ -285,11 +311,6 @@
                         <p data-i18n-html="guideSec1Step4Desc">Nhấn nút <strong>"Load unpacked"</strong> (Tải tiện ích đã giải nén) → chọn thư mục vừa giải nén.</p>
                     </div>
                 </div>
-                <div class="guide-tip">
-                    <i data-lucide="lightbulb"></i>
-                    <div>
-                        <span data-i18n-html="guideSec1Tip"><strong>Mẹo:</strong> Sau khi cài đặt, hãy nhấp vào biểu tượng mảnh ghép trên Chrome và "Ghim" biểu tượng SafeKid lên thanh công cụ để dễ dàng truy cập.</span>
-                    </div>
                 </div>
             </div>
 
@@ -562,12 +583,17 @@
         </div>
     </div>
 
+    <!-- Version Config (phải load trước inline script) -->
+    <script src="version-config.js"></script>
+
     <!-- Initialize Icons -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
+            // Version check: ẩn ZIP section nếu CWS đã up-to-date
+            checkGuideVersions();
         });
 
         function openContactModal() {
@@ -591,6 +617,47 @@
                 closeContactModal();
             }
         });
+
+        function compareVersions(a, b) {
+            const partsA = a.replace(/^v/i, '').split('.').map(Number);
+            const partsB = b.replace(/^v/i, '').split('.').map(Number);
+            const len = Math.max(partsA.length, partsB.length);
+            for (let i = 0; i < len; i++) {
+                const numA = partsA[i] || 0;
+                const numB = partsB[i] || 0;
+                if (numA > numB) return 1;
+                if (numA < numB) return -1;
+            }
+            return 0;
+        }
+
+        async function checkGuideVersions() {
+            const cwsVersion = (typeof SAFEKID_VERSION_CONFIG !== 'undefined')
+                ? SAFEKID_VERSION_CONFIG.cwsVersion
+                : null;
+
+            try {
+                const response = await fetch('https://api.github.com/repos/PiPyL/safekid-extension/releases/latest');
+                if (!response.ok) throw new Error('GitHub API error');
+
+                const data = await response.json();
+                const releaseVersion = data.tag_name || null;
+
+                if (cwsVersion && releaseVersion) {
+                    const cmp = compareVersions(releaseVersion, cwsVersion);
+                    if (cmp <= 0) {
+                        const zipSection = document.getElementById('guide-zip-section');
+                        if (zipSection) zipSection.style.display = 'none';
+                    }
+                }
+            } catch (e) {
+                // GitHub fail + có cwsVersion → ẩn ZIP (giả định CWS up-to-date)
+                if (cwsVersion) {
+                    const zipSection = document.getElementById('guide-zip-section');
+                    if (zipSection) zipSection.style.display = 'none';
+                }
+            }
+        }
     </script>
     <script src="i18n.js"></script>
 </body>

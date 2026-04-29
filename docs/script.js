@@ -102,12 +102,38 @@ function closeVideoModal() {
     }
 }
 
+// Install Tab Switcher
+function switchInstallTab(tabId) {
+    // Update tab buttons
+    document.querySelectorAll('.install-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    const activeTab = document.getElementById(`tab-${tabId}`);
+    if (activeTab) activeTab.classList.add('active');
+
+    // Update tab content
+    document.querySelectorAll('.install-tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    const activeContent = document.getElementById(`content-${tabId}`);
+    if (activeContent) activeContent.classList.add('active');
+
+    // Re-init Lucide icons for newly visible content
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
 // Modal Logic
 function openInstallModal() {
     const modal = document.getElementById('installModal');
     if (modal) {
         modal.classList.add('active');
         document.body.style.overflow = 'hidden'; // Prevent scrolling
+        // Re-init icons inside modal
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
 }
 
@@ -162,50 +188,119 @@ document.addEventListener('keydown', (event) => {
 });
 
 /**
- * Tự động cập nhật link download từ GitHub Releases API (frontend-specialist)
- * Đảm bảo người dùng luôn tải về bản ZIP mới nhất đã được release.
+ * So sánh 2 chuỗi version theo semver (1.0.8 vs 1.1.0)
+ * Trả về: 1 nếu a > b, -1 nếu a < b, 0 nếu a == b
+ */
+function compareVersions(a, b) {
+    const partsA = a.replace(/^v/i, '').split('.').map(Number);
+    const partsB = b.replace(/^v/i, '').split('.').map(Number);
+    const len = Math.max(partsA.length, partsB.length);
+    for (let i = 0; i < len; i++) {
+        const numA = partsA[i] || 0;
+        const numB = partsB[i] || 0;
+        if (numA > numB) return 1;
+        if (numA < numB) return -1;
+    }
+    return 0;
+}
+
+/**
+ * Ẩn tất cả các nút/thành phần liên quan đến ZIP download
+ * Khi CWS đã có bản mới nhất, không cần hiển thị phương thức ZIP
+ */
+function hideZipElements() {
+    // 1. Ẩn nút "Tải file ZIP" trên hero
+    const heroZipBtn = document.getElementById('hero-zip-btn');
+    if (heroZipBtn) heroZipBtn.style.display = 'none';
+
+    // 2. Ẩn nút "Hoặc tải file ZIP" trong CTA section cuối
+    document.querySelectorAll('.cta-buttons .btn-outline').forEach(btn => {
+        btn.style.display = 'none';
+    });
+
+    // 3. Ẩn tab ZIP trong install modal (chỉ giữ tab CWS)
+    const tabZip = document.getElementById('tab-zip');
+    if (tabZip) tabZip.style.display = 'none';
+
+    // 4. Ẩn nội dung tab ZIP
+    const contentZip = document.getElementById('content-zip');
+    if (contentZip) contentZip.style.display = 'none';
+
+    // 5. Ẩn badge "Khuyên dùng" vì chỉ còn 1 phương thức
+    document.querySelectorAll('.tab-badge-rec').forEach(badge => {
+        badge.style.display = 'none';
+    });
+
+    console.log('🟢 CWS đã cập nhật bản mới nhất — ẩn phương thức ZIP');
+}
+
+/**
+ * Hiển thị nút ZIP và cập nhật text khi có bản mới hơn CWS
+ */
+function showZipElements(releaseVersion, cwsVersion) {
+    // Đảm bảo các phần tử ZIP hiển thị (mặc định đã hiển thị)
+    const heroZipBtn = document.getElementById('hero-zip-btn');
+    if (heroZipBtn) heroZipBtn.style.display = '';
+
+    const tabZip = document.getElementById('tab-zip');
+    if (tabZip) tabZip.style.display = '';
+
+    const contentZip = document.getElementById('content-zip');
+    if (contentZip) contentZip.style.display = '';
+
+    console.log(`🟡 Có bản mới v${releaseVersion} (CWS đang ở v${cwsVersion}) — hiện phương thức ZIP`);
+}
+
+/**
+ * Tự động cập nhật link download từ GitHub Releases API
+ * + So sánh version với CWS để quyết định ẩn/hiện nút ZIP
  */
 async function updateDownloadLink() {
     const repo = 'PiPyL/safekid-extension';
     const downloadBtn = document.getElementById('latest-download-link');
-    
-    if (!downloadBtn) return;
+
+    // Đọc CWS version từ biến global (version-config.js)
+    const cwsVersion = (typeof SAFEKID_VERSION_CONFIG !== 'undefined')
+        ? SAFEKID_VERSION_CONFIG.cwsVersion
+        : null;
 
     try {
         const response = await fetch(`https://api.github.com/repos/${repo}/releases/latest`);
-        if (!response.ok) throw new Error('Không thể kết nối GitHub API');
-        
-        const data = await response.json();
-        
-        // 1. Tìm trong Assets (Cách chuẩn nhất)
-        const zipAsset = data.assets && data.assets.find(asset => asset.name.endsWith('.zip'));
-        
-        if (zipAsset) {
-            downloadBtn.href = zipAsset.browser_download_url;
-            console.log('✅ Đã cập nhật link từ Assets:', zipAsset.name);
-            return;
-        }
+        if (!response.ok) throw new Error('GitHub API error');
 
-        // 2. Tìm trong nội dung Release (body) nếu file được đính kèm ở đó
-        if (data.body) {
-            const bodyZipMatch = data.body.match(/https?:\/\/[^\s)]+\.zip/i);
-            if (bodyZipMatch) {
-                downloadBtn.href = bodyZipMatch[0];
-                console.log('✅ Đã cập nhật link từ nội dung Release:', bodyZipMatch[0]);
-                return;
+        const releaseData = await response.json();
+        const releaseVersion = releaseData.tag_name || null;
+
+        // --- Cập nhật link download nếu có ---
+        if (downloadBtn) {
+            const zipAsset = releaseData.assets && releaseData.assets.find(a => a.name.endsWith('.zip'));
+            if (zipAsset) {
+                downloadBtn.href = zipAsset.browser_download_url;
+            } else if (releaseData.body) {
+                const bodyMatch = releaseData.body.match(/https?:\/\/[^\s)]+\.zip/i);
+                if (bodyMatch) downloadBtn.href = bodyMatch[0];
+            } else if (releaseData.zipball_url) {
+                downloadBtn.href = releaseData.zipball_url;
             }
         }
 
-        // 3. Dự phòng: Nếu không có Assets, lấy link Source Code ZIP của Release đó
-        if (data.zipball_url) {
-            downloadBtn.href = data.zipball_url;
-            console.log('⚠️ Không thấy Assets, đã dùng link Source ZIP của Release ' + data.tag_name);
-            return;
+        // --- So sánh version để ẩn/hiện ZIP ---
+        if (cwsVersion && releaseVersion) {
+            const cmp = compareVersions(releaseVersion, cwsVersion);
+            if (cmp <= 0) {
+                hideZipElements();
+            } else {
+                showZipElements(releaseVersion.replace(/^v/i, ''), cwsVersion);
+            }
         }
 
     } catch (error) {
-        console.error('❌ Lỗi cập nhật link download:', error);
-        // Giữ nguyên link mặc định trong HTML làm phương án cuối cùng
+        // Nếu GitHub API fail nhưng có cwsVersion → vẫn ẩn ZIP (giả định CWS up-to-date)
+        // Vì không lấy được release version để biết có bản mới hơn không
+        if (cwsVersion) {
+            hideZipElements();
+        }
+        console.warn('⚠️ Không thể kiểm tra GitHub release:', error.message);
     }
 }
 
@@ -215,4 +310,3 @@ if (document.readyState === 'loading') {
 } else {
     updateDownloadLink();
 }
-

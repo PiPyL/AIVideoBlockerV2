@@ -50,7 +50,7 @@
                     <button class="lang-btn active" data-lang="vi" title="Tiếng Việt">VI</button>
                     <button class="lang-btn" data-lang="en" title="English">EN</button>
                 </div>
-                <button onclick="openInstallModal()" class="btn btn-primary" data-i18n="btnInstall">Cài đặt miễn phí</button>
+                <a href="https://chromewebstore.google.com/detail/safekid/dbgnblfmefkncfhnnomcdoljchmjapoo" target="_blank" rel="noopener noreferrer" class="btn btn-primary" data-i18n="btnInstall">Cài đặt miễn phí</a>
             </div>
         </div>
     </header>
@@ -62,25 +62,18 @@
                 <h1 data-i18n="heroTitle">Hỗ trợ chặn kênh/video không phù hợp với trẻ em</h1>
                 <p data-i18n-html="heroSubtitle">SafeKid hỗ trợ chặn kênh hoặc video không phù hợp với trẻ em do phụ huynh tự thiết lập hoặc thông qua cơ chế tự động phát hiện. Hoạt động trên cả <strong>YouTube</strong> và <strong>YouTube Kids</strong> — miễn phí, riêng tư 100%.</p>
                 
-                <!-- Chrome Web Store Review Status Banner -->
-                <div class="store-review-banner" id="store-review-banner">
-                    <div class="store-review-icon">
-                        <i data-lucide="store" class="store-icon"></i>
-                    </div>
-                    <div class="store-review-content">
-                        <div class="store-review-status">
-                            <span class="store-review-dot"></span>
-                            <strong data-i18n="storeReviewStatus">Đã gửi lên Chrome Web Store</strong>
-                        </div>
-                        <p data-i18n="storeReviewDesc">SafeKid đã được gửi lên Google Chrome Web Store và hiện đang trong quá trình xem xét, chờ phê duyệt. Trong thời gian chờ đợi, bạn vẫn có thể cài đặt thủ công bằng file ZIP.</p>
-                    </div>
-                </div>
 
                 <div class="hero-cta">
-                    <button onclick="openInstallModal()" class="btn btn-primary btn-large pulse-animation">
-                        <i data-lucide="download"></i>
-                        <span data-i18n="heroBtnDownload">Tải file ZIP miễn phí</span>
-                    </button>
+                    <div class="hero-cta-buttons">
+                        <a href="https://chromewebstore.google.com/detail/safekid/dbgnblfmefkncfhnnomcdoljchmjapoo" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-large pulse-animation" id="hero-cws-btn">
+                            <i data-lucide="globe"></i>
+                            <span data-i18n="heroBtnCWS">Cài đặt từ Chrome Web Store</span>
+                        </a>
+                        <button onclick="openInstallModal()" class="btn btn-secondary btn-large" id="hero-zip-btn">
+                            <i data-lucide="download"></i>
+                            <span data-i18n="heroBtnZip">Tải file ZIP (bản mới nhất)</span>
+                        </button>
+                    </div>
                     <div class="hero-trust-badges">
                         <span class="trust-badge"><i data-lucide="lock" class="icon-small"></i> <span data-i18n="heroTrust1">Bảo mật 100%</span></span>
                         <span class="trust-badge"><i data-lucide="monitor-play" class="icon-small"></i> <span data-i18n="heroTrust2">YouTube & YouTube Kids</span></span>
@@ -197,7 +190,7 @@
                 <div class="step">
                     <div class="step-number">1</div>
                     <h3 data-i18n="how1Title">Cài đặt tiện ích</h3>
-                    <p data-i18n="how1Desc">Tải file ZIP và thêm SafeKid vào Chrome hoàn toàn miễn phí.</p>
+                    <p data-i18n="how1Desc">Cài đặt SafeKid từ Chrome Web Store chỉ với 1 click, hoàn toàn miễn phí.</p>
                 </div>
                 <div class="step-connector"></div>
                 <div class="step">
@@ -240,11 +233,11 @@
                 </div>
                 <div class="faq-item">
                     <button class="faq-question" id="faq-btn-2" aria-expanded="false" aria-controls="faq-answer-2">
-                        <span data-i18n="faq2Q">Tại sao chưa có trên Chrome Web Store?</span>
+                        <span data-i18n="faq2Q">Tại sao có 2 cách cài đặt?</span>
                         <i data-lucide="chevron-down" class="faq-chevron"></i>
                     </button>
                     <div class="faq-answer" id="faq-answer-2" role="region" aria-labelledby="faq-btn-2">
-                        <p data-i18n-html="faq2A">SafeKid đang chờ duyệt trên Chrome Web Store. Hiện tại bạn cài đặt bằng cách load unpacked — hướng dẫn chi tiết sẽ hiện khi bạn nhấn nút <strong>"Tải file ZIP"</strong>.</p>
+                        <p data-i18n-html="faq2A">SafeKid đã chính thức có mặt trên <strong>Chrome Web Store</strong> — cách cài đặt nhanh nhất và tiện lợi nhất. Ngoài ra, bạn có thể tải file ZIP để cài đặt bản cập nhật mới nhất ngay lập tức khi phiên bản mới chưa kịp được Google phê duyệt trên Store.</p>
                     </div>
                 </div>
                 <div class="faq-item">
@@ -293,9 +286,16 @@
             <div class="glass-card cta-card">
                 <h2 data-i18n="ctaTitle">Hãy để con có một tuổi thơ kỹ thuật số an toàn</h2>
                 <p data-i18n="ctaDesc">Tham gia cùng hàng ngàn phụ huynh đang bảo vệ con em mình trên Internet.</p>
-                <button onclick="openInstallModal()" class="btn btn-primary btn-large pulse-animation">
-                    <span data-i18n="ctaBtn">Tải về máy ngay (File ZIP)</span>
-                </button>
+                <div class="cta-buttons">
+                    <a href="https://chromewebstore.google.com/detail/safekid/dbgnblfmefkncfhnnomcdoljchmjapoo" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-large pulse-animation">
+                        <i data-lucide="globe"></i>
+                        <span data-i18n="ctaBtnCWS">Cài đặt từ Chrome Web Store</span>
+                    </a>
+                    <button onclick="openInstallModal()" class="btn btn-outline btn-large">
+                        <i data-lucide="download"></i>
+                        <span data-i18n="ctaBtnZip">Hoặc tải file ZIP</span>
+                    </button>
+                </div>
             </div>
         </div>
     </section>
@@ -355,45 +355,94 @@
     <!-- Install Guide Modal -->
     <div id="installModal" class="modal">
         <div class="modal-overlay" onclick="closeInstallModal()"></div>
-        <div class="modal-content">
+        <div class="modal-content install-modal-wide">
             <button class="modal-close" onclick="closeInstallModal()">
                 <i data-lucide="x"></i>
             </button>
             <div class="modal-header">
-                <h2 data-i18n="installTitle">Hướng dẫn cài đặt thủ công</h2>
-                <p data-i18n="installDesc">Do tiện ích đang chờ duyệt trên Chrome Store, bạn vui lòng cài đặt theo 4 bước đơn giản sau:</p>
+                <h2 data-i18n="installTitle">Cài đặt SafeKid</h2>
+                <p data-i18n="installDesc">Chọn phương thức cài đặt phù hợp với bạn.</p>
             </div>
             
-            <div class="modal-steps">
-                <div class="install-step">
-                    <div class="step-badge">1</div>
-                    <div class="step-info">
-                        <strong data-i18n="installStep1">Tải và giải nén</strong>
-                        <p data-i18n="installStep1Desc">Tải file ZIP bên dưới về máy tính và giải nén ra một thư mục.</p>
-                        <a id="latest-download-link" href="https://github.com/PiPyL/safekid-extension/raw/main/safekid-extension.zip" class="btn btn-primary download-btn" download>
-                            <i data-lucide="download"></i> <span data-i18n="installStep1Btn">Click để tải file ZIP</span>
-                        </a>
+            <!-- Install Method Tabs -->
+            <div class="install-tabs">
+                <button class="install-tab active" id="tab-cws" onclick="switchInstallTab('cws')">
+                    <i data-lucide="globe"></i>
+                    <span data-i18n="installTabCWS">Chrome Web Store</span>
+                    <span class="tab-badge-rec" data-i18n="installTabRec">Khuyên dùng</span>
+                </button>
+                <button class="install-tab" id="tab-zip" onclick="switchInstallTab('zip')">
+                    <i data-lucide="file-archive"></i>
+                    <span data-i18n="installTabZip">Cài từ file ZIP</span>
+                </button>
+            </div>
+
+            <!-- Tab Content: Chrome Web Store -->
+            <div class="install-tab-content active" id="content-cws">
+                <div class="cws-install-card">
+                    <div class="cws-icon-wrapper">
+                        <img src="logo.png" alt="SafeKid" class="cws-logo">
+                    </div>
+                    <h3 data-i18n="installCWSTitle">Cài đặt chính thức từ Chrome Web Store</h3>
+                    <p data-i18n="installCWSDesc">Cách nhanh nhất và dễ nhất. Chỉ cần 1 click, Chrome sẽ tự động cài đặt và cập nhật SafeKid cho bạn.</p>
+                    <a href="https://chromewebstore.google.com/detail/safekid/dbgnblfmefkncfhnnomcdoljchmjapoo" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-large cws-install-btn">
+                        <i data-lucide="external-link"></i>
+                        <span data-i18n="installCWSBtn">Mở Chrome Web Store</span>
+                    </a>
+                    <div class="cws-benefits">
+                        <div class="cws-benefit">
+                            <i data-lucide="refresh-cw" class="icon-small"></i>
+                            <span data-i18n="installCWSBenefit1">Tự động cập nhật</span>
+                        </div>
+                        <div class="cws-benefit">
+                            <i data-lucide="shield-check" class="icon-small"></i>
+                            <span data-i18n="installCWSBenefit2">Được Google xác minh</span>
+                        </div>
+                        <div class="cws-benefit">
+                            <i data-lucide="zap" class="icon-small"></i>
+                            <span data-i18n="installCWSBenefit3">Cài đặt 1 click</span>
+                        </div>
                     </div>
                 </div>
-                <div class="install-step">
-                    <div class="step-badge">2</div>
-                    <div class="step-info">
-                        <strong data-i18n="installStep2">Mở trang Quản lý tiện ích</strong>
-                        <p data-i18n-html="installStep2Desc">Mở trình duyệt, copy và dán đường dẫn này vào thanh địa chỉ: <code class="highlight-code">chrome://extensions/</code> (sau đó nhấn Enter).</p>
-                    </div>
+            </div>
+
+            <!-- Tab Content: ZIP Manual Install -->
+            <div class="install-tab-content" id="content-zip">
+                <div class="zip-notice">
+                    <i data-lucide="info"></i>
+                    <span data-i18n-html="installZipNotice">Phương thức này dành cho trường hợp có <strong>bản cập nhật mới</strong> nhưng chưa được Google phê duyệt trên Chrome Web Store. Bạn sẽ luôn có phiên bản mới nhất ngay lập tức.</span>
                 </div>
-                <div class="install-step">
-                    <div class="step-badge">3</div>
-                    <div class="step-info">
-                        <strong data-i18n="installStep3">Bật Chế độ nhà phát triển</strong>
-                        <p data-i18n-html="installStep3Desc">Nhìn lên góc <strong>phải, phía trên</strong> màn hình và bật công tắc <strong>Chế độ dành cho nhà phát triển</strong> (Developer mode).</p>
+                <div class="modal-steps">
+                    <div class="install-step">
+                        <div class="step-badge">1</div>
+                        <div class="step-info">
+                            <strong data-i18n="installStep1">Tải và giải nén</strong>
+                            <p data-i18n="installStep1Desc">Tải file ZIP bên dưới về máy tính và giải nén ra một thư mục.</p>
+                            <a id="latest-download-link" href="https://github.com/PiPyL/safekid-extension/raw/main/safekid-extension.zip" class="btn btn-primary download-btn" download>
+                                <i data-lucide="download"></i> <span data-i18n="installStep1Btn">Click để tải file ZIP</span>
+                            </a>
+                        </div>
                     </div>
-                </div>
-                <div class="install-step">
-                    <div class="step-badge">4</div>
-                    <div class="step-info">
-                        <strong data-i18n="installStep4">Tải thư mục lên</strong>
-                        <p data-i18n-html="installStep4Desc">Nhấn vào nút <strong>Tải tiện ích đã giải nén</strong> (Load unpacked) ở góc trái và chọn thư mục bạn vừa giải nén ở Bước 1. Xong!</p>
+                    <div class="install-step">
+                        <div class="step-badge">2</div>
+                        <div class="step-info">
+                            <strong data-i18n="installStep2">Mở trang Quản lý tiện ích</strong>
+                            <p data-i18n-html="installStep2Desc">Mở trình duyệt, copy và dán đường dẫn này vào thanh địa chỉ: <code class="highlight-code">chrome://extensions/</code> (sau đó nhấn Enter).</p>
+                        </div>
+                    </div>
+                    <div class="install-step">
+                        <div class="step-badge">3</div>
+                        <div class="step-info">
+                            <strong data-i18n="installStep3">Bật Chế độ nhà phát triển</strong>
+                            <p data-i18n-html="installStep3Desc">Nhìn lên góc <strong>phải, phía trên</strong> màn hình và bật công tắc <strong>Chế độ dành cho nhà phát triển</strong> (Developer mode).</p>
+                        </div>
+                    </div>
+                    <div class="install-step">
+                        <div class="step-badge">4</div>
+                        <div class="step-info">
+                            <strong data-i18n="installStep4">Tải thư mục lên</strong>
+                            <p data-i18n-html="installStep4Desc">Nhấn vào nút <strong>Tải tiện ích đã giải nén</strong> (Load unpacked) ở góc trái và chọn thư mục bạn vừa giải nén ở Bước 1. Xong!</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -476,6 +525,7 @@
 
     <!-- Scripts -->
     <script src="i18n.js"></script>
+    <script src="version-config.js"></script>
     <script src="script.js" defer></script>
 </body>
 </html>
