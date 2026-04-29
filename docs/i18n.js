@@ -262,6 +262,13 @@ const WebI18n = (() => {
       termsSec5P1: 'Chúng tôi bảo lưu quyền thay đổi, tạm ngưng hoặc ngừng cung cấp tiện ích (hoặc bất kỳ phần nào của nó) vào bất kỳ lúc nào mà không cần thông báo trước. Các điều khoản này cũng có thể được cập nhật trong tương lai.',
       termsSec6Title: '6. Liên hệ',
       termsSec6P1: 'Mọi thắc mắc về Điều khoản dịch vụ này, xin vui lòng liên hệ qua email: <strong>autowork365@gmail.com</strong> hoặc SĐT/Zalo: <strong>0394932696</strong>.',
+      donateTitle: 'Ủng hộ SafeKid',
+      donateSubtitle: 'SafeKid là dự án 100% miễn phí. Nếu bạn thấy hữu ích, một ly cà phê từ bạn sẽ giúp chúng mình có thêm động lực phát triển! ☕',
+      donateBankLabel: 'Ngân hàng',
+      donateAccountNameLabel: 'Chủ tài khoản',
+      donateAccountNumberLabel: 'Số tài khoản',
+      donatePaypal: 'Donate qua PayPal',
+      donateThanks: 'Cảm ơn bạn đã đồng hành cùng SafeKid! 💚',
     },
     en: {
       navFeatures: 'Features',
@@ -515,6 +522,13 @@ const WebI18n = (() => {
       termsSec5P1: 'We reserve the right to modify, suspend, or discontinue the extension (or any part thereof) at any time without prior notice. These terms may also be updated in the future.',
       termsSec6Title: '6. Contact',
       termsSec6P1: 'If you have any questions about these Terms of Service, please contact us via email: <strong>autowork365@gmail.com</strong> or Phone/Zalo: <strong>0394932696</strong>.',
+      donateTitle: 'Support SafeKid',
+      donateSubtitle: 'SafeKid is a 100% free project. If you find it useful, a coffee from you will motivate us to keep developing! ☕',
+      donateBankLabel: 'Bank',
+      donateAccountNameLabel: 'Account Holder',
+      donateAccountNumberLabel: 'Account Number',
+      donatePaypal: 'Donate via PayPal',
+      donateThanks: 'Thank you for being with SafeKid! 💚',
     }
   };
 
